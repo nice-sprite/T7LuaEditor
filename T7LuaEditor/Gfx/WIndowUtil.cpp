@@ -42,6 +42,7 @@ HWND WindowUtil::NewWindow( std::wstring windowName, HINSTANCE hInst, bool nCmdS
 
 LRESULT WINAPI WindowUtil::WindowProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
 {
+    // TODO: handle resize event
     if (ImGui_ImplWin32_WndProcHandler( hwnd, uMsg, wParam, lParam ))
         return true;
 
