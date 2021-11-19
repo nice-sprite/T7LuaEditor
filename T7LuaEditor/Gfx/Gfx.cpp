@@ -1,6 +1,4 @@
 #include "./Gfx.h"
-
-
 ID3D11Device* Gfx::g_pDevice = nullptr;
 IDXGISwapChain* Gfx::g_pSwapChain = nullptr;
 ID3D11DeviceContext* Gfx::g_pContext = nullptr;
@@ -74,8 +72,14 @@ void Gfx::Render()
     g_pSwapChain->Present( 1, 0 );
 }
 
-void Gfx::Resize()
+void Gfx::Resize(LPARAM lParam, WPARAM wParam)
 {
+    if (g_pDevice != NULL && wParam != SIZE_MINIMIZED)
+    {
+        CleanupRenderTarget();
+        g_pSwapChain->ResizeBuffers( 0, (UINT)LOWORD( lParam ), (UINT)HIWORD( lParam ), DXGI_FORMAT_UNKNOWN, 0 );
+        CreateRenderTarget();
+    }
 }
 
 bool Gfx::StartDx11(HWND hWnd)

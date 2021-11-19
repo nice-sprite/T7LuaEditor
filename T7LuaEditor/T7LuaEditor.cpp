@@ -2,9 +2,7 @@
 //
 
 #include "T7LuaEditor.h"
-
-
-
+#include <memory>
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     auto hwnd = WindowUtil::NewWindow(L"Lua editor", hInstance, nCmdShow);
@@ -25,7 +23,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
                 break; 
             }
         }
-
         Gfx::Render();
     }
     WindowUtil::Cleanup();

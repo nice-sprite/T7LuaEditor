@@ -94,7 +94,7 @@ namespace Gfx
     void CleanupRenderTarget();
 
     void Render();
-    void Resize();
+    void Resize(LPARAM lParam, WPARAM wParam);
 
 }
 #endif // !GFX_HELPERS_H
