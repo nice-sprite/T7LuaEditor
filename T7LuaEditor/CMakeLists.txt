@@ -4,7 +4,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 # Add source to this project's executable.
-add_executable (T7LuaEditor WIN32 "T7LuaEditor.cpp" "T7LuaEditor.h" "Gfx/Gfx.h" "Gfx/Gfx.cpp" "Gfx/WindowUtil.h" "Gfx/WIndowUtil.cpp" "Lua/AnimParser.h")
+add_executable (T7LuaEditor WIN32 "T7LuaEditor.cpp" "T7LuaEditor.h" "Gfx/Gfx.h" "Gfx/Gfx.cpp" "Gfx/WindowUtil.h" "Gfx/WindowUtil.cpp" "Lua/AnimParser.h" Exceptions/GfxException.cpp Exceptions/GfxException.h)
 target_compile_features(T7LuaEditor PUBLIC cxx_std_17)
 # TODO: Add tests and install targets if needed.
 

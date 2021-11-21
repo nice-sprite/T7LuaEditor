@@ -1,6 +1,7 @@
 #ifndef GFX_HELPERS_H
 #define GFX_HELPERS_H
 
+#include <wrl/client.h> // Microsoft::WRL::ComPtr<T>
 // d3d headers for creating d3d context to render with
 #include <d3d11.h>
 #include <dxgi.h>
@@ -16,85 +17,55 @@
 #include <imgui_impl_win32.h>
 #include <fmt/format.h> // for error printing
 
-// used to safely free Com Objects (ex. d3d context)
-template <class T>
-void SafeRelease( T** ppT )
-{
-    if (*ppT)
-    {
-        (*ppT)->Release();
-        *ppT = NULL;
-    }
-}
-
 struct Vertex
 {
     DirectX::XMFLOAT3 pos;
     DirectX::XMFLOAT4 color;
 };
 
-namespace Gfx
+
+class Gfx
 {
-    extern ID3D11Device* g_pDevice;
-    extern IDXGISwapChain* g_pSwapChain;
-    extern ID3D11DeviceContext* g_pContext;
-    extern ID3D11RenderTargetView* g_pRenderTargetView ;
-    extern ID3D11VertexShader* g_pVertexShader ;
-    extern ID3D11InputLayout* g_pVertexLayout ;
-    extern ID3D11PixelShader* g_pPixelShader ;
-    extern ID3D11Buffer* g_pVertexBuffer ;
-    extern ID3D11Buffer* g_pIndexBuffer ;
-    extern ID3D11Buffer* g_pConstantBuffer;
-    extern D3D11_VIEWPORT g_pViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
-    extern DirectX::XMMATRIX mOrtho;
-    extern HWND g_hwnd;
 
-#pragma region DefaultShader
-    constexpr const char* szShadez = R"(
-        // Constant buffer
-        cbuffer ConstantBuffer : register(b0)
-        {
-	        matrix projection;
-        }
-        // PSI (PixelShaderInput)
-        struct PSI
-        {
-	        float4 pos : SV_POSITION;
-	        float4 color : COLOR;
-        };
-        // VertexShader
-        PSI VS( float4 pos : POSITION, float4 color : COLOR )
-        {
-	        PSI psi;
-	        psi.color = color;
-	        pos = mul( pos, projection );
-	        psi.pos = pos;
-	        return psi;
-        }
-        // PixelShader
-        float4 PS(PSI psi) : SV_TARGET
-        {
-	        return psi.color;
-        }
-        )";
-#pragma endregion
+public:
+    /// <summary>
+    /// Create a new rendering context for the window
+    /// </summary>
+    explicit Gfx(HWND hwnd, size_t _width, size_t _height);
+    Gfx(const Gfx& Gfx) = delete;
+    Gfx& operator=( const Gfx& ) = delete;
+    ~Gfx();
+    void Render();
+    void Resize( LPARAM lParam, WPARAM wParam );
 
-    /*create a d3d context to render with*/
-    bool StartDx11( HWND hwnd );
+private:
     void PrepareImGui();
-    // free system resources when program exits
+    void ShutdownImGui();
+    bool SetupDx11();
     void ShutdownDx11();
-
-    bool CompileShader_Mem( const char* szShader,
-        const char* szEntrypoint,
-        const char* szTarget,
-        ID3D10Blob** pBlob );
-
     void CreateRenderTarget();
     void CleanupRenderTarget();
 
-    void Render();
-    void Resize(LPARAM lParam, WPARAM wParam);
+    /*compile a shader from source that is loaded in memory*/
+    bool CompileShader_Mem( const char* szShader,
+                            const char* szEntrypoint,
+                            const char* szTarget,
+                            ID3D10Blob** pBlob );
 
-}
+    Microsoft::WRL::ComPtr<ID3D11Buffer> constantBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> indexBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Buffer> vertexBuffer;
+    Microsoft::WRL::ComPtr<ID3D11Device> device;
+    Microsoft::WRL::ComPtr<ID3D11DeviceContext> context;
+    Microsoft::WRL::ComPtr<ID3D11InputLayout> vertexLayout;
+    Microsoft::WRL::ComPtr<ID3D11PixelShader> pixelShader;
+    Microsoft::WRL::ComPtr<ID3D11RenderTargetView> renderTargetView;
+    Microsoft::WRL::ComPtr<ID3D11VertexShader> m_pVertexShader;
+    Microsoft::WRL::ComPtr<IDXGISwapChain> swapChain;
+    D3D11_VIEWPORT m_viewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE];
+    DirectX::XMMATRIX mOrtho;
+    HWND hwnd;
+    size_t width, height;
+};
+
 #endif // !GFX_HELPERS_H

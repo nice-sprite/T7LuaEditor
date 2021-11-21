@@ -5,26 +5,9 @@
 #include <memory>
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-    auto hwnd = WindowUtil::NewWindow(L"Lua editor", hInstance, nCmdShow);
 
-    Gfx::StartDx11(hwnd);
-    Gfx::PrepareImGui();
-    // main loop
-    MSG msg;
-    bool shouldClose = false;
-    while (!shouldClose)
-    {
-        if (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-            if (msg.message == WM_QUIT) { 
-                shouldClose = true;  
-                break; 
-            }
-        }
-        Gfx::Render();
-    }
-    WindowUtil::Cleanup();
+    Window window(hInstance, L"Lua Editor", L"luaeditor", 1280, 720);
+
+    window.ProcessMessages();
     return 0;
 }

@@ -1,34 +1,30 @@
 #include "./Gfx.h"
-ID3D11Device* Gfx::g_pDevice = nullptr;
-IDXGISwapChain* Gfx::g_pSwapChain = nullptr;
-ID3D11DeviceContext* Gfx::g_pContext = nullptr;
-ID3D11RenderTargetView* Gfx::g_pRenderTargetView = nullptr;
-ID3D11VertexShader* Gfx::g_pVertexShader = nullptr;
-ID3D11InputLayout* Gfx::g_pVertexLayout = nullptr;
-ID3D11PixelShader* Gfx::g_pPixelShader = nullptr;
-ID3D11Buffer* Gfx::g_pVertexBuffer = nullptr;
-ID3D11Buffer* Gfx::g_pIndexBuffer = nullptr;
-ID3D11Buffer* Gfx::g_pConstantBuffer = nullptr;
-D3D11_VIEWPORT Gfx::g_pViewports[D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE]{ 0 };
-DirectX::XMMATRIX Gfx::mOrtho{};
-HWND Gfx::g_hwnd = NULL;
+
+Gfx::Gfx(HWND _hwnd, size_t _width, size_t _height)
+        : hwnd{_hwnd}, width{_width}, height{_height} {
+    SetupDx11();
+    PrepareImGui();
+}
 
 
-bool Gfx::CompileShader_Mem(const char* szShader,
-    const char* szEntrypoint,
-    const char* szTarget,
-    ID3D10Blob** pBlob )
-{
-    ID3D10Blob* pErrorBlob = nullptr;
+Gfx::~Gfx() {
+    ShutdownImGui();
+    ShutdownDx11();
+}
 
-    auto hr = D3DCompile( szShader, strlen( szShader ), 0, nullptr, nullptr, szEntrypoint, szTarget, D3DCOMPILE_ENABLE_STRICTNESS, 0, pBlob, &pErrorBlob );
-    if (FAILED( hr ))
-    {
-        if (pErrorBlob)
-        {
-            char szError[256]{ 0 };
-            memcpy( szError, pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize() );
-            MessageBoxA( nullptr, szError, "Error", MB_OK );
+bool Gfx::CompileShader_Mem(const char *szShader,
+                            const char *szEntrypoint,
+                            const char *szTarget,
+                            ID3D10Blob **pBlob) {
+    ID3D10Blob *pErrorBlob = nullptr;
+
+    auto hr = D3DCompile(szShader, strlen(szShader), 0, nullptr, nullptr, szEntrypoint, szTarget,
+                         D3DCOMPILE_ENABLE_STRICTNESS, 0, pBlob, &pErrorBlob);
+    if (FAILED(hr)) {
+        if (pErrorBlob) {
+            char szError[256]{0};
+            memcpy(szError, pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
+            MessageBoxA(nullptr, szError, "Error", MB_OK);
         }
         return false;
     }
@@ -36,54 +32,54 @@ bool Gfx::CompileShader_Mem(const char* szShader,
 
 }
 
-void Gfx::CreateRenderTarget()
-{
-    ID3D11Texture2D* pBackBuffer; 
-    g_pSwapChain->GetBuffer( 0, IID_PPV_ARGS( &pBackBuffer ) );
-    g_pDevice->CreateRenderTargetView( pBackBuffer, NULL, &g_pRenderTargetView );
+void Gfx::CreateRenderTarget() {
+    ID3D11Texture2D *pBackBuffer;
+    swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+    device->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView);
     pBackBuffer->Release();
 }
 
-void Gfx::CleanupRenderTarget()
-{
-    if (g_pRenderTargetView) { g_pRenderTargetView->Release(); g_pRenderTargetView = NULL; }
+void Gfx::CleanupRenderTarget() {
+    renderTargetView.Reset();
 }
 
-void Gfx::Render()
-{
+void Gfx::Render() {
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-    bool demo = true;
-    ImGui::ShowDemoWindow( &demo );
+    static bool demo = true;
+    ImGui::ShowDemoWindow(&demo);
 
     ImGui::Render();
-    const float clearColor[4] = { 
-        0.5,
-        0.5,
-        0.5,
-        1.0
+    const float clearColor[4] = {
+            0.5,
+            0.5,
+            0.5,
+            1.0
     };
 
-    g_pContext->OMSetRenderTargets( 1, &g_pRenderTargetView, NULL );
+    context->OMSetRenderTargets(1,
+                                renderTargetView.GetAddressOf(),
+                                nullptr);
 
-    g_pContext->ClearRenderTargetView( g_pRenderTargetView, clearColor );
-    ImGui_ImplDX11_RenderDrawData( ImGui::GetDrawData() );
-    g_pSwapChain->Present( 1, 0 );
+    context->ClearRenderTargetView(renderTargetView.Get(), clearColor);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+    swapChain->Present(1, 0);
 }
 
-void Gfx::Resize(LPARAM lParam, WPARAM wParam)
-{
-    if (g_pDevice != NULL && wParam != SIZE_MINIMIZED)
-    {
+void Gfx::Resize(LPARAM lParam, WPARAM wParam) {
+    if (device && wParam != SIZE_MINIMIZED) {
         CleanupRenderTarget();
-        g_pSwapChain->ResizeBuffers( 0, (UINT)LOWORD( lParam ), (UINT)HIWORD( lParam ), DXGI_FORMAT_UNKNOWN, 0 );
+        swapChain->ResizeBuffers(0,
+                                 (UINT) LOWORD(lParam),
+                                 (UINT) HIWORD(lParam),
+                                 DXGI_FORMAT_UNKNOWN,
+                                 0);
         CreateRenderTarget();
     }
 }
 
-bool Gfx::StartDx11(HWND hWnd)
-{
+bool Gfx::SetupDx11() {
     /*
         * 1. create the swapchain, the device, the context, and render targets
         * 2. set up shaders (vertex shader and then pixel shader)
@@ -93,10 +89,9 @@ bool Gfx::StartDx11(HWND hWnd)
         * 6. finally create a fucking triangle
         * 7. cry
     */
-    g_hwnd = hWnd;
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC sd;
-    ZeroMemory( &sd, sizeof( sd ) );
+    ZeroMemory(&sd, sizeof(sd));
     sd.BufferCount = 2;
     sd.BufferDesc.Width = 0;
     sd.BufferDesc.Height = 0;
@@ -105,7 +100,7 @@ bool Gfx::StartDx11(HWND hWnd)
     sd.BufferDesc.RefreshRate.Denominator = 1;
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-    sd.OutputWindow = hWnd;
+    sd.OutputWindow = hwnd;
     sd.SampleDesc.Count = 1;
     sd.SampleDesc.Quality = 0;
     sd.Windowed = TRUE;
@@ -113,19 +108,21 @@ bool Gfx::StartDx11(HWND hWnd)
 
     UINT createDeviceFlags = 0;
     D3D_FEATURE_LEVEL featureLevel;
-    const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-    HRESULT res = D3D11CreateDeviceAndSwapChain( NULL,
-        D3D_DRIVER_TYPE_HARDWARE,
-        NULL,
-        createDeviceFlags,
-        featureLevelArray,
-        2,
-        D3D11_SDK_VERSION,
-        &sd,
-        &g_pSwapChain,
-        &g_pDevice,
-        &featureLevel,
-        &g_pContext );
+    const D3D_FEATURE_LEVEL featureLevelArray[2] = {D3D_FEATURE_LEVEL_11_0,
+                                                    D3D_FEATURE_LEVEL_10_0,};
+    HRESULT res = D3D11CreateDeviceAndSwapChain(
+            nullptr,
+            D3D_DRIVER_TYPE_HARDWARE,
+            nullptr,
+            createDeviceFlags,
+            featureLevelArray,
+            2,
+            D3D11_SDK_VERSION,
+            &sd,
+            swapChain.GetAddressOf(),
+            device.GetAddressOf(),
+            &featureLevel,
+            context.GetAddressOf());
 
     if (res != S_OK)
         return false;
@@ -136,12 +133,11 @@ bool Gfx::StartDx11(HWND hWnd)
     return true;
 }
 
-void Gfx::PrepareImGui()
-{
+void Gfx::PrepareImGui() {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO();
+    ImGuiIO &io = ImGui::GetIO();
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -150,15 +146,17 @@ void Gfx::PrepareImGui()
     //ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
-    ImGui_ImplWin32_Init( g_hwnd );
-    ImGui_ImplDX11_Init( g_pDevice, g_pContext );
+    ImGui_ImplWin32_Init(hwnd);
+    ImGui_ImplDX11_Init(device.Get(), context.Get());
 }
 
-void Gfx::ShutdownDx11()
-{
-    CleanupRenderTarget();
-    SafeRelease( &g_pSwapChain );
-    SafeRelease( &g_pContext);
-    SafeRelease( &g_pDevice );
+void Gfx::ShutdownDx11() {
 }
+
+void Gfx::ShutdownImGui() {
+    ImGui_ImplDX11_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+}
+
 

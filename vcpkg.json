@@ -1,7 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "t7luaeditor",
-  "version-string": "v1.0.0",
+  "version-string": "v1.0.1",
   "dependencies": [
     "fmt",
     "simdjson",
@@ -10,5 +10,4 @@
       "features": ["dx11-binding", "win32-binding"]
     }
   ]
-  
 }
