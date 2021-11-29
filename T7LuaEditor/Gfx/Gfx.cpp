@@ -1,7 +1,10 @@
 #include "./Gfx.h"
+#include "GfxResource/Viewport.h"
+
+#include <ImSequencer.h>
 
 Gfx::Gfx(HWND _hwnd, size_t _width, size_t _height)
-        : hwnd{_hwnd}, width{_width}, height{_height} {
+        : hwnd{_hwnd}, width{_width}, height{_height}, mainTimer{} {
     SetupDx11();
     PrepareImGui();
 }
@@ -12,30 +15,11 @@ Gfx::~Gfx() {
     ShutdownDx11();
 }
 
-bool Gfx::CompileShader_Mem(const char *szShader,
-                            const char *szEntrypoint,
-                            const char *szTarget,
-                            ID3D10Blob **pBlob) {
-    ID3D10Blob *pErrorBlob = nullptr;
-
-    auto hr = D3DCompile(szShader, strlen(szShader), 0, nullptr, nullptr, szEntrypoint, szTarget,
-                         D3DCOMPILE_ENABLE_STRICTNESS, 0, pBlob, &pErrorBlob);
-    if (FAILED(hr)) {
-        if (pErrorBlob) {
-            char szError[256]{0};
-            memcpy(szError, pErrorBlob->GetBufferPointer(), pErrorBlob->GetBufferSize());
-            MessageBoxA(nullptr, szError, "Error", MB_OK);
-        }
-        return false;
-    }
-    return true;
-
-}
 
 void Gfx::CreateRenderTarget() {
     ID3D11Texture2D *pBackBuffer;
     swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-    device->CreateRenderTargetView(pBackBuffer, NULL, &renderTargetView);
+    device->CreateRenderTargetView(pBackBuffer, nullptr, &renderTargetView);
     pBackBuffer->Release();
 }
 
@@ -44,17 +28,29 @@ void Gfx::CleanupRenderTarget() {
 }
 
 void Gfx::Render() {
+    static long double totalElapsedMs;
+    mainTimer.Start();
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
     static bool demo = true;
     ImGui::ShowDemoWindow(&demo);
-
+    static bool showSystemInfo = true;
+    if (ImGui::Begin("System Info", &showSystemInfo)) {
+        for (auto const& deviceInfoStr: systemInfo.ToString()) {
+            ImGui::Text(deviceInfoStr.c_str());
+        }
+    }
+    ImGui::End();
+    auto timeElapsedMs = mainTimer.Stop() * .001;
+    totalElapsedMs += timeElapsedMs;
+    auto timeStr = fmt::format("{}ms\ntotal: {}ms", timeElapsedMs, totalElapsedMs);
+    ImGui::GetForegroundDrawList()->AddText(ImVec2(0, 0), 0xFFFFFFFF, timeStr.c_str());
     ImGui::Render();
     const float clearColor[4] = {
-            0.5,
-            0.5,
-            0.5,
+            0.1,
+            0.1,
+            0.1,
             1.0
     };
 
@@ -63,6 +59,7 @@ void Gfx::Render() {
                                 nullptr);
 
     context->ClearRenderTargetView(renderTargetView.Get(), clearColor);
+
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     swapChain->Present(1, 0);
 }
@@ -89,12 +86,13 @@ bool Gfx::SetupDx11() {
         * 6. finally create a fucking triangle
         * 7. cry
     */
+
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC sd;
     ZeroMemory(&sd, sizeof(sd));
     sd.BufferCount = 2;
-    sd.BufferDesc.Width = 0;
-    sd.BufferDesc.Height = 0;
+    sd.BufferDesc.Width = width;
+    sd.BufferDesc.Height = height;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     sd.BufferDesc.RefreshRate.Numerator = 60;
     sd.BufferDesc.RefreshRate.Denominator = 1;
@@ -124,10 +122,44 @@ bool Gfx::SetupDx11() {
             &featureLevel,
             context.GetAddressOf());
 
-    if (res != S_OK)
-        return false;
+    assert(SUCCEEDED(res));
 
+    // setup raster state
+    D3D11_RASTERIZER_DESC rasterDesc{};
+    rasterDesc.AntialiasedLineEnable = false;
+    rasterDesc.CullMode = D3D11_CULL_BACK;
+    rasterDesc.DepthBias = 0;
+    rasterDesc.DepthBiasClamp = 0.0f;
+    rasterDesc.DepthClipEnable = true;
+    rasterDesc.FillMode = D3D11_FILL_SOLID;
+    rasterDesc.FrontCounterClockwise = false;
+    rasterDesc.MultisampleEnable = false;
+    rasterDesc.ScissorEnable = false;
+    rasterDesc.SlopeScaledDepthBias = 0.0f;
 
+    res = device->CreateRasterizerState(&rasterDesc, rasterizerState.GetAddressOf());
+    assert(SUCCEEDED(res));
+
+    context->RSSetState(rasterizerState.Get());
+
+    // setup viewport
+    viewport.Height = (float) height;
+    viewport.Width = (float) width;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0;
+    context->RSSetViewports(1, &viewport);
+
+    // setup matrices
+
+    float fov = DirectX::XM_PIDIV4;
+    float aspectRatio = viewport.Width / viewport.Height;
+    constexpr float ZNEAR = 1.0f;
+    constexpr float ZFAR = 650.0f;
+    projectionMat = DirectX::XMMatrixPerspectiveFovLH(fov, aspectRatio, ZNEAR, ZFAR);
+    worldMat = DirectX::XMMatrixIdentity();
+    orthoMat = DirectX::XMMatrixOrthographicLH(viewport.Width, viewport.Height, ZNEAR, ZFAR);
     CreateRenderTarget();
 
     return true;
@@ -158,5 +190,9 @@ void Gfx::ShutdownImGui() {
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 }
+
+
+
+
 
 

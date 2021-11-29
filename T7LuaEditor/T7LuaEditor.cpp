@@ -5,9 +5,7 @@
 #include <memory>
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-
     Window window(hInstance, L"Lua Editor", L"luaeditor", 1280, 720);
-
     window.ProcessMessages();
     return 0;
 }
