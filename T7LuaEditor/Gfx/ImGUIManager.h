@@ -31,6 +31,9 @@ private:
     ImFont* GetFont(std::string const& fontName);
     std::vector<NamedFont> fonts;
     bool showSysInfo_ ;
+    std::string cpuInfo_;
+    std::vector<std::string> gpuInfo_;
+
     bool showDemoWindow_ ;
 };
 

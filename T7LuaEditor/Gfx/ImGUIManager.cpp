@@ -4,9 +4,10 @@
 
 #include <fmt/format.h>
 #include "ImGUIManager.h"
+#include "SystemInfo.h"
 
 ImGUIManager::ImGUIManager(ID3D11Device *device, ID3D11DeviceContext *context, HWND hwnd) :
-        showSysInfo_(false), showDemoWindow_(true) {
+        showSysInfo_(true), showDemoWindow_(true) {
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -23,6 +24,8 @@ ImGUIManager::ImGUIManager(ID3D11Device *device, ID3D11DeviceContext *context, H
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(device, context);
+    cpuInfo_ = GetCPUInfo();
+    gpuInfo_ = ToString(GetGPUInfo());
 }
 
 ImGUIManager::~ImGUIManager() {
@@ -39,6 +42,21 @@ void ImGUIManager::RenderUI() {
 
     if (showDemoWindow_)
         ImGui::ShowDemoWindow(&showDemoWindow_);
+
+    if (ImGui::Begin("SysInfo", &showSysInfo_)) {
+
+        if (ImGui::CollapsingHeader("CPU")) {
+            ImGui::Text("%s", cpuInfo_.c_str());
+        }
+
+        if (ImGui::CollapsingHeader("GPU")) {
+            for (auto const& infoStr: gpuInfo_)
+                ImGui::Text("%s", infoStr.c_str());
+        }
+    }
+    ImGui::End();
+
+
 /*
     if (ImGui::Begin("System Info", &showSysInfo_)) {
         for (auto const &deviceInfoStr: systemInfo.ToString()) {

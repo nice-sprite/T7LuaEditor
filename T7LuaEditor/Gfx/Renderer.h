@@ -19,7 +19,7 @@
 #include <fmt/format.h> // for error printing
 #include <vector>
 #include "Timer.h"
-#include "SystemDeviceInfoManager.h"
+#include "SystemInfo.h"
 #include "Editor/Widgets/AnimationTimelineSequencer.h"
 #include "Texture.h"
 #include "ImGUIManager.h"
