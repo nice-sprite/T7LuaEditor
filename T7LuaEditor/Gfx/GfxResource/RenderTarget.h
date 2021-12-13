@@ -7,8 +7,8 @@
 #include "Bindable.h"
 
 class RenderTarget : public Bindable{
-    RenderTarget(Gfx& gfx);
-    void Bind(Gfx& gfx);
+    RenderTarget(Renderer& gfx);
+    void Bind(Renderer& gfx);
 };
 
 

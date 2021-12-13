@@ -12,8 +12,8 @@ class VertexBuffer : public Bindable {
 
 public:
 
-    VertexBuffer(Gfx& gfx, std::vector<Vertex>& vertexList);
-    void Bind(Gfx& gfx) override;
+    VertexBuffer(Renderer& gfx, std::vector<Vertex>& vertexList);
+    void Bind(Renderer& gfx) override;
 
 private:
     wrl::ComPtr<ID3D11Buffer> vertexBuffer;

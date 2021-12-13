@@ -9,8 +9,8 @@
 class IndexBuffer : public Bindable {
 
 public:
-    IndexBuffer(Gfx& gfx, std::vector<unsigned long>& idxs);
-    void Bind(Gfx& gfx) override;
+    IndexBuffer(Renderer& gfx, std::vector<unsigned long>& idxs);
+    void Bind(Renderer& gfx) override;
 
 private:
     wrl::ComPtr<ID3D11Buffer> indexBuffer;

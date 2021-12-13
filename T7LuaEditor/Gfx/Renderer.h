@@ -11,6 +11,7 @@
 #pragma comment( lib, "d3d11.lib" )       // direct3D library
 #pragma comment( lib, "dxgi.lib" )        // directx graphics interface
 #pragma comment( lib, "d3dcompiler.lib" ) // shader compiler
+#pragma comment( lib, "dxguid.lib")
 
 #include <imgui.h> // menu creation
 #include <imgui_impl_dx11.h>
@@ -19,22 +20,26 @@
 #include <vector>
 #include "Timer.h"
 #include "SystemDeviceInfoManager.h"
+#include "Editor/Widgets/AnimationTimelineSequencer.h"
+#include "Texture.h"
+#include "ImGUIManager.h"
+
 namespace wrl = Microsoft::WRL;
 
-class Gfx {
-    friend class GraphicsResource;
+class Renderer {
+    friend class GraphicsResource; // this is where it started to stink...
 
 public:
     /// <summary>
     /// Create a new rendering context for the window
     /// </summary>
-    explicit Gfx(HWND hwnd, size_t _width, size_t _height);
+    explicit Renderer(HWND hwnd, size_t _width, size_t _height);
 
-    Gfx(const Gfx &Gfx) = delete;
+    Renderer(const Renderer &Gfx) = delete;
 
-    Gfx &operator=(const Gfx &) = delete;
+    Renderer &operator=(const Renderer &) = delete;
 
-    ~Gfx();
+    ~Renderer();
 
     void Render();
 
@@ -51,9 +56,6 @@ public:
     [[nodiscard]] size_t GetHeight() const { return height; }
 
 private:
-    void PrepareImGui();
-
-    void ShutdownImGui();
 
     bool SetupDx11();
 
@@ -64,7 +66,7 @@ private:
     void CleanupRenderTarget();
 
 private:
-
+    ImGUIManager* imgui_;
     wrl::ComPtr<ID3D11Device> device;
     wrl::ComPtr<ID3D11DeviceContext> context;
     wrl::ComPtr<ID3D11RenderTargetView> renderTargetView;
@@ -76,8 +78,8 @@ private:
     DirectX::XMMATRIX worldMat{};
     HWND hwnd;
     size_t width, height;
-    Timer mainTimer;
-    SystemDeviceInfoManager systemInfo;
+    Timer frameTimer;
+    Texture demoTexture;
 };
 
 #endif // !GFX_HELPERS_H

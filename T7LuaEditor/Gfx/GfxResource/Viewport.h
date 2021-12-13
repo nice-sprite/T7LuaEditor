@@ -8,8 +8,8 @@
 
 class Viewport : public Bindable {
 public:
-    explicit Viewport(Gfx& gfx);
-    void Bind(Gfx& gfx) override;
+    explicit Viewport(Renderer& gfx);
+    void Bind(Renderer& gfx) override;
 private:
     D3D11_VIEWPORT viewport{};
     size_t width, height;

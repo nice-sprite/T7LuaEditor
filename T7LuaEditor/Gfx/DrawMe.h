@@ -14,8 +14,8 @@
 
 class DrawMe : public GraphicsResource {
 public:
-    DrawMe(Gfx& gfx);
-    void Draw(Gfx& gfx);
+    DrawMe(Renderer& gfx);
+    void Draw(Renderer& gfx);
 
 private:
 //    VertexShader vertexShader;

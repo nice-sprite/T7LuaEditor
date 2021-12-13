@@ -4,7 +4,7 @@
 
 #include "Mesh.h"
 
-Mesh::Mesh(Gfx &gfx)
+Mesh::Mesh(Renderer &gfx)
         : shader(gfx, L"C:\\Users\\coxtr\\source\\repos\\T7LuaEditor\\T7LuaEditor\\ShaderSrc\\test.hlsl") {
     HRESULT result;
     Vertex* verts;

@@ -4,11 +4,11 @@
 
 #include "GraphicsResource.h"
 
-ID3D11DeviceContext *GraphicsResource::GetContext(Gfx &gfx) noexcept {
+ID3D11DeviceContext *GraphicsResource::GetContext(Renderer &gfx) noexcept {
     return gfx.context.Get();
 }
 
 
-ID3D11Device *GraphicsResource::GetDevice(Gfx &gfx) noexcept {
+ID3D11Device *GraphicsResource::GetDevice(Renderer &gfx) noexcept {
     return gfx.device.Get();
 }

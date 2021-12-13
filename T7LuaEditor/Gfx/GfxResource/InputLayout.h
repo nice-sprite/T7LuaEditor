@@ -14,9 +14,9 @@ class InputLayout : public Bindable {
 
 public:
 
-    InputLayout(Gfx &gfx, const VertexShader &vertexShader);
+    InputLayout(Renderer &gfx, const VertexShader &vertexShader);
 
-    void Bind(Gfx &gfx) override;
+    void Bind(Renderer &gfx) override;
 };
 
 

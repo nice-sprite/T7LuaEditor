@@ -9,7 +9,7 @@
 template<typename CbufType>
 class ConstantBuffer : public Bindable {
 public:
-    ConstantBuffer(Gfx& gfx, const CbufType vtx)
+    ConstantBuffer(Renderer& gfx, const CbufType vtx)
     {
         bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
         bufferDesc.ByteWidth = sizeof(CbufType);
@@ -22,12 +22,12 @@ public:
         assert(SUCCEEDED(res));
     }
 
-    void Bind(Gfx& gfx) override
+    void Bind(Renderer& gfx) override
     {
         GetContext(gfx)->VSSetConstantBuffers(0, 1, cbuf.GetAddressOf());
     }
 
-    void Update(Gfx& gfx, const CbufType* newData)
+    void Update(Renderer& gfx, const CbufType* newData)
     {
         D3D11_MAPPED_SUBRESOURCE mappedResource;
         CbufType* dataPtr;

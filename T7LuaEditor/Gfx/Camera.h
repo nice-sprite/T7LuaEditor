@@ -8,10 +8,10 @@
 #include <DirectXMath.h>
 class Camera : public Bindable {
 public:
-    Camera(Gfx& gfx);
-    void BindTo(Gfx& gfx);
+    Camera(Renderer& gfx);
+    void BindTo(Renderer& gfx);
 
-    void SetTransform(Gfx& gfx);
+    void SetTransform(Renderer& gfx);
 private:
     float x, y, z, pitch, yaw, roll; // store the camera
     DirectX::XMMATRIX viewMatrix;

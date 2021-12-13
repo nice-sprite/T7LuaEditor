@@ -8,7 +8,7 @@
 #include <fmt/format.h> // for logging
 #include <cassert>
 #include <imgui_impl_win32.h>
-#include "Gfx.h"
+#include "Renderer.h"
 #include <memory>
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -33,7 +33,7 @@ public:
 
     [[nodiscard]] HWND GetHwnd() const { return hwnd; }
 
-    [[nodiscard]] Gfx &GetGfx() {
+    [[nodiscard]] Renderer &GetGfx() {
         if (!graphics) {
             // throw exception
         }
@@ -47,7 +47,7 @@ public:
     }
 
 private:
-    std::unique_ptr<Gfx> graphics = nullptr;
+    std::unique_ptr<Renderer> graphics = nullptr;
     HWND hwnd;
     HINSTANCE hInst;
     size_t width, height;

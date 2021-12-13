@@ -4,7 +4,7 @@
 
 #include "PixelShader.h"
 
-PixelShader::PixelShader(Gfx &gfx, const wchar_t *filepath) : path{filepath} {
+PixelShader::PixelShader(Renderer &gfx, const wchar_t *filepath) : path{filepath} {
     HRESULT res;
     wrl::ComPtr<ID3DBlob> pixelShaderBuffer;
 
@@ -18,6 +18,6 @@ PixelShader::PixelShader(Gfx &gfx, const wchar_t *filepath) : path{filepath} {
 }
 
 
-void PixelShader::Bind(Gfx &gfx) {
+void PixelShader::Bind(Renderer &gfx) {
     GetContext(gfx)->PSSetShader(pixelShader.Get(), nullptr, 0);
 }

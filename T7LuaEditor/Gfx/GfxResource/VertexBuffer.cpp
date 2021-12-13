@@ -5,7 +5,7 @@
 #include "VertexBuffer.h"
 
 // we only use one vertex layout so...
-VertexBuffer::VertexBuffer(Gfx &gfx, std::vector<Vertex>& vertexList)
+VertexBuffer::VertexBuffer(Renderer &gfx, std::vector<Vertex>& vertexList)
 {
     bufferDesc.BindFlags = D3D11_BIND_VERTEX_BUFFER;
     bufferDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -23,7 +23,7 @@ VertexBuffer::VertexBuffer(Gfx &gfx, std::vector<Vertex>& vertexList)
     assert(SUCCEEDED(res));
 }
 
-void VertexBuffer::Bind(Gfx &gfx) {
+void VertexBuffer::Bind(Renderer &gfx) {
     unsigned int stride = sizeof(Vertex);
     unsigned int offset = 0;
     GetContext(gfx)->IASetVertexBuffers(0, 1, vertexBuffer.GetAddressOf(), &stride, &offset);

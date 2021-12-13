@@ -10,7 +10,7 @@ namespace wrl = Microsoft::WRL;
 class Bindable : public GraphicsResource {
 
 public:
-    virtual void Bind(Gfx& gfx) = 0;
+    virtual void Bind(Renderer& gfx) = 0;
 //    virtual void InitializeParentReference( const Drawable& ) noexcept
 //    {}
     virtual std::string GetUID() const noexcept

@@ -1,5 +1,5 @@
 #include "WindowUtil.h"
-#include "Gfx.h"
+#include "Renderer.h"
 
 
 LRESULT Window::HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept {
@@ -71,7 +71,7 @@ Window::Window(HINSTANCE hInst, std::wstring _title, std::wstring _classname, si
             this            // Additional application data
     );
     assert(hwnd != nullptr);
-    graphics = std::make_unique<Gfx>(hwnd, _width, _height);
+    graphics = std::make_unique<Renderer>(hwnd, _width, _height);
 
     ShowWindow(hwnd, SW_SHOWDEFAULT);
     UpdateWindow(hwnd);

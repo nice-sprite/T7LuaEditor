@@ -4,7 +4,7 @@
 
 #include "Viewport.h"
 
-Viewport::Viewport(Gfx &gfx) {
+Viewport::Viewport(Renderer &gfx) {
     width = gfx.GetWidth();
     height = gfx.GetHeight();
     viewport.TopLeftX = 0.f;
@@ -15,6 +15,6 @@ Viewport::Viewport(Gfx &gfx) {
     viewport.MinDepth = 0.0f;
 }
 
-void Viewport::Bind(Gfx &gfx) {
+void Viewport::Bind(Renderer &gfx) {
     GetContext(gfx)->RSSetViewports(1, &viewport);
 }

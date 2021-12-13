@@ -4,7 +4,7 @@
 
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(Gfx &gfx, std::vector<unsigned long>& idxs) {
+IndexBuffer::IndexBuffer(Renderer &gfx, std::vector<unsigned long>& idxs) {
     D3D11_SUBRESOURCE_DATA subresourceData;
     bufDef.Usage = D3D11_USAGE_DEFAULT;
     bufDef.ByteWidth = sizeof(unsigned long) * idxs.size();
@@ -20,6 +20,6 @@ IndexBuffer::IndexBuffer(Gfx &gfx, std::vector<unsigned long>& idxs) {
     assert(SUCCEEDED(res));
 }
 
-void IndexBuffer::Bind(Gfx &gfx) {
+void IndexBuffer::Bind(Renderer &gfx) {
     GetContext(gfx)->IASetIndexBuffer(indexBuffer.Get(), DXGI_FORMAT_R32_UINT, 0);
 }

@@ -9,12 +9,12 @@
 #include "../Vertex.h"
 #include <wrl/client.h>
 
-class Gfx;
+class Renderer;
 
 class Mesh {
 
 public:
-    Mesh(Gfx &gfx);
+    Mesh(Renderer &gfx);
 
     int UseShader(const char *shaderpath);
 

@@ -9,8 +9,8 @@
 #include <string>
 class VertexShader : public Bindable {
 public:
-    VertexShader(Gfx& gfx, const wchar_t *filepath);
-    void Bind(Gfx& gfx) override;
+    VertexShader(Renderer& gfx, const wchar_t *filepath);
+    void Bind(Renderer& gfx) override;
     ID3DBlob* GetBlob() const noexcept;
 private:
     wrl::ComPtr<ID3D11VertexShader> vertexShader;

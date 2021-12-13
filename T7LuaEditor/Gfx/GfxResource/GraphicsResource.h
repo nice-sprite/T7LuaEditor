@@ -5,15 +5,15 @@
 #ifndef T7LUAEDITOR_GRAPHICSRESOURCE_H
 #define T7LUAEDITOR_GRAPHICSRESOURCE_H
 
-#include "../Gfx.h"
+#include "../Renderer.h"
 
-class Gfx;
+class Renderer;
 
 class GraphicsResource {
 
 protected:
-    static ID3D11DeviceContext *GetContext(Gfx &gfx) noexcept;
-    static ID3D11Device *GetDevice(Gfx &gfx) noexcept;
+    static ID3D11DeviceContext *GetContext(Renderer &gfx) noexcept;
+    static ID3D11Device *GetDevice(Renderer &gfx) noexcept;
 };
 
 

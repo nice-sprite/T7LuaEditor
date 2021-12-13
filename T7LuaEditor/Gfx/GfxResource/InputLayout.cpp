@@ -4,7 +4,7 @@
 
 #include "InputLayout.h"
 
-InputLayout::InputLayout(Gfx &gfx, const VertexShader &vertexShader) {
+InputLayout::InputLayout(Renderer &gfx, const VertexShader &vertexShader) {
     D3D11_INPUT_ELEMENT_DESC layoutDesc[2]{};
     /*
      * TODO: im sure some clever shit here could be done but i wanna keep this bit simple, just match the
@@ -32,7 +32,7 @@ InputLayout::InputLayout(Gfx &gfx, const VertexShader &vertexShader) {
     assert(SUCCEEDED(res));
 }
 
-void InputLayout::Bind(Gfx& gfx)
+void InputLayout::Bind(Renderer& gfx)
 {
     GetContext(gfx)->IASetInputLayout(layout.Get());
 }

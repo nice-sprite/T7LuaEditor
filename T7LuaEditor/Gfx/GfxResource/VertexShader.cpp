@@ -4,7 +4,7 @@
 
 #include "VertexShader.h"
 
-VertexShader::VertexShader(Gfx &gfx, const wchar_t *filepath) {
+VertexShader::VertexShader(Renderer &gfx, const wchar_t *filepath) {
 
 
     bool compileSuccess = CompileShader_Disk(filepath, "vs_main", "vs_5_0", bytecodeBlob.GetAddressOf());
@@ -16,7 +16,7 @@ VertexShader::VertexShader(Gfx &gfx, const wchar_t *filepath) {
 
 }
 
-void VertexShader::Bind(Gfx &gfx) {
+void VertexShader::Bind(Renderer &gfx) {
     GetContext(gfx)->VSSetShader(vertexShader.Get(), nullptr, 0u);
 }
 

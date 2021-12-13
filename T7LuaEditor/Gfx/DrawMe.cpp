@@ -4,7 +4,7 @@
 
 #include "DrawMe.h"
 constexpr auto DefaultShader = L"C:\\Users\\coxtr\\source\\repos\\T7LuaEditor\\T7LuaEditor\\ShaderSrc";
-DrawMe::DrawMe(Gfx& gfx) /*:*/
+DrawMe::DrawMe(Renderer& gfx) /*:*/
 /*
     vertexShader(gfx, DefaultShader), pixelShader(gfx, DefaultShader),
     inputLayout(gfx, vertexShader)
@@ -34,7 +34,7 @@ DrawMe::DrawMe(Gfx& gfx) /*:*/
 */
 }
 
-void DrawMe::Draw(Gfx& gfx)
+void DrawMe::Draw(Renderer& gfx)
 {
 /*
     vertexBuffer.Bind(gfx);

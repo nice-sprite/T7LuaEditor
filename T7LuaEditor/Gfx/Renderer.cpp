@@ -1,52 +1,36 @@
-#include "./Gfx.h"
+#include "./Renderer.h"
 #include "GfxResource/Viewport.h"
 
 #include <ImSequencer.h>
 
-Gfx::Gfx(HWND _hwnd, size_t _width, size_t _height)
-        : hwnd{_hwnd}, width{_width}, height{_height}, mainTimer{} {
+#define TEST_TEXTURE TEXT("C:/Users/coxtr/Downloads/the-shard-x0-3840x2160.jpg")
+
+Renderer::Renderer(HWND _hwnd, size_t _width, size_t _height)
+        : hwnd{_hwnd}, width{_width}, height{_height}, frameTimer{} {
     SetupDx11();
-    PrepareImGui();
+    imgui_ = new ImGUIManager(device.Get(), context.Get(), hwnd);
+    demoTexture = LoadTexture(device.Get(), context.Get(), TEST_TEXTURE);
 }
 
 
-Gfx::~Gfx() {
-    ShutdownImGui();
+Renderer::~Renderer() {
     ShutdownDx11();
 }
 
 
-void Gfx::CreateRenderTarget() {
+void Renderer::CreateRenderTarget() {
     ID3D11Texture2D *pBackBuffer;
     swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
     device->CreateRenderTargetView(pBackBuffer, nullptr, &renderTargetView);
     pBackBuffer->Release();
 }
 
-void Gfx::CleanupRenderTarget() {
+void Renderer::CleanupRenderTarget() {
     renderTargetView.Reset();
 }
 
-void Gfx::Render() {
-    static long double totalElapsedMs;
-    mainTimer.Start();
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-    static bool demo = true;
-    ImGui::ShowDemoWindow(&demo);
-    static bool showSystemInfo = true;
-    if (ImGui::Begin("System Info", &showSystemInfo)) {
-        for (auto const& deviceInfoStr: systemInfo.ToString()) {
-            ImGui::Text(deviceInfoStr.c_str());
-        }
-    }
-    ImGui::End();
-    auto timeElapsedMs = mainTimer.Stop() * .001;
-    totalElapsedMs += timeElapsedMs;
-    auto timeStr = fmt::format("{}ms\ntotal: {}ms", timeElapsedMs, totalElapsedMs);
-    ImGui::GetForegroundDrawList()->AddText(ImVec2(0, 0), 0xFFFFFFFF, timeStr.c_str());
-    ImGui::Render();
+void Renderer::Render() {
+    frameTimer.Start();
     const float clearColor[4] = {
             0.1,
             0.1,
@@ -54,6 +38,7 @@ void Gfx::Render() {
             1.0
     };
 
+    imgui_->RenderUI();
     context->OMSetRenderTargets(1,
                                 renderTargetView.GetAddressOf(),
                                 nullptr);
@@ -64,7 +49,7 @@ void Gfx::Render() {
     swapChain->Present(1, 0);
 }
 
-void Gfx::Resize(LPARAM lParam, WPARAM wParam) {
+void Renderer::Resize(LPARAM lParam, WPARAM wParam) {
     if (device && wParam != SIZE_MINIMIZED) {
         CleanupRenderTarget();
         swapChain->ResizeBuffers(0,
@@ -76,7 +61,7 @@ void Gfx::Resize(LPARAM lParam, WPARAM wParam) {
     }
 }
 
-bool Gfx::SetupDx11() {
+bool Renderer::SetupDx11() {
     /*
         * 1. create the swapchain, the device, the context, and render targets
         * 2. set up shaders (vertex shader and then pixel shader)
@@ -165,31 +150,10 @@ bool Gfx::SetupDx11() {
     return true;
 }
 
-void Gfx::PrepareImGui() {
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO &io = ImGui::GetIO();
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-    // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    //ImGui::StyleColorsClassic();
-
-    // Setup Platform/Renderer backends
-    ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX11_Init(device.Get(), context.Get());
+void Renderer::ShutdownDx11() {
 }
 
-void Gfx::ShutdownDx11() {
-}
-
-void Gfx::ShutdownImGui() {
-    ImGui_ImplDX11_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
-}
 
 
 

@@ -16,8 +16,8 @@ private:
     std::wstring path;
     wrl::ComPtr<ID3D11PixelShader> pixelShader;
 public:
-    PixelShader(Gfx& gfx, const wchar_t* filepath);
-    void Bind(Gfx& gfx) override; // binds the shader to the pipeline
+    PixelShader(Renderer& gfx, const wchar_t* filepath);
+    void Bind(Renderer& gfx) override; // binds the shader to the pipeline
 };
 
 
