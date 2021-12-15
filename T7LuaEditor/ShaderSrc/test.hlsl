@@ -1,15 +1,7 @@
 cbuffer ConstantBuffer
 {
-    float4x4 worldMatrix;
-    float4x4 projectionMatrix;
-    float4x4 viewMatrix;
-};
-
-struct VSInput
-{
-    float4 pos : POSITION;
-    float4 color: COLOR;
-};
+    float time;
+}
 
 struct PSInput
 {
@@ -18,18 +10,20 @@ struct PSInput
 };
 
 
-VSInput vs_main(VSInput vin)
+PSInput vs_main(float4 position : POSITION, float4 color : COLOR)
 {
     PSInput output;
 
-    vin.pos.w = 1.0f;
-    output.position = mul(mul(vin.pos, worldMatrix), projectionMatrix);
-    output.color = vin.color;
+    output.position = position;
+    output.position.x = output.position.x + sin(time*0.01);
+    output.position.w = 1.0;
+    output.color = color;
+    return output;
 }
 
 
-float4 ps_main(PSInput pin) : SV_TARGET
+float4 ps_main(float4 position : SV_POSITION, float4 color : COLOR) : SV_TARGET
 {
-    return pin.color;
+    return color;
 }
 

@@ -11,7 +11,8 @@ class VertexShader : public Bindable {
 public:
     VertexShader(Renderer& gfx, const wchar_t *filepath);
     void Bind(Renderer& gfx) override;
-    ID3DBlob* GetBlob() const noexcept;
+    LPVOID GetBufferPtr() const noexcept;
+    size_t GetProgramSize() const noexcept;
 private:
     wrl::ComPtr<ID3D11VertexShader> vertexShader;
     wrl::ComPtr<ID3DBlob> bytecodeBlob;

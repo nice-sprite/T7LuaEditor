@@ -8,6 +8,7 @@
 #include <wrl/client.h>
 #include <d3d11.h>
 #include <DirectXMath.h>
+#include <memory>
 
 #define STRINGIZING(x) #x
 #define STR(x) STRINGIZING(x)

@@ -56,38 +56,6 @@ void ImGUIManager::RenderUI() {
     }
     ImGui::End();
 
-
-/*
-    if (ImGui::Begin("System Info", &showSysInfo_)) {
-        for (auto const &deviceInfoStr: systemInfo.ToString()) {
-            ImGui::Text(deviceInfoStr.c_str());
-        }
-    }
-    ImGui::End();
-
-    if (ImGui::Begin("Sequencer Widget")) {
-
-        static int selectedEntry = -1;
-        static int firstFrame = 0;
-        static bool expanded = true;
-        static int currentFrame = 100;
-
-        ImGui::PushItemWidth(130);
-        ImGui::InputInt("Frame Min", &timelineSequencer.frameMin_);
-        ImGui::SameLine();
-        ImGui::InputInt("Frame ", &currentFrame);
-        ImGui::SameLine();
-        ImGui::InputInt("Frame Max", &timelineSequencer.frameMax_);
-        ImGui::PopItemWidth();
-        Sequencer(&timelineSequencer, &currentFrame, &expanded, &selectedEntry, &firstFrame,
-                  ImSequencer::SEQUENCER_EDIT_STARTEND | ImSequencer::SEQUENCER_ADD | ImSequencer::SEQUENCER_DEL |
-                  ImSequencer::SEQUENCER_COPYPASTE | ImSequencer::SEQUENCER_CHANGE_FRAME);
-
-    }
-    ImGui::End();
-    auto timeStr = fmt::format("{}ms\ntotal: {}ms", timeElapsedMs, totalElapsedMs);
-    ImGui::GetForegroundDrawList()->AddText(ImVec2(0, 0), 0xFFFFFFFF, timeStr.c_str());
-*/
     ImGui::PopFont();
     ImGui::Render();
 

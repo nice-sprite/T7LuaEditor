@@ -9,7 +9,7 @@ PixelShader::PixelShader(Renderer &gfx, const wchar_t *filepath) : path{filepath
     wrl::ComPtr<ID3DBlob> pixelShaderBuffer;
 
     // compile the pixel shader
-    bool compileSuccess = CompileShader_Disk(filepath, "ps_main", "ps_5_0", &pixelShaderBuffer);
+    bool compileSuccess = Shader_CompileFromDisk(filepath, "ps_main", "ps_5_0", &pixelShaderBuffer);
     assert(compileSuccess == true);
 
     res = GetDevice(gfx)->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(),

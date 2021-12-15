@@ -19,10 +19,16 @@
 #include <fmt/format.h> // for error printing
 #include <vector>
 #include "Timer.h"
-#include "SystemInfo.h"
-#include "Editor/Widgets/AnimationTimelineSequencer.h"
 #include "Texture.h"
 #include "ImGUIManager.h"
+/*
+#include "GfxResource/VertexShader.h"
+#include "GfxResource/PixelShader.h"
+*/
+
+class VertexShader;
+class PixelShader;
+#include "Vertex.h"
 
 namespace wrl = Microsoft::WRL;
 
@@ -59,23 +65,30 @@ private:
 
     bool SetupDx11();
 
-    void ShutdownDx11();
-
     void CreateRenderTarget();
 
     void CleanupRenderTarget();
 
+    void DrawTestImage();
+
+    struct ConstantBuffer {
+        float time;
+    };
+
 private:
-    ImGUIManager* imgui_;
+    std::unique_ptr<ImGUIManager> imgui_;
     wrl::ComPtr<ID3D11Device> device;
     wrl::ComPtr<ID3D11DeviceContext> context;
     wrl::ComPtr<ID3D11RenderTargetView> renderTargetView;
     wrl::ComPtr<IDXGISwapChain> swapChain;
     wrl::ComPtr<ID3D11RasterizerState> rasterizerState;
+    wrl::ComPtr<ID3D11BlendState> blendState_;
+    wrl::ComPtr<ID3D11Buffer> constantBuf_;
     D3D11_VIEWPORT viewport{};
     DirectX::XMMATRIX orthoMat{};
     DirectX::XMMATRIX projectionMat{};
     DirectX::XMMATRIX worldMat{};
+    DirectX::XMFLOAT4 backgroundColor_;
     HWND hwnd;
     size_t width, height;
     Timer frameTimer;

@@ -25,10 +25,9 @@ InputLayout::InputLayout(Renderer &gfx, const VertexShader &vertexShader) {
     layoutDesc[1].InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
     layoutDesc[1].InstanceDataStepRate = 0;
 
-    auto bytecode = vertexShader.GetBlob();
     int numElements = sizeof(layoutDesc) / sizeof(layoutDesc[1]);
-    HRESULT res = GetDevice(gfx)->CreateInputLayout(layoutDesc, numElements, bytecode->GetBufferPointer(),
-                                            bytecode->GetBufferSize(), layout.GetAddressOf());
+    HRESULT res = GetDevice(gfx)->CreateInputLayout(layoutDesc, numElements, vertexShader.GetBufferPtr(),
+                                            vertexShader.GetProgramSize(), layout.GetAddressOf());
     assert(SUCCEEDED(res));
 }
 

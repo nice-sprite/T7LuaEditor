@@ -6,8 +6,7 @@
 #define T7LUAEDITOR_VERTEX_H
 #include <DirectXMath.h>
 
-class Vertex {
-public:
+struct Vertex {
     DirectX::XMFLOAT3 position; // xyz
     DirectX::XMFLOAT4 color;    // rgba
 };
