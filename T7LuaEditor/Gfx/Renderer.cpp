@@ -5,7 +5,7 @@
 #include "GfxResource/VertexBuffer.h"
 
 
-#define TEST_TEXTURE TEXT("C:/Users/coxtr/Downloads/the-shard-x0-3840x2160.jpg")
+#define TEST_TEXTURE TEXT("C:/Users/coxtr/Downloads/integra.jpg")
 
 Renderer::Renderer(HWND _hwnd, size_t _width, size_t _height)
         : hwnd{_hwnd}, width{_width}, height{_height}, frameTimer{} {
@@ -20,8 +20,7 @@ Renderer::Renderer(HWND _hwnd, size_t _width, size_t _height)
     demoTexture = LoadTexture(device.Get(), context.Get(), TEST_TEXTURE);
 }
 
-Renderer::~Renderer() {
-}
+Renderer::~Renderer() = default;
 
 void Renderer::CreateRenderTarget() {
     ID3D11Texture2D *pBackBuffer;
@@ -42,7 +41,7 @@ void Renderer::Render() {
                                 renderTargetView.GetAddressOf(),
                                 nullptr);
 
-    context->ClearRenderTargetView(renderTargetView.Get(), (float*)&backgroundColor_);
+    context->ClearRenderTargetView(renderTargetView.Get(), (float *) &backgroundColor_);
 
     DrawTestImage();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
@@ -91,7 +90,7 @@ bool Renderer::SetupDx11() {
 
     UINT createDeviceFlags = 0;
     D3D_FEATURE_LEVEL featureLevel;
-    const D3D_FEATURE_LEVEL featureLevelArray[2] = {D3D_FEATURE_LEVEL_11_0,
+    const D3D_FEATURE_LEVEL featureLevelArray[] = {D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0,
                                                     D3D_FEATURE_LEVEL_10_0,};
     HRESULT res = D3D11CreateDeviceAndSwapChain(
             nullptr,
@@ -120,9 +119,9 @@ bool Renderer::SetupDx11() {
     alphaBlend.RenderTarget[0].RenderTargetWriteMask = 0x0f;
 
     // Setup blend state
-    const float blend_factor[4] = { 0.f, 0.f, 0.f, 0.f };
+    const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
     device->CreateBlendState(&alphaBlend, &blendState_);
-    context->OMSetBlendState(blendState_.Get(), blend_factor, 0xffffffff );
+    context->OMSetBlendState(blendState_.Get(), blend_factor, 0xffffffff);
     // setup raster state
     D3D11_RASTERIZER_DESC rasterDesc{};
     rasterDesc.AntialiasedLineEnable = false;
@@ -152,7 +151,7 @@ bool Renderer::SetupDx11() {
 
     D3D11_BUFFER_DESC bd{};
     bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = 16;
+    bd.ByteWidth = 64;
     bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
     device->CreateBuffer(&bd, nullptr, &constantBuf_);
     // setup matrices
@@ -160,57 +159,80 @@ bool Renderer::SetupDx11() {
     float fov = DirectX::XM_PIDIV4;
     float aspectRatio = viewport.Width / viewport.Height;
     constexpr float ZNEAR = 1.0f;
-    constexpr float ZFAR = 650.0f;
-    projectionMat = DirectX::XMMatrixPerspectiveFovLH(fov, aspectRatio, ZNEAR, ZFAR);
-    worldMat = DirectX::XMMatrixIdentity();
-    orthoMat = DirectX::XMMatrixOrthographicLH(viewport.Width, viewport.Height, ZNEAR, ZFAR);
+    constexpr float ZFAR = 100.0f;
+    projectionMat_ = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.f), aspectRatio, ZNEAR, ZFAR);
+    worldMat_ = DirectX::XMMatrixIdentity();
+    orthoMat_ = DirectX::XMMatrixOrthographicLH(viewport.Width, viewport.Height, ZNEAR, ZFAR);
+    viewMat_ = DirectX::XMMatrixLookAtLH(
+            DirectX::XMVECTOR{0.0, 0.0f, 2.f, 0.f},
+            DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},
+            DirectX::XMVECTOR{0.f, 1.f, 0.f, 0.f});
     CreateRenderTarget();
 
     return true;
 }
 
 
-void Renderer::DrawTestImage()
-{
+void Renderer::DrawTestImage() {
+    DirectX::XMMATRIX rotation{};
+    static float time = 0.f;
+    time += 0.01f;
+    rotation = DirectX::XMMatrixRotationZ(time);
     constexpr auto ShaderPath = L"C:/Users/coxtr/source/repos/T7LuaEditor/T7LuaEditor/ShaderSrc/test.hlsl";
-    static ConstantBuffer cbuf{1.0f};
-    cbuf.time += 1.f;
+    static ConstantBuffer cbuf{};
+    cbuf.modelViewProjection = rotation* viewMat_ * projectionMat_;
 
-    static VertexShader vShader( *this, ShaderPath );
-    static PixelShader pShader( *this, ShaderPath);
-    static std::vector<Vertex> triangle = {
-            {DirectX::XMFLOAT3(0.0f, 0.5f, 0.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f)},
-            {DirectX::XMFLOAT3(0.45f, -0.5, 0.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)},
-            {DirectX::XMFLOAT3(-0.45f, -0.5f, 0.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)}
+    static VertexShader vShader(*this, ShaderPath);
+    static PixelShader pShader(*this, ShaderPath);
+    static std::vector<Vertex> texturedRect = {
+            {DirectX::XMFLOAT3(-0.5f, -0.5f, 0.f),    DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), {1.f, 1.f}},
+            {DirectX::XMFLOAT3(0.5f, -0.5f, 0.f),   DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), {0.f, 1.f}},
+            {DirectX::XMFLOAT3(-0.5f, 0.5f, 0.f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), {1.f, 0.f}},
+            {DirectX::XMFLOAT3(0.5f, 0.5f, 0.f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), {0.f, 0.f}}
     };
-    static std::vector<Vertex> triangle2 = {
-            {DirectX::XMFLOAT3(0.3f, 0.7f, 0.0f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 0.0f)},
-            {DirectX::XMFLOAT3(0.45f, -0.5, 0.0f), DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f)},
-            {DirectX::XMFLOAT3(-0.45f, -0.5f, 0.0f), DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f)}
-    };
-    static VertexBuffer vertices(*this, triangle);
-    static VertexBuffer vertices2(*this, triangle2);
+
+
+    static VertexBuffer vertices(*this, texturedRect);
     context->UpdateSubresource(constantBuf_.Get(), 0, 0, &cbuf, 0, 0);
 
+    context->PSSetShaderResources(0, 1, demoTexture.view_.GetAddressOf());
     context->PSSetConstantBuffers(0, 1, constantBuf_.GetAddressOf());
     context->VSSetConstantBuffers(0, 1, constantBuf_.GetAddressOf());
 
 
-    vShader.Bind( *this );
-    pShader.Bind( *this );
+    vShader.Bind(*this);
+    pShader.Bind(*this);
+
+    DWORD idx[] = {
+            0, 1, 2, 2, 1, 3
+    };
+
+    D3D11_BUFFER_DESC id;
+    // create the index buffer
+    id.Usage = D3D11_USAGE_DYNAMIC;
+    id.ByteWidth = sizeof(DWORD) *6;
+    id.BindFlags = D3D11_BIND_INDEX_BUFFER;
+    id.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    id.MiscFlags = 0;
+    D3D11_SUBRESOURCE_DATA indexData{};
+    indexData.pSysMem = idx;
+    ID3D11Buffer* indexBuffer_;
+    device-> CreateBuffer(&id, &indexData, &indexBuffer_);
+
+    context->IASetIndexBuffer(indexBuffer_, DXGI_FORMAT_R32_UINT, 0);
+
 
     D3D11_INPUT_ELEMENT_DESC ied[] = {
-        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
-        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0}
+            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0}
     };
-    ID3D11InputLayout* layout;
-    device->CreateInputLayout( ied, 2, vShader.GetBufferPtr(), vShader.GetProgramSize(), &layout );
+    ID3D11InputLayout *layout;
+    device->CreateInputLayout(ied, 3, vShader.GetBufferPtr(), vShader.GetProgramSize(), &layout);
     context->IASetInputLayout(layout);
     vertices.Bind(*this);
     context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    context->Draw(3, 0);
-    vertices2.Bind(*this);
-    context->Draw(3, 0);
+    context->DrawIndexed(6, 0, 0);
 }
 
 

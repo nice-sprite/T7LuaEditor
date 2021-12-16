@@ -1,29 +1,34 @@
 cbuffer ConstantBuffer
 {
-    float time;
+    float4x4 modelViewProjection;
 }
 
 struct PSInput
 {
     float4 position : SV_POSITION;
     float4 color : COLOR;
+    float2 uv : TEXCOORD;
 };
 
 
-PSInput vs_main(float4 position : POSITION, float4 color : COLOR)
+PSInput vs_main(float4 position : POSITION, float4 color : COLOR, float2 texcoord : TEXCOORD)
 {
     PSInput output;
+    position.w = 1.0;
 
-    output.position = position;
-    output.position.x = output.position.x + sin(time*0.01);
-    output.position.w = 1.0;
+    output.position = mul(modelViewProjection, position);
     output.color = color;
+    output.uv = texcoord;
     return output;
 }
 
 
-float4 ps_main(float4 position : SV_POSITION, float4 color : COLOR) : SV_TARGET
+Texture2D Texture;
+SamplerState ss;
+
+float4 ps_main(float4 position : SV_POSITION, float4 color : COLOR, float2 uv : TEXCOORD) : SV_TARGET
 {
-    return color;
+
+    return Texture.Sample(ss, uv);
 }
 

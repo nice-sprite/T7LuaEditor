@@ -8,7 +8,8 @@
 
 struct Vertex {
     DirectX::XMFLOAT3 position; // xyz
-    DirectX::XMFLOAT4 color;    // rgba
+    DirectX::XMFLOAT4 color;    // rgba off=12
+    DirectX::XMFLOAT2 texCoord; // texture UV coords off = 12 + 16 = 28
 };
 
 #endif //T7LUAEDITOR_VERTEX_H

@@ -51,11 +51,11 @@ public:
 
     void Resize(LPARAM lParam, WPARAM wParam);
 
-    DirectX::XMMATRIX &GetOrthoMatrix() { return orthoMat; }
+    DirectX::XMMATRIX &GetOrthoMatrix() { return orthoMat_; }
 
-    DirectX::XMMATRIX &GetProjectionMatrix() { return projectionMat; }
+    DirectX::XMMATRIX &GetProjectionMatrix() { return projectionMat_; }
 
-    DirectX::XMMATRIX &GetWorldMatrix() { return worldMat; }
+    DirectX::XMMATRIX &GetWorldMatrix() { return worldMat_; }
 
     [[nodiscard]] size_t GetWidth() const { return width; }
 
@@ -72,7 +72,7 @@ private:
     void DrawTestImage();
 
     struct ConstantBuffer {
-        float time;
+        DirectX::XMMATRIX modelViewProjection;
     };
 
 private:
@@ -85,9 +85,11 @@ private:
     wrl::ComPtr<ID3D11BlendState> blendState_;
     wrl::ComPtr<ID3D11Buffer> constantBuf_;
     D3D11_VIEWPORT viewport{};
-    DirectX::XMMATRIX orthoMat{};
-    DirectX::XMMATRIX projectionMat{};
-    DirectX::XMMATRIX worldMat{};
+    DirectX::XMMATRIX orthoMat_{};
+    DirectX::XMMATRIX projectionMat_{};
+    DirectX::XMMATRIX worldMat_{};
+    DirectX::XMMATRIX viewMat_{};
+
     DirectX::XMFLOAT4 backgroundColor_;
     HWND hwnd;
     size_t width, height;
