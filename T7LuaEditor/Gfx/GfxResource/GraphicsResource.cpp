@@ -5,10 +5,10 @@
 #include "GraphicsResource.h"
 
 ID3D11DeviceContext *GraphicsResource::GetContext(Renderer &gfx) noexcept {
-    return gfx.context.Get();
+    return gfx.ctx_.Get();
 }
 
 
 ID3D11Device *GraphicsResource::GetDevice(Renderer &gfx) noexcept {
-    return gfx.device.Get();
+    return gfx.device_.Get();
 }

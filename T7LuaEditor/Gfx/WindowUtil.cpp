@@ -63,7 +63,7 @@ Window::Window(HINSTANCE hInst, std::wstring _title, std::wstring _classname, si
             WS_OVERLAPPEDWINDOW,            // Window style
 
             // Size and position
-            CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+            CW_USEDEFAULT, CW_USEDEFAULT, width, height,
 
             nullptr,        // Parent window
             nullptr,        // Menu

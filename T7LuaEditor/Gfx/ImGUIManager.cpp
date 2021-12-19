@@ -8,14 +8,15 @@
 
 ImGUIManager::ImGUIManager(ID3D11Device *device, ID3D11DeviceContext *context, HWND hwnd) :
         showSysInfo_(true), showDemoWindow_(true) {
-    // Setup Dear ImGui context
+    // Setup Dear ImGui ctx_
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO &io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    auto font_FantasqueSansMono = io.Fonts->AddFontFromFileTTF(
-            "C:/Users/coxtr/source/repos/T7LuaEditor/Resource/Fonts/FantasqueSansMono-Regular.ttf", 14);
-    fonts.emplace_back("FantasqueSansMono", font_FantasqueSansMono);
+//    auto font_FantasqueSansMono = io.Fonts->AddFontFromFileTTF(
+//            "C:/Users/coxtr/source/repos/T7LuaEditor/Resource/Fonts/FantasqueSansMono-Regular.ttf", 14);
+//    fonts.emplace_back("FantasqueSansMono", font_FantasqueSansMono);
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
     //io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
@@ -35,11 +36,6 @@ ImGUIManager::~ImGUIManager() {
 }
 
 void ImGUIManager::RenderUI() {
-    ImGui_ImplDX11_NewFrame();
-    ImGui_ImplWin32_NewFrame();
-    ImGui::NewFrame();
-    ImGui::PushFont(GetFont("FantasqueSansMono")); // this is the main font.
-
     if (showDemoWindow_)
         ImGui::ShowDemoWindow(&showDemoWindow_);
 
@@ -55,10 +51,18 @@ void ImGUIManager::RenderUI() {
         }
     }
     ImGui::End();
+}
 
-    ImGui::PopFont();
+void ImGUIManager::BeginUI() {
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+    RenderUI();
+}
+
+void ImGUIManager::EndUI() {
     ImGui::Render();
-
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
 ImFont *ImGUIManager::GetFont(const std::string &fontName) {

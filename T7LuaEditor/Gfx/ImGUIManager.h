@@ -27,6 +27,8 @@ public:
     ~ImGUIManager();
 
     void RenderUI();
+    void BeginUI();
+    void EndUI();
 
 private:
     ImFont* GetFont(std::string const& fontName);

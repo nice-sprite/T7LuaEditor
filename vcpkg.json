@@ -7,8 +7,9 @@
     "simdjson",
     {
       "name": "imgui",
-      "features": ["dx11-binding", "win32-binding"]
+      "features": ["dx11-binding", "win32-binding", "docking-experimental"]
     },
-    "imguizmo"
+    "imguizmo",
+    "entt"
   ]
 }
