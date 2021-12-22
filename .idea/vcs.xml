@@ -2,5 +2,11 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/FileDialog" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/FileDialog/3rdparty/glad" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/FileDialog/3rdparty/glfw" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/FileDialog/3rdparty/imgui" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/FileDialog/ImGuiFileDialog" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/T7LuaEditor/3rdparty/ImGuiFileDialog" vcs="Git" />
   </component>
 </project>

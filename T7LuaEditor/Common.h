@@ -9,6 +9,7 @@
 #include <d3d11.h>
 #include <DirectXMath.h>
 #include <memory>
+#include "3rdparty/ImGuiFileDialog/ImGuiFileDialog.h"
 
 #define STRINGIZING(x) #x
 #define STR(x) STRINGIZING(x)

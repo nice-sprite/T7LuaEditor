@@ -11,3 +11,5 @@ project ("T7LuaEditor")
  
 # Include sub-projects.
 add_subdirectory ("T7LuaEditor")
+
+

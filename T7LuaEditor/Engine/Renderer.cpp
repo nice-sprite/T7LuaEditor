@@ -5,6 +5,7 @@
 #include "GfxResource/VertexBuffer.h"
 #include <fmt/core.h>
 #include <fmt/format.h>
+#include <filesystem>
 
 #define TEST_TEXTURE TEXT("C:/Users/coxtr/Downloads/integra.jpg")
 
@@ -37,6 +38,9 @@ void Renderer::CleanupRenderTarget() {
 }
 
 void Renderer::Render() {
+    static std::string filePath = "";
+    static std::vector<Texture> assetThumbnails = {};
+    static bool dirChanged = false;// temp to make sure we dont create thumbnail textures each frame, only when the dir contents changed
     frameTimer.Start();
     ctx_->OMSetRenderTargets(1, renderTargetView_.GetAddressOf(), nullptr);
     ctx_->ClearRenderTargetView(renderTargetView_.Get(), (float *) &backgroundColor_);
@@ -51,6 +55,45 @@ void Renderer::Render() {
         ImGui::Text("backbuffer: %d x %d", desc.Width, desc.Height);
     }
     ImGui::End();
+
+#pragma region Imgui file dialog test
+
+    if (ImGui::Begin("Asset Picker", nullptr, ImGuiWindowFlags_MenuBar)) {
+        if(ImGui::BeginMenuBar())
+        {
+            if (ImGui::Button("Select Directory..."))
+                ImGuiFileDialog::Instance()->OpenModal("AssetDirKey", "Choose Directory", nullptr, ".");
+
+            if (ImGuiFileDialog::Instance()->Display("AssetDirKey")) {
+                if (ImGuiFileDialog::Instance()->IsOk()) {
+                    filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+                    std::filesystem::directory_iterator dirIt(filePath);
+                    for (auto const &file: dirIt) {
+                        if (file.path().extension() == ".png" || file.path().extension() == ".tiff" || file.path().extension() == ".jpg")
+                            assetThumbnails.push_back(LoadTexture(device_.Get(), ctx_.Get(), file.path().c_str()));
+                    }
+                }
+                ImGuiFileDialog::Instance()->Close();
+            }
+            ImGui::EndMenuBar();
+        }
+        ImGui::SameLine();
+        ImGui::Text(filePath.c_str());
+        int i = 0;
+        int numPerRow = (int)ImGui::GetContentRegionAvailWidth()/128;
+
+        numPerRow--;
+        for(auto const& thumbnail : assetThumbnails) {
+            if(i%numPerRow) {
+                ImGui::SameLine();
+            }
+            ImGui::Image((void *) thumbnail.view_.Get(), ImVec2(128.f, 128.f));
+            ++i;
+        }
+
+    }
+    ImGui::End();
+#pragma endregion
 
     DrawTestImage();
     renderTarget2d_->BeginDraw();
