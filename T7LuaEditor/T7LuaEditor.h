@@ -15,5 +15,5 @@
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
-#include "Gfx/WindowUtil.h"
-#include "Gfx/Gfx.h"
+#include "Engine/WindowUtil.h"
+#include "Engine/Renderer.h"

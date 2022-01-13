@@ -1,0 +1,9 @@
+{
+    "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+    "cmake.configureOnOpen": true,
+    "editor.cursorSmoothCaretAnimation": true,
+    "editor.cursorSurroundingLines": 5,
+    "vim.cursorStylePerMode.normal": "block",
+    "vim.cursorStylePerMode.insert": "line-thin",
+    "editor.lineHeight": 1
+}
