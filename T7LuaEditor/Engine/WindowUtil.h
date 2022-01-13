@@ -1,59 +1,64 @@
 #ifndef WINDOW_UTIL_H
 #define WINDOW_UTIL_H
 
-#define WIN32_LEAN_AND_MEAN
-
-#include <Windows.h>
-#include <string>
-#include <fmt/format.h> // for logging
-#include <cassert>
-#include <imgui_impl_win32.h>
+#include "../t7pch.h"
+#include "./Input.h"
 #include "Renderer.h"
-#include <memory>
-
+#include <functional>
 // Forward declare message handler from imgui_impl_win32.cpp
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
-class Window {
-private:
-    static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+namespace WindowUtil
+{
+    struct Window
+    {
+        HWND hwnd;
+        RECT clientRect;
+    };
 
-    static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+    Window Create(HINSTANCE hinst, const wchar_t *windowTitle,
+                  const wchar_t *classname,
+                  int width, int height, WNDPROC proc);
 
-    LRESULT CALLBACK HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
-
-public:
-    Window(HINSTANCE hInst, std::wstring _title, std::wstring _classname, size_t _width, size_t _height);
-
-    bool ProcessMessages();
-    // only because you *really* shouldn't change these.
-    [[nodiscard]] std::wstring GetTitle() const { return title; }
-
-    [[nodiscard]] std::wstring GetClassname() const { return classname; }
-
-    [[nodiscard]] HWND GetHwnd() const { return hwnd; }
-
-    [[nodiscard]] Renderer &GetGfx() {
-        if (!graphics) {
-            // throw exception
-        }
-
-        return *graphics;
-    }
-
-    ~Window() {
-        DestroyWindow(hwnd);
-        UnregisterClass(classname.c_str(), hInst);
-    }
-
-private:
-    std::unique_ptr<Renderer> graphics = nullptr;
-    HWND hwnd;
-    HINSTANCE hInst;
-    size_t width, height;
-    std::wstring title;
-    std::wstring classname;
+    void SetIcon(HWND hwnd, const wchar_t *iconPath);
 };
 
+// class Window
+// {
+// private:
+//     static LRESULT CALLBACK HandleMsgSetup(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
+//     static LRESULT CALLBACK HandleMsgThunk(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
+//     LRESULT CALLBACK HandleMsg(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam) noexcept;
+
+// public:
+//     Window(HINSTANCE hInst, std::wstring _title, std::wstring _classname, int _width, int _height);
+
+//     bool ProcessMessages();
+//     // only because you *really* shouldn't change these.
+//     [[nodiscard]] std::wstring GetTitle() const;
+
+//     [[nodiscard]] std::wstring GetClassname() const;
+
+//     [[nodiscard]] HWND GetHwnd() const { return hwnd; }
+
+//     ~Window()
+//     {
+//         DestroyWindow(hwnd);
+//         UnregisterClass(classname.c_str(), hInst);
+//     }
+
+//     std::function < LRESULT()
+
+//                         private : HWND hwnd;
+//     HINSTANCE hInst;
+//     int width, height;
+//     std::wstring title;
+//     std::wstring classname;
+
+//     Mouse mouse;
+//     Keyboard keyboard;
+// };
 
 #endif // !WINDOW_UTIL_H

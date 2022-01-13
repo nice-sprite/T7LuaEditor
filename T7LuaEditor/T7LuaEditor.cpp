@@ -2,11 +2,13 @@
 //
 
 #include "T7LuaEditor.h"
+#include "Application/Application.h"
 #include <memory>
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     CoInitialize(nullptr);
-    Window window(hInstance, L"Lua Editor", L"luaeditor", 1920, 1080);
-    window.ProcessMessages();
+    Application::StartApplication(hInstance, L"Priscilla");
+    Application::MessageLoop();
     return 0;
 }

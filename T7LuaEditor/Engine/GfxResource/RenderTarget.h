@@ -4,11 +4,10 @@
 
 #ifndef T7LUAEDITOR_RENDERTARGET_H
 #define T7LUAEDITOR_RENDERTARGET_H
-#include "Bindable.h"
-
-class RenderTarget : public Bindable{
-    RenderTarget(Renderer& gfx);
-    void Bind(Renderer& gfx);
+#include "../../t7pch.h"
+class RenderTarget {
+    RenderTarget(ID3D11Device* device);
+    void Bind(ID3D11DeviceContext* context);
 };
 
 

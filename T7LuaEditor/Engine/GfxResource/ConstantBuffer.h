@@ -4,45 +4,43 @@
 
 #ifndef T7LUAEDITOR_CONSTANTBUFFER_H
 #define T7LUAEDITOR_CONSTANTBUFFER_H
-#include "Bindable.h"
 
-template<typename CbufType>
-class ConstantBuffer : public Bindable {
-public:
-    ConstantBuffer(Renderer& gfx, const CbufType vtx)
-    {
-        bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-        bufferDesc.ByteWidth = sizeof(CbufType);
-        bufferDesc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-        bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-        bufferDesc.MiscFlags = 0;
-        bufferDesc.StructureByteStride = 0;
-        HRESULT res = GetDevice(gfx)->CreateBuffer(&bufferDesc, NULL, cbuf.GetAddressOf());
+constexpr auto CbufSlot_PerSceneConst = 0u;
+constexpr auto  CbufSlot_Transforms = 1u;
 
+
+template <typename TBuffer>
+HRESULT UpdateConstantBuffer(ID3D11DeviceContext *context, int bufferSlot, TBuffer *newData, ID3D11Buffer* buffer)
+{
+    D3D11_MAPPED_SUBRESOURCE mr;
+    TBuffer *dataPtr;
+    HRESULT res = context->Map(buffer, bufferSlot, D3D11_MAP_WRITE_DISCARD, 0, &mr);
         assert(SUCCEEDED(res));
-    }
+        dataPtr = (TBuffer*)mr.pData;
+        memcpy(dataPtr, newData, sizeof(TBuffer));
+    context->Unmap(buffer, bufferSlot);
+    return res;
+}
 
-    void Bind(Renderer& gfx) override
-    {
-        GetContext(gfx)->VSSetConstantBuffers(0, 1, cbuf.GetAddressOf());
-    }
+void BindConstantBuffer(ID3D11DeviceContext *context, int bufferSlot, ID3D11Buffer *buffer);
 
-    void Update(Renderer& gfx, const CbufType* newData)
-    {
-        D3D11_MAPPED_SUBRESOURCE mappedResource;
-        CbufType* dataPtr;
-        unsigned int bufferNum;
-        HRESULT res = GetContext(gfx)->Map(cbuf.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &mappedResource);
-        assert(SUCCEEDED(res));
-        dataPtr = (CbufType*)mappedResource.pData;
-        memcpy(dataPtr, newData, sizeof(CbufType));
-        GetContext(gfx)->Unmap(cbuf.Get(), 0);
-        Bind(gfx); // TODO might be ok to remove
-    } // for now, just get the matrices from gfx and upload to GPU
-private:
-    wrl::ComPtr<ID3D11Buffer> cbuf;
-    D3D11_BUFFER_DESC bufferDesc;
-};
-
+template<typename TBuffer>
+HRESULT CreateConstantBuffer(ID3D11Device* device, TBuffer* data, ID3D11Buffer** ppBuffer)
+{
+    static_assert(alignof(TBuffer) == 16, "constant buffers must be 16 byte aligned");
+    D3D11_BUFFER_DESC bd;
+    bd.Usage = D3D11_USAGE_DYNAMIC;
+    bd.ByteWidth = sizeof(TBuffer);
+    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+    bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+    bd.MiscFlags = 0;
+    bd.StructureByteStride = 0;
+    D3D11_MAPPED_SUBRESOURCE rm;
+    rm.pData = (void*)data;
+    rm.DepthPitch = 0;
+    rm.RowPitch = 0;
+    HRESULT res = device->CreateBuffer(&bd, (const D3D11_SUBRESOURCE_DATA*)&rm, ppBuffer);
+    return res;
+}
 
 #endif //T7LUAEDITOR_CONSTANTBUFFER_H

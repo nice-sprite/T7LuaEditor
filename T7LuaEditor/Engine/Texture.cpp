@@ -148,8 +148,8 @@ HRESULT CreateTextureFromWIC(ID3D11Device *d3dDevice, ID3D11DeviceContext *d3dCo
     if (!bpp)
         return E_FAIL;
 
-    // Verify our target format is supported by the current device_
-    // (handles WDDM 1.0 or WDDM 1.1 device_ driver cases as well as DirectX 11.0 Runtime without 16bpp format support)
+    // Verify our target format is supported by the current device
+    // (handles WDDM 1.0 or WDDM 1.1 device driver cases as well as DirectX 11.0 Runtime without 16bpp format support)
     UINT support = 0;
     hr = d3dDevice->CheckFormatSupport(format, &support);
     if (FAILED(hr) || !(support & D3D11_FORMAT_SUPPORT_TEXTURE2D)) {
@@ -235,7 +235,7 @@ HRESULT CreateTextureFromWIC(ID3D11Device *d3dDevice, ID3D11DeviceContext *d3dCo
 
     // See if format is supported for auto-gen mipmaps (varies by feature level)
     bool autogen = false;
-    if (d3dContext != 0 && textureView != 0) // Must have ctx_ and shader-view to auto generate mipmaps
+    if (d3dContext != 0 && textureView != 0) // Must have context and shader-view to auto generate mipmaps
     {
         UINT fmtSupport = 0;
         hr = d3dDevice->CheckFormatSupport(format, &fmtSupport);
@@ -326,6 +326,12 @@ Texture LoadTexture(ID3D11Device *device, ID3D11DeviceContext *context, const wc
 
     Texture tex;
     CreateTextureFromWIC(device, context, frame_.Get(), &(tex.texture_), &(tex.view_), 0);
+    wrl::ComPtr<ID3D11Texture2D> texture2d;
+    tex.texture_.As(&texture2d);
+    D3D11_TEXTURE2D_DESC texDesc{};
+    texture2d->GetDesc(&texDesc);
+    tex.width_ = static_cast<float>(texDesc.Width);
+    tex.height_ = static_cast<float>(texDesc.Height);
     return tex;
 
 }

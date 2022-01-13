@@ -4,20 +4,16 @@
 
 #include "PixelShader.h"
 
-PixelShader::PixelShader(Renderer &gfx, const wchar_t *filepath) : path{filepath} {
+void BuildPixelShader(ID3D11Device* device, const wchar_t* filepath, ID3D11PixelShader** pixelShader)
+{
     HRESULT res;
-    wrl::ComPtr<ID3DBlob> pixelShaderBuffer;
+    ComPtr<ID3DBlob> pixelShaderBuffer;
 
     // compile the pixel shader
     bool compileSuccess = Shader_CompileFromDisk(filepath, "ps_main", "ps_5_0", &pixelShaderBuffer);
     assert(compileSuccess == true);
 
-    res = GetDevice(gfx)->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(),
-                                            nullptr, pixelShader.GetAddressOf());
+    res = device->CreatePixelShader(pixelShaderBuffer->GetBufferPointer(), pixelShaderBuffer->GetBufferSize(),
+                                            nullptr, pixelShader);
     assert(SUCCEEDED(res));
-}
-
-
-void PixelShader::Bind(Renderer &gfx) {
-    GetContext(gfx)->PSSetShader(pixelShader.Get(), nullptr, 0);
 }

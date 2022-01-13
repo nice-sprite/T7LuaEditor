@@ -4,18 +4,21 @@
 
 #ifndef T7LUAEDITOR_CAMERA_H
 #define T7LUAEDITOR_CAMERA_H
-#include "GfxResource/Bindable.h"
 #include <DirectXMath.h>
-class Camera : public Bindable {
+class Camera
+{
 public:
-    Camera(Renderer& gfx);
-    void BindTo(Renderer& gfx);
+    Camera(float fovRadians, float aspectRatio, float nearPlane, float farPlane);
+    void UpdateView(float timestep, DirectX::XMMATRIX view);
+    void UpdateProjection(float timestep, DirectX::XMMATRIX projection);
+    void Translate(XMFLOAT3 translation);
+    DirectX::XMMATRIX GetCameraTransform();
+    void SetAspectRatio(float aspectRatio);
 
-    void SetTransform(Renderer& gfx);
 private:
-    float x, y, z, pitch, yaw, roll; // store the camera
-    DirectX::XMMATRIX viewMatrix;
+    DirectX::XMMATRIX viewMat, 
+        projectionMat; // can be orthographic or perspective
+    float zNear, zFar, fov, aspectRatio;
 };
-
 
 #endif //T7LUAEDITOR_CAMERA_H

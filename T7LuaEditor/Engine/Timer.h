@@ -13,6 +13,7 @@ public:
     Timer();
     void Start();
     __int64 Stop();
+    float StopMS();
 };
 
 

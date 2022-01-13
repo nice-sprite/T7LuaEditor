@@ -3,29 +3,24 @@
 //
 
 #include "VertexShader.h"
-
-VertexShader::VertexShader( Renderer& gfx, const wchar_t* filepath )
+void BuildVertexShader(ID3D11Device *device,
+                       const wchar_t *path,
+                       ID3D11VertexShader **outVS,
+                       ID3D11InputLayout **inputLayout)
 {
-    bool compileSuccess = Shader_CompileFromDisk( filepath, "vs_main", "vs_5_0", bytecodeBlob.GetAddressOf() );
-    assert( compileSuccess == true );
-    GetDevice( gfx )->CreateVertexShader( bytecodeBlob->GetBufferPointer(),
-        bytecodeBlob->GetBufferSize(),
-        nullptr,
-        vertexShader.GetAddressOf() );
+    ComPtr<ID3DBlob> bytecode;
+    bool compileSuccess = Shader_CompileFromDisk(path, "vs_main", "vs_5_0", &bytecode);
+    assert(compileSuccess == true);
+    device->CreateVertexShader(bytecode->GetBufferPointer(),
+                               bytecode->GetBufferSize(),
+                               nullptr,
+                               outVS);
+    // I only need one IL
+    D3D11_INPUT_ELEMENT_DESC il[] = {
+        {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
+        {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0}};
 
-}
-
-void VertexShader::Bind( Renderer& gfx )
-{
-    GetContext( gfx )->VSSetShader( vertexShader.Get(), nullptr, 0u );
-}
-
-LPVOID VertexShader::GetBufferPtr() const noexcept
-{
-    return bytecodeBlob->GetBufferPointer();
-}
-
-size_t VertexShader::GetProgramSize() const noexcept
-{
-    return bytecodeBlob->GetBufferSize();
+    device->CreateInputLayout(il, 3,
+                              bytecode->GetBufferPointer(), bytecode->GetBufferSize(), inputLayout);
 }

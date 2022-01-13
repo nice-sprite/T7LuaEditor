@@ -4,21 +4,9 @@
 
 #ifndef T7LUAEDITOR_PIXELSHADER_H
 #define T7LUAEDITOR_PIXELSHADER_H
-#include <d3d11.h>
-#include "Bindable.h"
+#include "../../t7pch.h"
 #include "ShaderUtil.h"
-#include <string>
-using DirectX::XMMATRIX;
 
-
-class PixelShader : public Bindable {
-private:
-    std::wstring path;
-    wrl::ComPtr<ID3D11PixelShader> pixelShader;
-public:
-    PixelShader(Renderer& gfx, const wchar_t* filepath);
-    void Bind(Renderer& gfx) override; // binds the shader to the pipeline
-};
-
+void BuildPixelShader(ID3D11Device *device, const wchar_t *filepath, ID3D11PixelShader **pixelShader);
 
 #endif //T7LUAEDITOR_PIXELSHADER_H

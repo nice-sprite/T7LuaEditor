@@ -4,20 +4,40 @@
 
 #include "Camera.h"
 
-Camera::Camera(Renderer &gfx) :
-    x{}, y{}, z{}, pitch{}, roll{}, yaw{}, viewMatrix{}
+Camera::Camera(float fovRadians, float aspectRatio, float nearPlane, float farPlane) : 
+    zNear(nearPlane), zFar(farPlane), fov(fovRadians)
 {
-    DirectX::XMFLOAT3 up, position, lookAt;
-    DirectX::XMVECTOR upVec, positionVec, lookAtVec;
+    viewMat = DirectX::XMMatrixLookAtLH(
+        DirectX::XMVECTOR{0.0, 0.0f, 800.f, 0.f},
+        DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},
+        DirectX::XMVECTOR{0.f, -1.f, 0.f, 0.f});
 
-// TODO pickup here
-
+    projectionMat = DirectX::XMMatrixPerspectiveFovLH(
+        fovRadians,
+        aspectRatio, zNear, zFar);
 }
 
-void Camera::BindTo(Renderer &gfx) {
-
+void Camera::UpdateView(float timestep, DirectX::XMMATRIX view)
+{
+    viewMat = view;
 }
 
-void Camera::SetTransform(Renderer &gfx) {
+void Camera::UpdateProjection(float timestep, DirectX::XMMATRIX projection)
+{
+    projectionMat = projection;
+}
 
+DirectX::XMMATRIX Camera::GetCameraTransform()
+{
+    return viewMat * projectionMat;
+}
+
+void Camera::SetAspectRatio(float aspectRatio)
+{
+    projectionMat = DirectX::XMMatrixPerspectiveFovLH(fov, aspectRatio, zNear, zFar);
+}
+
+void Camera::Translate(XMFLOAT3 translation)
+{
+    viewMat *= DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&translation));
 }

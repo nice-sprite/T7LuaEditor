@@ -15,7 +15,7 @@ using DxgiAdapterList = std::vector<DXGI_ADAPTER_DESC1>;
 
 DxgiAdapterList GetGPUInfo();
 
-typedef BOOL (WINAPI *LPFN_GLPI)(
+typedef BOOL (WINAPI* LPFN_GLPI)(
         PSYSTEM_LOGICAL_PROCESSOR_INFORMATION,
         PDWORD);
 

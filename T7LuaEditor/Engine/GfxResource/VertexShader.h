@@ -4,20 +4,11 @@
 
 #ifndef T7LUAEDITOR_VERTEXSHADER_H
 #define T7LUAEDITOR_VERTEXSHADER_H
-#include "Bindable.h"
+#include "../../t7pch.h"
 #include "ShaderUtil.h"
-#include <string>
-class VertexShader : public Bindable {
-public:
-    VertexShader(Renderer& gfx, const wchar_t *filepath);
-    void Bind(Renderer& gfx) override;
-    LPVOID GetBufferPtr() const noexcept;
-    size_t GetProgramSize() const noexcept;
-private:
-    wrl::ComPtr<ID3D11VertexShader> vertexShader;
-    wrl::ComPtr<ID3DBlob> bytecodeBlob;
 
-};
-
-
+void BuildVertexShader(ID3D11Device *device,
+                       const wchar_t *path,
+                       ID3D11VertexShader **outVS,
+                       ID3D11InputLayout **inputLayout);
 #endif //T7LUAEDITOR_VERTEXSHADER_H

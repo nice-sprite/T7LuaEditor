@@ -4,15 +4,14 @@
 
 #ifndef T7LUAEDITOR_VIEWPORT_H
 #define T7LUAEDITOR_VIEWPORT_H
-#include "Bindable.h"
-
-class Viewport : public Bindable {
+#include "../../t7pch.h"
+class Viewport {
 public:
-    explicit Viewport(Renderer& gfx);
-    void Bind(Renderer& gfx) override;
+    explicit Viewport(float x, float y, float width, float height);
+    void Bind(ID3D11DeviceContext* context);
+
 private:
     D3D11_VIEWPORT viewport{};
-    size_t width, height;
 };
 
 

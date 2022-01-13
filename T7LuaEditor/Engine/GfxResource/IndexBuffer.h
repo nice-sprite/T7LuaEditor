@@ -4,18 +4,12 @@
 
 #ifndef T7LUAEDITOR_INDEXBUFFER_H
 #define T7LUAEDITOR_INDEXBUFFER_H
-#include "Bindable.h"
-#include <vector>
-class IndexBuffer : public Bindable {
+#include "../../t7pch.h"
 
-public:
-    IndexBuffer(Renderer& gfx, std::vector<unsigned long>& idxs);
-    void Bind(Renderer& gfx) override;
-
-private:
-    wrl::ComPtr<ID3D11Buffer> indexBuffer;
-    D3D11_BUFFER_DESC bufDef;
-};
-
+HRESULT CreateDynamicIndexBuffer(ID3D11Device *device, ID3D11Buffer **ppBuffer, int numIndices);
+HRESULT CreateDynamicIndexBuffer(ID3D11Device *device, ID3D11Buffer **ppBuffer, int *initialData, int numIndices);
+void BindDynamicIndexBuffer(ID3D11DeviceContext *context, ID3D11Buffer *buf);
+void UpdateDynamicIndexBuffer(ID3D11DeviceContext *context, ID3D11Buffer *buf, int *indexData, size_t numIndices);
+void AppendDynamicIndexBuffer(ID3D11DeviceContext *context, ID3D11Buffer *buf, int *indexData, size_t numIndices, size_t offset);
 
 #endif //T7LUAEDITOR_INDEXBUFFER_H

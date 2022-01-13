@@ -1,157 +1,145 @@
 #include "./Renderer.h"
-#include "GfxResource/Viewport.h"
-#include "GfxResource/VertexShader.h"
+#include "../Editor/Widgets/AssetPicker/AssetView.h"
+#include "GfxResource/IndexBuffer.h"
 #include "GfxResource/PixelShader.h"
 #include "GfxResource/VertexBuffer.h"
-#include <fmt/core.h>
-#include <fmt/format.h>
-#include <filesystem>
+#include "GfxResource/VertexShader.h"
+#include "GfxResource/Viewport.h"
 
 #define TEST_TEXTURE TEXT("C:/Users/coxtr/Downloads/integra.jpg")
+#define GRID_TEXTURE TEXT("C:/Users/coxtr/source/repos/T7LuaEditor/Resource/Textures/grid_64x64.png")
 
-Renderer::Renderer(HWND _hwnd, size_t _width, size_t _height)
-        : hwnd{_hwnd}, width{_width}, height{_height}, frameTimer{} {
-    InitializeDx11();
-    backgroundColor_ = {
-            0.1,
-            0.1,
-            0.1,
-            1.0
-    };
-    imgui_ = std::make_unique<ImGUIManager>(device_.Get(), ctx_.Get(), hwnd);
-    demoTexture = LoadTexture(device_.Get(), ctx_.Get(), TEST_TEXTURE);
+#include <random>
+float RandUniformRange(float min_, float max_)
+{
+    static std::default_random_engine rng;
+    static std::uniform_real_distribution<float> dist(min_, max_);
+    return dist(rng);
+}
+
+Renderer::Renderer(HWND _hwnd, float _width, float _height) : hwnd{_hwnd}, width{_width}, height{_height}, frameTimer{}
+{
+    Init();
+    clearColor = {0.0f, 0.05490196078431372549019607843137f, 0.14117647058823529411764705882353f, 1.0f};
+
+    defaultTextures_[0] = LoadTexture(device.Get(), context.Get(), GRID_TEXTURE); // put these in a "util" atlas
+    defaultTextures_[1] = LoadTexture(device.Get(), context.Get(), TEST_TEXTURE);
+
+    // std::vector<TexturedQuad> quads;
+    // std::vector<Vertex> verts;
+    // std::vector<DWORD> indexs;
+    // 20,000/128 = 157 shader resource updates assuming every single quad uses a different texture
+    // - Reserved Texture Slots:
+    // - 0: $white
+    // - 1: $black
+    // - 2: $grid
+
+    // D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT = 14
+    // Assuming all 20,000 elements have unique transform:
+    // the biggest constant buffer D3D11 supports is 4096 4*32bit constants (float4)
+    // this means we can have 4096/4 = 1024 transform matrices in one constant buffer.
+    // - assume we have 20,000 transforms, one per each quad. This requires 20 constant buffer uploads per frame
+    // for (int i = 0; i < 2; ++i)
+    // {
+    //     auto xOffset = RandUniformRange(-2.f, 2.f);
+    //     auto yOffset = RandUniformRange(-0.9f, 0.9f);
+    //     xOffset = 0.f;
+    //     yOffset = 0.f;
+    //     auto r = RandUniformRange(0.f, 1.f);
+    //     auto g = RandUniformRange(0.f, 1.f);
+    //     auto b = RandUniformRange(0.f, 1.f);
+    //     auto a = RandUniformRange(0.1f, 1.f);
+    //     TexturedQuad myRect = {
+    //         -1280.f / 2.0f + xOffset,
+    //         1280.f / 2.0f + xOffset,
+    //         -720.f / 2.0f + yOffset,
+    //         720.f / 2.0f + yOffset,
+    //         r, g, b, a};
+
+    //     quads.push_back(myRect);
+
+    //     verts.push_back(Vertex{XMFLOAT3(myRect.left, myRect.top, 0.0f), XMFLOAT4(r, g, b, a), XMFLOAT2(1.f, 1.f)});     // left top
+    //     verts.push_back(Vertex{XMFLOAT3(myRect.right, myRect.top, 0.0f), XMFLOAT4(r, g, b, a), XMFLOAT2(0.f, 1.f)});    // right top
+    //     verts.push_back(Vertex{XMFLOAT3(myRect.left, myRect.bottom, 0.0f), XMFLOAT4(r, g, b, a), XMFLOAT2(1.f, 0.f)});  // left bottom
+    //     verts.push_back(Vertex{XMFLOAT3(myRect.right, myRect.bottom, 0.0f), XMFLOAT4(r, g, b, a), XMFLOAT2(0.f, 0.f)}); // right bottom
+
+    //     int vertNum = i * 4;
+    //     indexs.push_back(0 + (vertNum));
+    //     indexs.push_back(1 + (vertNum));
+    //     indexs.push_back(2 + (vertNum));
+    //     indexs.push_back(2 + (vertNum));
+    //     indexs.push_back(1 + (vertNum));
+    //     indexs.push_back(3 + (vertNum));
+    // }
 }
 
 Renderer::~Renderer() = default;
 
-void Renderer::CreateRenderTarget() {
+void Renderer::CreateRenderTarget()
+{
     ID3D11Texture2D *pBackBuffer;
-    swapChain_->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
-    device_->CreateRenderTargetView(pBackBuffer, nullptr, &renderTargetView_);
+    swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
+    device->CreateRenderTargetView(pBackBuffer, nullptr, &rtv);
     pBackBuffer->Release();
     SetupD2D();
 }
 
-void Renderer::CleanupRenderTarget() {
-    renderTargetView_.Reset();
-    renderTarget2d_.Reset();
+void Renderer::CleanupRenderTarget()
+{
+    rtv.Reset();
+    rtv2D.Reset();
 }
 
-void Renderer::Render() {
-    static std::string filePath = "";
-    static std::vector<Texture> assetThumbnails = {};
-    static bool dirChanged = false;// temp to make sure we dont create thumbnail textures each frame, only when the dir contents changed
-    frameTimer.Start();
-    ctx_->OMSetRenderTargets(1, renderTargetView_.GetAddressOf(), nullptr);
-    ctx_->ClearRenderTargetView(renderTargetView_.Get(), (float *) &backgroundColor_);
-    imgui_->BeginUI();
-    if (ImGui::Begin("debug")) {
-        ImGui::Text("viewport_: %f x %f", viewport_.Width, viewport_.Height);
-        wrl::ComPtr<ID3D11Texture2D> backBuffer;
-        D3D11_TEXTURE2D_DESC desc;
-
-        swapChain_->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
-        backBuffer->GetDesc(&desc);
-        ImGui::Text("backbuffer: %d x %d", desc.Width, desc.Height);
-    }
-    ImGui::End();
-
-#pragma region Imgui file dialog test
-
-    if (ImGui::Begin("Asset Picker", nullptr, ImGuiWindowFlags_MenuBar)) {
-        if(ImGui::BeginMenuBar())
-        {
-            if (ImGui::Button("Select Directory..."))
-                ImGuiFileDialog::Instance()->OpenModal("AssetDirKey", "Choose Directory", nullptr, ".");
-
-            if (ImGuiFileDialog::Instance()->Display("AssetDirKey")) {
-                if (ImGuiFileDialog::Instance()->IsOk()) {
-                    filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
-                    std::filesystem::directory_iterator dirIt(filePath);
-                    for (auto const &file: dirIt) {
-                        if (file.path().extension() == ".png" || file.path().extension() == ".tiff" || file.path().extension() == ".jpg")
-                            assetThumbnails.push_back(LoadTexture(device_.Get(), ctx_.Get(), file.path().c_str()));
-                    }
-                }
-                ImGuiFileDialog::Instance()->Close();
-            }
-            ImGui::EndMenuBar();
-        }
-        ImGui::SameLine();
-        ImGui::Text(filePath.c_str());
-        int i = 0;
-        int numPerRow = (int)ImGui::GetContentRegionAvailWidth()/128;
-
-        numPerRow--;
-        for(auto const& thumbnail : assetThumbnails) {
-            if(i%numPerRow) {
-                ImGui::SameLine();
-            }
-            ImGui::Image((void *) thumbnail.view_.Get(), ImVec2(128.f, 128.f));
-            ++i;
-        }
-
-    }
-    ImGui::End();
-#pragma endregion
-
-    DrawTestImage();
-    renderTarget2d_->BeginDraw();
-    using namespace std::string_literals;
-    std::wstring text = L"fps: "s;
-    text += std::to_wstring(ImGui::GetIO().Framerate);
-    renderTarget2d_->DrawTextW(text.c_str(), text.length(), textFormat_.Get(),
-                               D2D1::RectF(0, 0, (float) viewport_.Width, (float) viewport_.Height), whiteBrush_.Get());
-    renderTarget2d_->EndDraw();
-    imgui_->EndUI();
-    swapChain_->Present(1, 0);
-}
-
-void Renderer::Resize(LPARAM lParam, WPARAM wParam) {
-    if (device_ && wParam != SIZE_MINIMIZED) {
+void Renderer::Resize(LPARAM lParam, WPARAM wParam)
+{
+    if (device && wParam != SIZE_MINIMIZED)
+    {
         CleanupRenderTarget();
-        swapChain_->ResizeBuffers(0,
-                                  (UINT) LOWORD(lParam),
-                                  (UINT) HIWORD(lParam),
-                                  DXGI_FORMAT_B8G8R8A8_UNORM,
-                                  0);
-        width = (UINT) LOWORD(lParam);
-        height = (UINT) HIWORD(lParam);
-        viewport_.Width = width;
-        viewport_.Height = height;
-
+        swapChain->ResizeBuffers(0,
+                                 (UINT)LOWORD(lParam),
+                                 (UINT)HIWORD(lParam),
+                                 DXGI_FORMAT_B8G8R8A8_UNORM,
+                                 0);
+        width = (float)(UINT)LOWORD(lParam);
+        height = (float)(UINT)HIWORD(lParam);
+        viewport.Width = width;
+        viewport.Height = height;
         CreateRenderTarget();
     }
 }
 
-bool Renderer::InitializeDx11() {
-
+bool Renderer::Init()
+{
     UINT createDeviceFlags = D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
     D3D_FEATURE_LEVEL featureLevel;
     const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_12_0,
                                                D3D_FEATURE_LEVEL_11_1,
                                                D3D_FEATURE_LEVEL_11_0};
-    wrl::ComPtr<ID3D11Device> baseDevice;
-    wrl::ComPtr<ID3D11DeviceContext> baseCtx;
+    ComPtr<ID3D11Device> baseDevice;
+    ComPtr<ID3D11DeviceContext> baseCtx;
 
     HRESULT res = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevels,
                                     _countof(featureLevels), D3D11_SDK_VERSION, &baseDevice, &featureLevel, &baseCtx);
     assert(SUCCEEDED(res));
 
-    if (SUCCEEDED(baseDevice.As(&device_))) {
-        baseCtx.As(&ctx_); // upgrade context to revision 4
+    if (SUCCEEDED(baseDevice.As(&device)))
+    {
+        baseCtx.As(&context); // upgrade context to revision 4
     }
 
     {
-        wrl::ComPtr<IDXGIDevice4> dxgiDevice;
-        wrl::ComPtr<IDXGIFactory> dxgiBaseFact;
+        ComPtr<IDXGIDevice4> dxgiDevice;
+        ComPtr<IDXGIFactory> dxgiBaseFact;
 
-        if (SUCCEEDED(device_.As(&dxgiDevice))) {
-            wrl::ComPtr<IDXGIAdapter> adapter;
-            if (SUCCEEDED(dxgiDevice->GetAdapter(&adapter))) {
+        if (SUCCEEDED(device.As(&dxgiDevice)))
+        {
+            ComPtr<IDXGIAdapter> adapter;
+            if (SUCCEEDED(dxgiDevice->GetAdapter(&adapter)))
+            {
                 HRESULT hr = adapter->GetParent(IID_PPV_ARGS(&dxgiBaseFact));
-                if (SUCCEEDED(hr)) {
-                    dxgiBaseFact.As(&dxgiFactory_); // get the factory that created the d3d11 device
+                if (SUCCEEDED(hr))
+                {
+                    dxgiBaseFact.As(&dxgiFactory); // get the factory that created the d3d11 device
                 }
             }
         }
@@ -160,8 +148,8 @@ bool Renderer::InitializeDx11() {
 #pragma region setup swapChain
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC1 sd = {0};
-    sd.Width = width;
-    sd.Height = height;
+    sd.Width = static_cast<UINT>(width);
+    sd.Height = static_cast<UINT>(height);
     sd.BufferCount = 2;
     sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
     sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
@@ -171,8 +159,8 @@ bool Renderer::InitializeDx11() {
     sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
     wrl::ComPtr<IDXGISwapChain1> baseSwapChain;
-    dxgiFactory_->CreateSwapChainForHwnd((IUnknown *) device_.Get(), hwnd, &sd, nullptr, nullptr, &baseSwapChain);
-    baseSwapChain.As(&swapChain_); // upgrade the swapchain to revision 4
+    dxgiFactory->CreateSwapChainForHwnd((IUnknown *)device.Get(), hwnd, &sd, nullptr, nullptr, &baseSwapChain);
+    baseSwapChain.As(&swapChain); // upgrade the swapchain to revision 4
 #pragma endregion
 
 #pragma region setup AlphaBlend state
@@ -188,8 +176,8 @@ bool Renderer::InitializeDx11() {
 
     // Setup blend state
     const float blend_factor[4] = {0.f, 0.f, 0.f, 0.f};
-    device_->CreateBlendState(&alphaBlend, &blendState_);
-    ctx_->OMSetBlendState(blendState_.Get(), blend_factor, 0xffffffff);
+    device->CreateBlendState(&alphaBlend, &alphaBlendState);
+    context->OMSetBlendState(alphaBlendState.Get(), blend_factor, 0xffffffff);
 #pragma endregion
 
 #pragma region setup rasterizer state
@@ -206,42 +194,42 @@ bool Renderer::InitializeDx11() {
     rasterDesc.ScissorEnable = false;
     rasterDesc.SlopeScaledDepthBias = 0.0f;
 
-    res = device_->CreateRasterizerState2(&rasterDesc, rasterizerState_.GetAddressOf());
+    res = device->CreateRasterizerState2(&rasterDesc, rasterizerState_.GetAddressOf());
     assert(SUCCEEDED(res));
 
-    ctx_->RSSetState(rasterizerState_.Get());
+    context->RSSetState(rasterizerState_.Get());
 #pragma endregion
 
 #pragma region setup viewport
-    viewport_.Height = (float) height;
-    viewport_.Width = (float) width;
-    viewport_.MinDepth = 0.0f;
-    viewport_.MaxDepth = 1.0f;
-    viewport_.TopLeftX = 0.0f;
-    viewport_.TopLeftY = 0.0;
-    ctx_->RSSetViewports(1, &viewport_);
+    viewport.Height = (float)height;
+    viewport.Width = (float)width;
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0;
+    context->RSSetViewports(1, &viewport);
 #pragma endregion
 
-#pragma region create constant buffer
-    D3D11_BUFFER_DESC bd{};
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = 64;
-    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    device_->CreateBuffer(&bd, nullptr, &constantBuf_);
-#pragma  endregion
+#pragma region create sampler state for grid
 
-#pragma region setup matrices
-    float fov = DirectX::XM_PIDIV4;
-    float aspectRatio = viewport_.Width / viewport_.Height;
-    constexpr float ZNEAR = 1.0f;
-    constexpr float ZFAR = 100.0f;
-    projectionMat_ = DirectX::XMMatrixPerspectiveFovLH(DirectX::XMConvertToRadians(45.f), aspectRatio, ZNEAR, ZFAR);
-    worldMat_ = DirectX::XMMatrixIdentity();
-    orthoMat_ = DirectX::XMMatrixOrthographicLH(viewport_.Width, viewport_.Height, ZNEAR, ZFAR);
-    viewMat_ = DirectX::XMMatrixLookAtLH(
-            DirectX::XMVECTOR{0.0, 0.0f, 2.f, 0.f},
-            DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},
-            DirectX::XMVECTOR{0.f, 1.f, 0.f, 0.f});
+    // TODO: move to CommonStates.h/cpp
+    D3D11_SAMPLER_DESC gridSampler{};
+    gridSampler.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+    gridSampler.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+    gridSampler.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+    gridSampler.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+    gridSampler.MipLODBias = 0;
+    gridSampler.MaxAnisotropy = 1;
+    gridSampler.ComparisonFunc = D3D11_COMPARISON_NEVER;
+    gridSampler.BorderColor[0] = 1.f;
+    gridSampler.BorderColor[1] = 1.f;
+    gridSampler.BorderColor[2] = 1.f;
+    gridSampler.BorderColor[3] = 1.f;
+    gridSampler.MinLOD = -FLT_MAX;
+    gridSampler.MaxLOD = FLT_MAX;
+
+    device->CreateSamplerState(&gridSampler, &gridSS);
+
 #pragma endregion
 
     CreateRenderTarget();
@@ -249,7 +237,8 @@ bool Renderer::InitializeDx11() {
     return true;
 }
 
-bool Renderer::SetupD2D() {
+bool Renderer::SetupD2D()
+{
     HRESULT res;
     D2D1_FACTORY_OPTIONS opts{};
     wrl::ComPtr<ID2D1Factory7> factory2d;
@@ -260,109 +249,72 @@ bool Renderer::SetupD2D() {
     opts.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
     res = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, opts, factory2d.GetAddressOf());
     assert(SUCCEEDED(res));
-    res = device_.As(&dxgiDevice);
+    res = device.As(&dxgiDevice);
     assert(SUCCEEDED(res));
 
-    res = factory2d->CreateDevice(dxgiDevice.Get(), &device2d_);
+    res = factory2d->CreateDevice(dxgiDevice.Get(), &device2D);
     assert(SUCCEEDED(res));
 
-    res = device2d_->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &context2d_);
+    res = device2D->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &context2D);
     assert(SUCCEEDED(res));
-    res = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory7), &writeFactory_);
+    res = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory7), &DWriteFactory);
     assert(SUCCEEDED(res));
 
-    swapChain_->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
+    swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
     res = backBuffer.As(&dxgiBackbuffer);
     assert(SUCCEEDED(res));
     D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-            D2D1_RENDER_TARGET_TYPE_HARDWARE,
-            D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
-            0,
-            0
-    );
+        D2D1_RENDER_TARGET_TYPE_HARDWARE,
+        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
+        0,
+        0);
 
-    res = factory2d->CreateDxgiSurfaceRenderTarget(dxgiBackbuffer.Get(), props, &renderTarget2d_);
+    res = factory2d->CreateDxgiSurfaceRenderTarget(dxgiBackbuffer.Get(), props, &rtv2D);
     assert(SUCCEEDED(res));
 
-    writeFactory_->CreateTextFormat(
-            L"Iosevka",
-            nullptr,
-            DWRITE_FONT_WEIGHT_LIGHT,
-            DWRITE_FONT_STYLE_NORMAL,
-            DWRITE_FONT_STRETCH_NORMAL,
-            16,
-            L"",
-            &textFormat_
-    );
-    renderTarget2d_->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &whiteBrush_);
+    DWriteFactory->CreateTextFormat(
+        L"Iosevka",
+        nullptr,
+        DWRITE_FONT_WEIGHT_LIGHT,
+        DWRITE_FONT_STYLE_NORMAL,
+        DWRITE_FONT_STRETCH_NORMAL,
+        16,
+        L"",
+        &defaultDWTextFormat);
+    rtv2D->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &solidWhiteBrush2D);
     return true;
 }
 
-void Renderer::DrawTestImage() {
-    DirectX::XMMATRIX rotation{};
-    static float time = 0.f;
-    time += 0.01f;
-    rotation = DirectX::XMMatrixRotationZ(time);
-    constexpr auto ShaderPath = L"C:/Users/coxtr/source/repos/T7LuaEditor/T7LuaEditor/ShaderSrc/test.hlsl";
-    static ConstantBuffer cbuf{};
-    cbuf.modelViewProjection = rotation * viewMat_ * projectionMat_;
-
-    static VertexShader vShader(*this, ShaderPath);
-    static PixelShader pShader(*this, ShaderPath);
-    static std::vector<Vertex> texturedRect = {
-            {DirectX::XMFLOAT3(-0.5f, -0.5f, 0.f), DirectX::XMFLOAT4(1.0f, 0.0f, 0.0f, 1.0f), {1.f, 1.f}},
-            {DirectX::XMFLOAT3(0.5f, -0.5f, 0.f),  DirectX::XMFLOAT4(1.0f, 1.0f, 0.0f, 1.0f), {0.f, 1.f}},
-            {DirectX::XMFLOAT3(-0.5f, 0.5f, 0.f),  DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), {1.f, 0.f}},
-            {DirectX::XMFLOAT3(0.5f, 0.5f, 0.f),   DirectX::XMFLOAT4(0.0f, 0.0f, 1.0f, 1.0f), {0.f, 0.f}}
-    };
-
-
-    static VertexBuffer vertices(*this, texturedRect);
-    ctx_->UpdateSubresource(constantBuf_.Get(), 0, 0, &cbuf, 0, 0);
-
-    ctx_->PSSetShaderResources(0, 1, demoTexture.view_.GetAddressOf());
-    ctx_->PSSetConstantBuffers(0, 1, constantBuf_.GetAddressOf());
-    ctx_->VSSetConstantBuffers(0, 1, constantBuf_.GetAddressOf());
-
-
-    vShader.Bind(*this);
-    pShader.Bind(*this);
-
-    DWORD idx[] = {
-            0, 1, 2, 2, 1, 3
-    };
-
-    D3D11_BUFFER_DESC id;
-    // create the index buffer
-    id.Usage = D3D11_USAGE_DYNAMIC;
-    id.ByteWidth = sizeof(DWORD) * 6;
-    id.BindFlags = D3D11_BIND_INDEX_BUFFER;
-    id.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-    id.MiscFlags = 0;
-    D3D11_SUBRESOURCE_DATA indexData{};
-    indexData.pSysMem = idx;
-    ID3D11Buffer *indexBuffer_;
-    device_->CreateBuffer(&id, &indexData, &indexBuffer_);
-
-    ctx_->IASetIndexBuffer(indexBuffer_, DXGI_FORMAT_R32_UINT, 0);
-
-
-    D3D11_INPUT_ELEMENT_DESC ied[] = {
-            {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,    0, 0,  D3D11_INPUT_PER_VERTEX_DATA, 0},
-            {"COLOR",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0},
-            {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT,       0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0}
-    };
-    ID3D11InputLayout *layout;
-    device_->CreateInputLayout(ied, 3, vShader.GetBufferPtr(), vShader.GetProgramSize(), &layout);
-    ctx_->IASetInputLayout(layout);
-    vertices.Bind(*this);
-    ctx_->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    ctx_->DrawIndexed(6, 0, 0);
+void Renderer::ClearRTV()
+{
+    context->RSSetViewports(1, &viewport);
+    context->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
+    context->ClearRenderTargetView(rtv.Get(), (float *)&clearColor);
+    rtv2D->BeginDraw();
 }
 
+void Renderer::Present()
+{
+    rtv2D->EndDraw();
+    swapChain->Present(1, 0);
+}
 
+float Renderer::GetWidth() const
+{
+    return width;
+}
 
+float Renderer::GetHeight() const
+{
+    return height;
+}
 
+ID3D11Device5 *Renderer::GetDevice() const noexcept
+{
+    return device.Get();
+}
 
-
-
+ID3D11DeviceContext *Renderer::GetContext() const noexcept
+{
+    return context.Get();
+}

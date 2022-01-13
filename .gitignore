@@ -363,3 +363,4 @@ MigrationBackup/
 FodyWeavers.xsd
 cmake-build-debug-visual-studio
 ParserTest
+build

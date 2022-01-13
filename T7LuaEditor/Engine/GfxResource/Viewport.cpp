@@ -4,17 +4,16 @@
 
 #include "Viewport.h"
 
-Viewport::Viewport(Renderer &gfx) {
-    width = gfx.GetWidth();
-    height = gfx.GetHeight();
-    viewport.TopLeftX = 0.f;
-    viewport.TopLeftY = 0.f;
-    viewport.Width = (float)height;
-    viewport.Height = (float)height;
+Viewport::Viewport(float x, float y, float width, float height) {
+
+    viewport.TopLeftX = x;
+    viewport.TopLeftY = y;
+    viewport.Width = width;
+    viewport.Height = height;
     viewport.MaxDepth = 1.0f;
     viewport.MinDepth = 0.0f;
 }
 
-void Viewport::Bind(Renderer &gfx) {
-    GetContext(gfx)->RSSetViewports(1, &viewport);
+void Viewport::Bind(ID3D11DeviceContext* context) {
+    context->RSSetViewports(1, &viewport);
 }
