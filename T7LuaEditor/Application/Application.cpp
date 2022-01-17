@@ -32,9 +32,8 @@ namespace Application
         {
             rhi->ClearRTV();
             ImGuiBeginFrame();
-            scene->HandleInput(mouse, keyboard);
+            Input::ProcessInput();
             scene->RenderScene(rhi.get(), timestep);
-            scene->HandleUI();
             ImGuiEndFrame();
             rhi->Present();
         }
@@ -46,82 +45,39 @@ namespace Application
             return true;
         switch (msg)
         {
-        case WM_DESTROY:
-        {
-            PostQuitMessage(0);
-            return 0;
-        }
-        case WM_MOUSEWHEEL:
-        {
-            int x, y;
-            x = (int)(short)LOWORD(lparam);
-            y = (int)(short)HIWORD(lparam);
-            int wheelDelta = GET_WHEEL_DELTA_WPARAM(wparam);
-            mouse.UpdateWheelDelta(wheelDelta);
-            break;
-        }
-        case WM_MOUSEMOVE:
-        {
-            int x, y;
-            x = (int)(short)LOWORD(lparam);
-            y = (int)(short)HIWORD(lparam);
-            mouse.UpdatePos(x, y);
-            break;
-            // update mouse x and y
-        }
-        case WM_LBUTTONDOWN:
-        {
-            int x, y;
-            x = (int)(short)LOWORD(lparam);
-            y = (int)(short)HIWORD(lparam);
-            mouse.buttons.leftButton = true;
-            mouse.UpdatePos(x, y);
-            break;
-            // lbutton down
-        }
-        case WM_RBUTTONDOWN:
-        {
-            // lbutton down
-            int x, y;
-            x = (int)(short)LOWORD(lparam);
-            y = (int)(short)HIWORD(lparam);
-            mouse.buttons.rightButton = true;
-            mouse.UpdatePos(x, y);
-            break;
-        }
-        case WM_LBUTTONUP:
-        {
-            // lbutton up
-            int x, y;
-            x = (int)(short)LOWORD(lparam);
-            y = (int)(short)HIWORD(lparam);
-            mouse.buttons.leftButton = false;
-            mouse.UpdatePos(x, y);
-            break;
-        }
-        case WM_RBUTTONUP:
-        {
-            // rbutton up
-            int x, y;
-            x = (int)(short)LOWORD(lparam);
-            y = (int)(short)HIWORD(lparam);
-            mouse.buttons.rightButton = false;
-            mouse.UpdatePos(x, y);
-            break;
-        }
-        case WM_KEYDOWN:
-        {
-            // update keyboard
-        }
-        case WM_SIZE:
-        {
-            if (rhi)
+            case WM_DESTROY:
             {
-
-                rhi->Resize(lparam, wparam);
-                scene->Resize(lparam, wparam);
+                PostQuitMessage(0);
+                return 0;
             }
-        }
+            case WM_MOUSEWHEEL:
+            case WM_MOUSEMOVE:
+            case WM_RBUTTONDBLCLK:
+            case WM_RBUTTONDOWN:
+            case WM_RBUTTONUP:
+            case WM_LBUTTONDOWN:
+            case WM_LBUTTONUP:
+            {
+                Input::CacheMouseEvents(hwnd, msg, wparam, lparam); // pushes events
+                break;
+            }
+            case WM_KEYDOWN:
+            case WM_KEYUP:
+            {
+                Input::CacheKeyboardEvents(hwnd, msg, wparam, lparam);
+                break;
+            }
+            case WM_SIZE:
+            {
+                if (rhi)
+                {
+
+                    rhi->Resize(lparam, wparam);
+                    scene->Resize(lparam, wparam); // we gotta fix this. I keep making it stink!
+                }
+                break;
+            }
+
         }
 
         return DefWindowProc(hwnd, msg, wparam, lparam);

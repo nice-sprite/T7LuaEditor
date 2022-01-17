@@ -69,7 +69,6 @@ public:
     void RenderScene(Renderer *rhi, float timestep);
     void HandleUI();
     void Resize(LPARAM lparam, WPARAM wparam);
-    void HandleInput(Mouse & mouse, Keyboard & kbd);
     void ZoomIn(float x, float y, float amount);
     void ZoomOut(float x, float y, float amount);
 

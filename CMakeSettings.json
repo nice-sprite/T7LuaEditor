@@ -16,6 +16,11 @@
           "name": "VCPKG_MANIFEST_MODE",
           "value": "True",
           "type": "BOOL"
+        },
+        { 
+            "name": "CMAKE_EXPORT_COMPILE_COMMANDS",
+            "value": "True",
+            "type": "BOOL"
         }
       ]
     }

@@ -20,8 +20,6 @@ namespace Application
     void ImGuiBeginFrame();
     void ImGuiEndFrame();
 
-    static Keyboard keyboard;
-    static Mouse mouse;
     static Timer frameTimer;
     static WindowUtil::Window mainWindow;
     static std::unique_ptr<Renderer> rhi = nullptr;

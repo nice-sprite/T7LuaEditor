@@ -4,6 +4,7 @@
 
 #include "Scene.h"
 using namespace DirectX;
+using namespace std::string_literals;
 
 Scene2D::Scene2D(Renderer *rhi) : camera(XMConvertToRadians(70.f), 16 / 9.f, 1.0f, 10000.f),
                                   sceneConstants{}
@@ -38,6 +39,46 @@ Scene2D::Scene2D(Renderer *rhi) : camera(XMConvertToRadians(70.f), 16 / 9.f, 1.0
     UpdateDynamicIndexBuffer(context, indexBuff.Get(), indices, 6);
     quadCount++;
     indexCount += 6;
+
+    auto mouse_cb = [this](float x, float y, WPARAM flags) -> bool
+    {
+        static int callcount = 0;
+        ImGui::Text("cursor (%f, %f)", x, y);
+        ImGui::Text("wparam: %d", flags);
+        ImGui::Text("Calls: %d", callcount);
+        auto ctrl = Input::Ctrl(flags),
+             shift = Input::Shift(flags),
+             btn_left = Input::Btn_Left(flags),
+             btn_right = Input::Btn_Right(flags),
+             btn_middle = Input::Btn_Mid(flags),
+             xbtn1 = Input::Btn_XBtn1(flags),
+             xbtn2 = Input::Btn_XBtn2(flags);
+
+        ImGui::Text("ctrl: %d\n", ctrl);
+        ImGui::Text("shift: %d\n", shift);
+        ImGui::Text("btn_left: %d\n", btn_left);
+        ImGui::Text("btn_right: %d\n", btn_right);
+        ImGui::Text("btn_mid: %d\n", btn_middle);
+        ImGui::Text("xbtn1: %d\n", xbtn1);
+        ImGui::Text("xbtn2: %d\n", xbtn2);
+
+        ++callcount;
+        return true;
+    };
+
+    auto kbd_cb = [this](Input::keyboard_t &keyState) -> bool
+    {
+        std::string pressedKeys = "";
+        for (auto c : keyState.key)
+        {
+            if (c != 0)
+                pressedKeys += c;
+        }
+        ImGui::Text("%s", pressedKeys.c_str());
+        return true;
+    };
+    Input::RegisterMouseMove(mouse_cb);
+    Input::RegisterKeyboardFn(kbd_cb);
 }
 
 void Scene2D::Resize(LPARAM lparam, WPARAM wparam)
@@ -101,41 +142,6 @@ void Scene2D::RenderScene(Renderer *rhi, float timestep)
     BindDynamicIndexBuffer(context, indexBuff.Get());
 
     context->DrawIndexed(UINT(6 * quadCount), 0u, 0);
-}
-
-void Scene2D::HandleUI()
-{
-    // if (ImGui::Begin("Scene"))
-    // {
-    //     if (ImGui::Button("Add Image"))
-    //     {
-    //         auto q = UIQuad{0, 100, 0, 100, 0};
-    //         AddUIQuad(q, DirectX::XMMatrixIdentity());
-    //     }
-    // }
-    // ImGui::End();
-}
-
-void Scene2D::HandleInput(Mouse &mouse, Keyboard &kbd)
-{
-    if (mouse.wheelDelta > 0) // this really needs to be an event...
-    {
-        ZoomIn(mouse.pos[0], mouse.pos[1], 0.5 * mouse.wheelDelta);
-        mouse.wheelDelta = 0;
-    }
-    else if (mouse.wheelDelta < 0)
-    {
-        ZoomOut(mouse.pos[0], mouse.pos[1], 0.5f * mouse.wheelDelta);
-        mouse.wheelDelta = 0;
-    }
-    if (mouse.buttons.leftButton)
-    {
-        camera.Translate(XMFLOAT3(10, 0.0, 0.0));
-    }
-    if (mouse.buttons.rightButton)
-    {
-        camera.Translate(XMFLOAT3(-10, 0.0, 0.0));
-    }
 }
 
 bool Scene2D::IsPointInRect(float const pt[2], float rect[4])
