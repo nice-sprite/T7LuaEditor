@@ -1,0 +1,9 @@
+[submodule "Source/ThirdParty/fmt"]
+	path = Source/ThirdParty/fmt
+	url = https://github.com/fmtlib/fmt
+[submodule "Source/ThirdParty/imgui"]
+	path = Source/ThirdParty/imgui
+	url = https://github.com/ocornut/imgui/tree/docking
+[submodule "Source/ThirdParty/entt"]
+	path = Source/ThirdParty/entt
+	url = https://github.com/skypjack/entt
