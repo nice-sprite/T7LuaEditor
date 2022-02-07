@@ -1,3 +1,4 @@
+#USE THE NODEPS BRANCH.
 # Priscilla
 Priscilla is a UI editor for Black Ops 3 LUI. It's still in the early stages of development, so don't expect to get much from this repo yet. With that said, if you have something you wish to contribute to Priscilla, you should join the discord server https://discord.gg/M9cxycZRSw and place your idea in #suggestions. If you are looking to contribute directly, join the discord and message me (nice_sprite#9217). 
 
