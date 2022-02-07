@@ -1,7 +1,0 @@
-#include "ConstantBuffer.h"
-#include "IndexBuffer.h"
-#include "VertexBuffer.h"
-#include "PixelShader.h"
-#include "VertexShader.h"
-#include "Viewport.h"
-#include "RenderTarget.h"

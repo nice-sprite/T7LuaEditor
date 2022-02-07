@@ -1,8 +1,6 @@
 #ifndef GFX_HELPERS_H
 #define GFX_HELPERS_H
 
-#include "GfxResource/Everything.h"
-#include "GfxResource/VertexBuffer.h"
 #include "ImGUIManager.h"
 #include "Vertex.h"
 #include <wrl/client.h>
@@ -11,6 +9,7 @@
 #include <dxgi1_6.h>
 #include <dwrite_3.h>
 #include "Timer.h"
+#include "gpu_resources.h"
 using namespace Microsoft::WRL;
 
 class Renderer

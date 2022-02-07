@@ -1,10 +1,5 @@
 #include "./Renderer.h"
-#include "../Editor/Widgets/AssetPicker/AssetView.h"
-#include "GfxResource/IndexBuffer.h"
-#include "GfxResource/PixelShader.h"
-#include "GfxResource/VertexBuffer.h"
-#include "GfxResource/VertexShader.h"
-#include "GfxResource/Viewport.h"
+#include "gpu_resources.h"
 
 #define TEST_TEXTURE TEXT("C:/Users/coxtr/Downloads/integra.jpg")
 #define GRID_TEXTURE TEXT("C:/Users/coxtr/source/repos/T7LuaEditor/Resource/Textures/grid_64x64.png")

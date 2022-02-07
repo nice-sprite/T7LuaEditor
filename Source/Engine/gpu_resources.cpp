@@ -1,9 +1,10 @@
-//
-// Created by coxtr on 11/25/2021.
-//
+#include "gpu_resources.h"
 
-#include "IndexBuffer.h"
-
+void bind_constant_buffer(ID3D11DeviceContext *context, int bufferSlot, ID3D11Buffer *buffer) 
+{
+    context->VSSetConstantBuffers(bufferSlot, 1, &buffer);
+    context->VSSetConstantBuffers(bufferSlot, 1, &buffer);
+}
 
 HRESULT create_dynamic_index_buffer(ID3D11Device* device, ID3D11Buffer** ppBuffer, int numIndices) 
 {
@@ -22,7 +23,7 @@ HRESULT create_dynamic_index_buffer(ID3D11Device* device, ID3D11Buffer** ppBuffe
 HRESULT create_dynamic_index_buffer(ID3D11Device* device, ID3D11Buffer** ppBuffer, int* initialData, int numIndices) 
 {
     D3D11_BUFFER_DESC bd{};
-    bd.ByteWidth = sizeof(int) * numIndices;  
+    bd.ByteWidth = sizeof(int) * numIndices;
     bd.Usage = D3D11_USAGE_DYNAMIC;
     bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
     bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -86,6 +87,5 @@ void update_dynamic_index_buffer(ID3D11DeviceContext *context, ID3D11Buffer *buf
     context->Unmap(buf, 0);
 
 }
-
 
 

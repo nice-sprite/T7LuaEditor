@@ -5,6 +5,7 @@
 #include "Scene.h"
 #include <DirectXMath.h>
 #include "Texture.h"
+#include "shader_util.h"
 using namespace DirectX;
 using namespace std::string_literals;
 
@@ -22,7 +23,7 @@ Scene2D::Scene2D(Renderer *rhi) : camera(XMConvertToRadians(70.f), 16 / 9.f, 1.0
     sceneConstants.viewportSize.y = rhi->GetHeight();
 
     build_vertex_shader(device, QuadShader, &vertexShader, &layoutPosColorCoord);
-    BuildPixelShader(device, QuadShader, &pixelShader);
+    build_pixel_shader(device, QuadShader, &pixelShader);
 
     // creates a 1280x720 canvas plane
     VertexPosColorTexcoord canvas[4] = {

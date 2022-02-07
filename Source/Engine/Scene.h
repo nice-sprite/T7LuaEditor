@@ -7,8 +7,9 @@
 
 #include "Camera.h"
 #include "Renderer.h"
-#include "./GfxResource/ConstantBuffer.h"
-#include "./GfxResource/VertexBuffer.h"
+// #include "./GfxResource/ConstantBuffer.h"
+// #include "./GfxResource/VertexBuffer.h"
+#include "gpu_resources.h"
 #include <imgui.h>
 #include "Input.h"
 #include <vector>

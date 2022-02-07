@@ -38,4 +38,5 @@ bool load_texture(const char* filename, ID3D11Device* device, ID3D11ShaderResour
     *width = image_width;
     *height = image_height;
     stbi_image_free(image_data);
+    return true;
 }

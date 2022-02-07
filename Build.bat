@@ -35,6 +35,6 @@ rem	cl %compiler_flags% /c ..\Source\ThirdParty\fmt\src\format.cc ..\Source\Thir
 rem	lib format.obj os.obj	
 
 :: compile and link
-	cl %compiler_flags% ..\Source\T7LuaEditor.cpp ..\Source\Application\*.cpp ..\Source\Engine\*.cpp ..\Source\Engine\GfxResource\*.cpp ..\Source\ThirdParty\imgui\imgui_impl_dx11.cpp ..\Source\ThirdParty\imgui\imgui_impl_win32.cpp %link_to_libs% /I ..\Source\ThirdParty /I ..\Source\ThirdParty\entt\single_include /I ..\Source\ThirdParty\fmt\include /I ..\Source\ThirdParty\imgui /link /out:luieditor.exe
+	cl %compiler_flags% ..\Source\T7LuaEditor.cpp ..\Source\Application\*.cpp ..\Source\Engine\*.cpp ..\Source\ThirdParty\imgui\imgui_impl_dx11.cpp ..\Source\ThirdParty\imgui\imgui_impl_win32.cpp %link_to_libs% /I ..\Source\ThirdParty /I ..\Source\ThirdParty\entt\single_include /I ..\Source\ThirdParty\fmt\include /I ..\Source\ThirdParty\imgui /link /out:luieditor.exe
 
 popd
