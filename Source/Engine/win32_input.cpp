@@ -1,10 +1,10 @@
-#include "Input.h"
+#include "win32_input.h"
 #include <windowsx.h>
 
-namespace Input
+namespace input
 {
 
-    void CacheMouseEvents(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+    void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
         auto x = float(GET_X_LPARAM(lparam)),
              y = float(GET_Y_LPARAM(lparam));
@@ -20,7 +20,7 @@ namespace Input
         ++cacheMouse;
     }
 
-    void CacheKeyboardEvents(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+    void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
         if(msg == WM_CHAR)
         {
@@ -84,7 +84,7 @@ namespace Input
         ++cacheKeyboard;
     }
 
-    void RegisterMouseMove(MouseMoveFn fn)
+    void register_mouse_move_callback(MouseMoveFn fn)
     {
         if (countMouseMove < MaxCallbacks)
         {
@@ -93,7 +93,7 @@ namespace Input
         }
     }
 
-    void RegisterMouseClick(MouseClickFn fn)
+    void register_mouse_click_callback(MouseClickFn fn)
     {
         if (countMouseClick < MaxCallbacks)
         {
@@ -102,7 +102,7 @@ namespace Input
         }
     }
 
-    void RegisterKeyboardFn(KeyboardFn fn)
+    void register_keyboard_callback(KeyboardFn fn)
     {
         if (countKeyboard < MaxCallbacks)
         {
@@ -111,7 +111,7 @@ namespace Input
         }
     }
 
-    void ProcessInput()
+    void process_input_for_frame()
     {
         if(true || cacheMouse > 0)
         {

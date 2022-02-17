@@ -1,45 +1,40 @@
-
 #include "Application.h"
 #include <Windows.h>
-
-namespace Application
+namespace app 
 {
-    void StartApplication(HINSTANCE hinst, const wchar_t *appname)
+    void start(HINSTANCE hinst, const wchar_t *appname)
     {
-        mainWindow = WindowUtil::Create(hinst, appname, L"luaeditor", AppWidth, AppHeight, WndMsgCallback);
-        WindowUtil::SetIcon(mainWindow.hwnd, AppIcon);
+        mainWindow = win32::create_window(hinst, appname, L"luaeditor", AppWidth, AppHeight, win32_message_callback);
+        win32::set_window_icon(mainWindow.hwnd, AppIcon);
         auto rect = mainWindow.clientRect;
-        rhi = std::make_unique<Renderer>(
-            mainWindow.hwnd,
-            float(rect.right - rect.left),
-            float(rect.bottom - rect.top));
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        ImGui_ImplDX11_Init(rhi->GetDevice(), rhi->GetContext());
-        ImGui_ImplWin32_Init(mainWindow.hwnd);
-        scene = std::make_unique<Scene2D>(rhi.get());
+        rhi = new Renderer(mainWindow.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
+        scene = new Scene();
         SetWindowPos(mainWindow.hwnd, nullptr, 0, 0,
                      (rect.right - rect.left + 1), // the + 1 is because the WM_SIZE message doesn't go through if the size is the same
                      (rect.bottom - rect.top),
                      SWP_NOMOVE);
     }
 
-    void Tick(float timestep)
+    void draw_scene(float ts)
     {
 
-        if (rhi)
+
+    }
+
+
+    void tick(float timestep)
+    {
+        if (rhi) // TODO: remove this
         {
-            rhi->ClearRTV();
-            ImGuiBeginFrame();
-            Input::ProcessInput();
-            scene->RenderScene(rhi.get(), timestep);
-            ImGuiEndFrame();
-            rhi->Present();
+            rhi->set_and_clear_backbuffer();
+            rhi->imgui_frame_begin();
+            input::process_input_for_frame();
+            rhi->imgui_frame_end();
+            rhi->present();
         }
     }
 
-    LRESULT CALLBACK WndMsgCallback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+    LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
         if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
             return true;
@@ -58,21 +53,23 @@ namespace Application
             case WM_LBUTTONDOWN:
             case WM_LBUTTONUP:
             {
-                Input::CacheMouseEvents(hwnd, msg, wparam, lparam); // pushes events
+                input::cache_mouse_input_for_frame(hwnd, msg, wparam, lparam); // pushes events
                 break;
             }
             case WM_KEYDOWN:
             case WM_KEYUP:
             {
-                Input::CacheKeyboardEvents(hwnd, msg, wparam, lparam);
+                input::cache_keyboard_input_for_frame(hwnd, msg, wparam, lparam);
                 break;
             }
             case WM_SIZE:
             {
                 if (rhi)
                 {
-                    rhi->Resize(lparam, wparam);
-                    scene->Resize(lparam, wparam); 
+                    auto newWidth = LOWORD(lparam);
+                    auto newHeight = HIWORD(lparam);
+                    auto wasMini = wparam == SIZE_MINIMIZED;
+                    rhi->resize_swapchain_backbuffer(newWidth, newHeight, wasMini);
                 }
                 break;
             }
@@ -82,9 +79,9 @@ namespace Application
         return DefWindowProc(hwnd, msg, wparam, lparam);
     }
 
-    void MessageLoop()
+    void message_loop()
     {
-        frameTimer.Start();
+        start_timer(&frameTimer);
         MSG msg;
         bool shouldClose = false;
         while (!shouldClose)
@@ -99,21 +96,8 @@ namespace Application
                     break;
                 }
             }
-            Tick(frameTimer.StopMS());
+            tick(get_timer_ms(&frameTimer));
         }
-    }
-
-    void ImGuiBeginFrame()
-    {
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-    }
-
-    void ImGuiEndFrame()
-    {
-        ImGui::Render();
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
     }
 
 };

@@ -1,14 +1,14 @@
 ﻿// T7LuaEditor.cpp : Defines the entry point for the application.
 //
 
-#include "T7LuaEditor.h"
+#include "main.h"
 #include "./Application/Application.h"
 #include <memory>
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     CoInitialize(nullptr);
-    Application::StartApplication(hInstance, L"Priscilla");
-    Application::MessageLoop();
+    app::start(hInstance, L"Priscilla");
+    app::message_loop();
     return 0;
 }

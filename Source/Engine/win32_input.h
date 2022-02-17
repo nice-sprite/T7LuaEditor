@@ -4,12 +4,8 @@
 #include <array>
 #include <functional>
 
-namespace Input
+namespace input
 {
-    // using MouseClickFn = bool (__stdcall*)(void* userData, Mouse::ButtonStates& buttons, float x, float y, int extra);
-    // using KeyboardFn = bool(__stdcall *)(void *userData, Keyboard::KeyboardState keyState);
-    // using MouseMoveFn = bool (__stdcall*)(void* userData, float x, float y, int extra);
-
     struct mouse_t
     {
         float x, y;
@@ -41,13 +37,13 @@ namespace Input
     static size_t countMouseClick = 0;
     static size_t countKeyboard = 0;
 
-    void RegisterMouseMove(MouseMoveFn fn);
-    void RegisterMouseClick(MouseClickFn fn);
-    void RegisterKeyboardFn(KeyboardFn fn);
-    void ProcessInput();
+    void register_mouse_move_callback(MouseMoveFn fn);
+    void register_mouse_click_callback(MouseClickFn fn);
+    void register_keyboard_callback(KeyboardFn fn);
+    void process_input_for_frame();
 
-    void CacheMouseEvents(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-    void CacheKeyboardEvents(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+    void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+    void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
     bool Ctrl(WPARAM wparam);
     bool Btn_Left(WPARAM);
