@@ -1,5 +1,6 @@
 #include "./renderer.h"
 #include "gpu_resources.h"
+#include "shader_util.h"
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
@@ -19,13 +20,11 @@ void Renderer::create_backbuffer_view()
     swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
     device->CreateRenderTargetView(pBackBuffer, nullptr, &rtv);
     pBackBuffer->Release();
-    initialize_d2d_interop();
 }
 
 void Renderer::reset_backbuffer_views()
 {
     rtv.Reset();
-    rtv2D.Reset();
 }
 
 void Renderer::resize_swapchain_backbuffer(int newWidth, int newHeight, bool minimized)
@@ -122,9 +121,9 @@ bool Renderer::initialize_d3d()
     rasterDesc.MultisampleEnable = false;
     rasterDesc.ScissorEnable = false;
     rasterDesc.SlopeScaledDepthBias = 0.0f;
-    res = device->CreateRasterizerState2(&rasterDesc, rasterizerState_.GetAddressOf());
+    res = device->CreateRasterizerState2(&rasterDesc, rasterizerState.GetAddressOf());
     assert(SUCCEEDED(res));
-    context->RSSetState(rasterizerState_.Get());
+    context->RSSetState(rasterizerState.Get());
 
     viewport.Height = (float)height;
     viewport.Width = (float)width;
@@ -148,58 +147,9 @@ bool Renderer::initialize_d3d()
     gridSampler.BorderColor[3] = 1.f;
     gridSampler.MinLOD = -FLT_MAX;
     gridSampler.MaxLOD = FLT_MAX;
-
     device->CreateSamplerState(&gridSampler, &gridSS);
 
     create_backbuffer_view();
-    return true;
-}
-
-bool Renderer::initialize_d2d_interop()
-{
-    HRESULT res;
-    D2D1_FACTORY_OPTIONS opts{};
-    ComPtr<ID2D1Factory7> factory2d;
-    ComPtr<ID3D11Texture2D> backBuffer;
-    ComPtr<IDXGIDevice4> dxgiDevice;
-    ComPtr<IDXGISurface> dxgiBackbuffer;
-
-    opts.debugLevel = D2D1_DEBUG_LEVEL_INFORMATION;
-    res = D2D1CreateFactory(D2D1_FACTORY_TYPE_SINGLE_THREADED, opts, factory2d.GetAddressOf());
-    assert(SUCCEEDED(res));
-    res = device.As(&dxgiDevice);
-    assert(SUCCEEDED(res));
-
-    res = factory2d->CreateDevice(dxgiDevice.Get(), &device2D);
-    assert(SUCCEEDED(res));
-
-    res = device2D->CreateDeviceContext(D2D1_DEVICE_CONTEXT_OPTIONS_NONE, &context2D);
-    assert(SUCCEEDED(res));
-    res = DWriteCreateFactory(DWRITE_FACTORY_TYPE_SHARED, __uuidof(IDWriteFactory7), &DWriteFactory);
-    assert(SUCCEEDED(res));
-
-    swapChain->GetBuffer(0, IID_PPV_ARGS(&backBuffer));
-    res = backBuffer.As(&dxgiBackbuffer);
-    assert(SUCCEEDED(res));
-    D2D1_RENDER_TARGET_PROPERTIES props = D2D1::RenderTargetProperties(
-        D2D1_RENDER_TARGET_TYPE_HARDWARE,
-        D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_IGNORE),
-        0,
-        0);
-
-    res = factory2d->CreateDxgiSurfaceRenderTarget(dxgiBackbuffer.Get(), props, &rtv2D);
-    assert(SUCCEEDED(res));
-
-    DWriteFactory->CreateTextFormat(
-        L"Iosevka",
-        nullptr,
-        DWRITE_FONT_WEIGHT_LIGHT,
-        DWRITE_FONT_STYLE_NORMAL,
-        DWRITE_FONT_STRETCH_NORMAL,
-        16,
-        L"",
-        &defaultDWTextFormat);
-    rtv2D->CreateSolidColorBrush(D2D1::ColorF(D2D1::ColorF::White), &solidWhiteBrush2D);
     return true;
 }
 
@@ -208,12 +158,10 @@ void Renderer::set_and_clear_backbuffer()
     context->RSSetViewports(1, &viewport);
     context->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
     context->ClearRenderTargetView(rtv.Get(), (float *)&clearColor);
-    rtv2D->BeginDraw();
 }
 
 void Renderer::present()
 {
-    rtv2D->EndDraw();
     swapChain->Present(1, 0);
 }
 
@@ -226,7 +174,6 @@ bool Renderer::initialize_imgui()
     ImGui_ImplWin32_Init(hwnd);
     return true;
 }
-
 
 void Renderer::imgui_frame_begin()
 {
@@ -241,3 +188,19 @@ void Renderer::imgui_frame_end()
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
+// void Renderer::create_render_pass_resources(char* passKey, PassDependencies deps, RenderPassResources* outPass)
+// {
+//     auto dev = device.Get();
+//     build_vertex_shader_and_input_layout(dev,
+//             deps.vertexShaderPath,
+//             deps.il,
+//             deps.ilSize,
+//             &outPass->vertexShader,
+//             &outPass->vertexInputLayout);
+
+//     build_pixel_shader(dev, deps.pixelShaderPath, &outPass->pixelShader);
+//     create_constant_buffer(dev, deps.constantBufferSize, &outPass->constantBuffer);
+//     create_dynamic_vertex_buffer(dev, &outPass->vertexBuffer, deps.vertexBufferSize);
+//     create_dynamic_index_buffer(dev, &outPass->indexBuffer, deps.indexBufferSize);
+//     alloc_texture_atlas(deps.atlasSlot, &outPass->textureAtlas);
+// }

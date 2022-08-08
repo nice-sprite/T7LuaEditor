@@ -11,46 +11,20 @@ using namespace std::string_literals;
 
 Scene::Scene() : sceneConstants{}
 {
-    auto mouse_cb = [this](float x, float y, WPARAM flags) -> bool
-    {
-        static int callcount = 0;
-        ImGui::Text("cursor (%f, %f)", x, y);
-        ImGui::Text("wparam: %d", flags);
-        ImGui::Text("Calls: %d", callcount);
-        auto ctrl = input::Ctrl(flags),
-             shift = input::Shift(flags),
-             btn_left = input::Btn_Left(flags),
-             btn_right = input::Btn_Right(flags),
-             btn_middle = input::Btn_Mid(flags),
-             xbtn1 = input::Btn_XBtn1(flags),
-             xbtn2 = input::Btn_XBtn2(flags);
+    passDef.vertexShaderPath = (wchar_t*)L"w:/priscilla/hlsl/TexturedQuad.hlsl";
+    passDef.pixelShaderPath  = (wchar_t*)L"w:/priscilla/hlsl/TexturedQuad.hlsl";
 
-        ImGui::Text("ctrl: %d\n", ctrl);
-        ImGui::Text("shift: %d\n", shift);
-        ImGui::Text("btn_left: %d\n", btn_left);
-        ImGui::Text("btn_right: %d\n", btn_right);
-        ImGui::Text("btn_mid: %d\n", btn_middle);
-        ImGui::Text("xbtn1: %d\n", xbtn1);
-        ImGui::Text("xbtn2: %d\n", xbtn2);
-        ++callcount;
-        return true;
-    };
+    passDef.il = new D3D11_INPUT_ELEMENT_DESC[3];
+    passDef.il[0] = {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}; // 3 * 4
+    passDef.il[1] = {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0};//+4 * 4
+    passDef.il[2] = {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0};   //+2 * 4
 
-    auto kbd_cb = [this](input::keyboard_t &keyState) -> bool
-    {
-        std::string pressedKeys = "";
-        for (auto c : keyState.key)
-        {
-            if (c != 0)
-                pressedKeys += c;
-        }
-        ImGui::Text("%s", pressedKeys.c_str());
-        return true;
-    };
-    input::register_mouse_move_callback(mouse_cb);
-    input::register_keyboard_callback(kbd_cb);
+    passDef.ilSize = 3;
+    passDef.constantBufferSize = sizeof(PerSceneConsts);
+    passDef.vertexBufferSize = 36 * MaxQuads; // 36 bytes per vertex, 
+    passDef.indexBufferSize = MaxIndices; // this is 6 * MaxQuads
+    passDef.atlasSlot = 0;
 }
-
 
 void Scene::add_quad(float left, 
         float right, 

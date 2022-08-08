@@ -24,6 +24,14 @@ void build_vertex_shader(
     ID3D11VertexShader** shaderOut,
     ID3D11InputLayout** inputLayout);
 
+void build_vertex_shader_and_input_layout(
+    ID3D11Device* device,
+    const wchar_t* path,
+    D3D11_INPUT_ELEMENT_DESC *il,
+    UINT numInputElements,
+    ID3D11VertexShader** shaderOut,
+    ID3D11InputLayout** inputLayout);
+
 void build_pixel_shader(
     ID3D11Device* device,
     const wchar_t* path, 

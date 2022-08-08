@@ -79,3 +79,22 @@ void build_pixel_shader(
     assert(SUCCEEDED(res));
 }
 
+void build_vertex_shader_and_input_layout(
+    ID3D11Device* device,
+    const wchar_t* path,
+    D3D11_INPUT_ELEMENT_DESC *il,
+    UINT numInputElements,
+    ID3D11VertexShader** shaderOut,
+    ID3D11InputLayout** inputLayout)
+{
+    ComPtr<ID3DBlob> bytecode;
+    bool compileSuccess = shader_compile_disk(path, "vs_main", "vs_5_0", &bytecode);
+    assert(compileSuccess == true);
+    device->CreateVertexShader(bytecode->GetBufferPointer(),
+                               bytecode->GetBufferSize(),
+                               nullptr,
+                               shaderOut);
+
+    device->CreateInputLayout(il, numInputElements, bytecode->GetBufferPointer(), bytecode->GetBufferSize(), inputLayout);
+
+}

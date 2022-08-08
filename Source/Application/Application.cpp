@@ -1,5 +1,6 @@
 #include "Application.h"
 #include <Windows.h>
+#include <imgui.h>
 namespace app 
 {
     void start(HINSTANCE hinst, const wchar_t *appname)
@@ -7,8 +8,13 @@ namespace app
         mainWindow = win32::create_window(hinst, appname, L"luaeditor", AppWidth, AppHeight, win32_message_callback);
         win32::set_window_icon(mainWindow.hwnd, AppIcon);
         auto rect = mainWindow.clientRect;
+
+        scene = new Scene();  
+
         rhi = new Renderer(mainWindow.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
-        scene = new Scene();
+
+        //rhi->create_render_pass_resources("scene", scene->passDef);
+
         SetWindowPos(mainWindow.hwnd, nullptr, 0, 0,
                      (rect.right - rect.left + 1), // the + 1 is because the WM_SIZE message doesn't go through if the size is the same
                      (rect.bottom - rect.top),
@@ -28,6 +34,8 @@ namespace app
         {
             rhi->set_and_clear_backbuffer();
             rhi->imgui_frame_begin();
+            static bool show = true;
+            ImGui::ShowDemoWindow(&show);
             input::process_input_for_frame();
             rhi->imgui_frame_end();
             rhi->present();
@@ -99,5 +107,8 @@ namespace app
             tick(get_timer_ms(&frameTimer));
         }
     }
+    // this is where the program exits: 
+    // TODO: call shutdown and free memory
+
 
 };

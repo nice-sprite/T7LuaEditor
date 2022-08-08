@@ -1,4 +1,3 @@
-
 #define STB_IMAGE_IMPLEMENTATION
 #include "Texture.h"
 bool load_texture(const char* filename, ID3D11Device* device, ID3D11ShaderResourceView** srv, int* width, int* height)
