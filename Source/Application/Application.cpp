@@ -1,6 +1,7 @@
 #include "Application.h"
 #include <Windows.h>
 #include <imgui.h>
+#include <Tracy.hpp> 
 namespace app 
 {
     void start(HINSTANCE hinst, const wchar_t *appname)
@@ -30,16 +31,22 @@ namespace app
 
     void tick(float timestep)
     {
-        if (rhi) // TODO: remove this
+        static const char* sl_FrameTick = "Tick";
+        FrameMarkStart(sl_FrameTick);
+
+        rhi->set_and_clear_backbuffer();
+        rhi->imgui_frame_begin();
+        static bool show = true;
         {
-            rhi->set_and_clear_backbuffer();
-            rhi->imgui_frame_begin();
-            static bool show = true;
+            ZoneScoped("ImGui::ShowDemoWindow()");
             ImGui::ShowDemoWindow(&show);
-            input::process_input_for_frame();
-            rhi->imgui_frame_end();
-            rhi->present();
+
         }
+        input::process_input_for_frame();
+        rhi->imgui_frame_end();
+        rhi->present();
+
+        FrameMarkEnd(sl_FrameTick);
     }
 
     LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)

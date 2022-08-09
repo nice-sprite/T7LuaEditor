@@ -4,6 +4,7 @@
 #include <imgui.h>
 #include <imgui_impl_win32.h>
 #include <imgui_impl_dx11.h>
+#include <Tracy.hpp>
 
 Renderer::Renderer(HWND _hwnd, float _width, float _height) : hwnd{_hwnd}, width{_width}, height{_height}
 {
@@ -155,6 +156,7 @@ bool Renderer::initialize_d3d()
 
 void Renderer::set_and_clear_backbuffer()
 {
+    ZoneScoped("clearbb");
     context->RSSetViewports(1, &viewport);
     context->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
     context->ClearRenderTargetView(rtv.Get(), (float *)&clearColor);
@@ -162,6 +164,7 @@ void Renderer::set_and_clear_backbuffer()
 
 void Renderer::present()
 {
+    ZoneScoped("present");
     swapChain->Present(1, 0);
 }
 
@@ -184,6 +187,7 @@ void Renderer::imgui_frame_begin()
 
 void Renderer::imgui_frame_end()
 {
+    ZoneScoped("imgui_end");
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }

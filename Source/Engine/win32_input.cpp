@@ -1,11 +1,12 @@
 #include "win32_input.h"
 #include <windowsx.h>
-
+#include <Tracy.hpp>
 namespace input
 {
 
     void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
+        ZoneScoped("cache_mouse_for_frame");
         auto x = float(GET_X_LPARAM(lparam)),
              y = float(GET_Y_LPARAM(lparam));
 
@@ -22,6 +23,7 @@ namespace input
 
     void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
+        ZoneScoped("cache_keyboard_for_frame");
         if(msg == WM_CHAR)
         {
             switch (wparam)
@@ -113,6 +115,7 @@ namespace input
 
     void process_input_for_frame()
     {
+        ZoneScoped("process_input");
         if(true || cacheMouse > 0)
         {
             auto cursor = mouse[0];

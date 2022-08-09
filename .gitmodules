@@ -4,3 +4,6 @@
 [submodule "Source/ThirdParty/entt"]
 	path = Source/ThirdParty/entt
 	url = https://github.com/skypjack/entt
+[submodule "Source/ThirdParty/tracy"]
+	path = Source/ThirdParty/tracy
+	url = https://github.com/wolfpld/tracy.git
