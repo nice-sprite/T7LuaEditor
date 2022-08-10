@@ -6,24 +6,34 @@
 #include <DirectXMath.h>
 #include "Texture.h"
 #include "shader_util.h"
+#include <random>
 using namespace DirectX;
 using namespace std::string_literals;
 
-Scene::Scene() : sceneConstants{}
-{
-    passDef.vertexShaderPath = (wchar_t*)L"w:/priscilla/hlsl/TexturedQuad.hlsl";
-    passDef.pixelShaderPath  = (wchar_t*)L"w:/priscilla/hlsl/TexturedQuad.hlsl";
+Scene::Scene() : sceneConstants{} {
+    add_quad( -720.f, 720.f, -360.f, 360.f,0);
+    input::register_keyboard_callback([this](input::keyboard_t &keys) -> bool {
+        static int last_state = 0;
+        std::random_device rd{};
+        std::mt19937 engine{rd()};
+        std::uniform_real_distribution<float> dist{-200.0f, 200.0f};
+        float rand_x = dist(engine);
+        float rand_y = dist(engine);
 
-    passDef.il = new D3D11_INPUT_ELEMENT_DESC[3];
-    passDef.il[0] = {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0}; // 3 * 4
-    passDef.il[1] = {"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 12, D3D11_INPUT_PER_VERTEX_DATA, 0};//+4 * 4
-    passDef.il[2] = {"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 28, D3D11_INPUT_PER_VERTEX_DATA, 0};   //+2 * 4
+        if(last_state == 0 && keys.key['B']) {
+            last_state = 1;
+            this->add_quad(-750 + rand_x, -600.0 + rand_x, -150.f + rand_y, 0.0f + rand_y, 0);
+        } 
+        if (last_state == 1 && !keys.key['B']) {
+            last_state = 0;
+        }
+        return true;
+    });
 
-    passDef.ilSize = 3;
-    passDef.constantBufferSize = sizeof(PerSceneConsts);
-    passDef.vertexBufferSize = 36 * MaxQuads; // 36 bytes per vertex, 
-    passDef.indexBufferSize = MaxIndices; // this is 6 * MaxQuads
-    passDef.atlasSlot = 0;
+    input::register_mouse_move_callback([this](float x, float y, WPARAM extra) -> bool {
+        ImGui::Text("mouse: (%f %f)", x, y);
+        return true;
+    });
 }
 
 void Scene::add_quad(float left, 
@@ -34,4 +44,11 @@ void Scene::add_quad(float left,
 {
     quads[quadCount] = UIQuad{left, right, top, bottom, texture};
     ++quadCount;
+}
+
+
+void Scene::draw_scene(float timestep) {
+    for(auto quad : quads) {
+
+    }
 }

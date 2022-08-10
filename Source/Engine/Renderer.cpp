@@ -6,11 +6,70 @@
 #include <imgui_impl_dx11.h>
 #include <Tracy.hpp>
 
-Renderer::Renderer(HWND _hwnd, float _width, float _height) : hwnd{_hwnd}, width{_width}, height{_height}
+Renderer::Renderer(HWND _hwnd, float _width, float _height) : 
+    hwnd{_hwnd}, 
+    width{_width}, 
+    height{_height}, 
+    camera(DirectX::XM_PIDIV2, 16.0f/9.0f, 10.0f, 2000.0f)
 {
     initialize_d3d();
     initialize_imgui();
     clearColor = {0.0f, 0.05490196078431372549019607843137f, 0.14117647058823529411764705882353f, 1.0f};
+
+    /*create scene resources*/
+    HRESULT buff_r = create_dynamic_vertex_buffer(device.Get(), 
+        scene_vertex_buffer.GetAddressOf(), 
+        sizeof(VertexPosColorTexcoord) * 10000
+    );
+
+    if(!SUCCEEDED(buff_r)) {
+        // debug
+        __debugbreak();
+    }
+
+    buff_r = create_dynamic_index_buffer(
+        device.Get(), 
+        scene_index_buffer.GetAddressOf(), 
+        10000 * 6
+    );
+
+    if(!SUCCEEDED(buff_r)) {
+        __debugbreak();
+    }
+
+    build_vertex_shader(
+        device.Get(), 
+        DEFAULT_SHADER, 
+        scene_vertex_shader.GetAddressOf(), 
+        vtx_pos_color_tex_il.GetAddressOf()
+    );
+
+    build_pixel_shader(
+        device.Get(), 
+        DEFAULT_SHADER,
+        scene_pixel_shader.GetAddressOf()
+    );
+
+    create_constant_buffer(
+        device.Get(),
+        sizeof(PerSceneConsts),
+        scene_constant_buffer.GetAddressOf()
+    );
+
+    scene_consts.modelViewProjection = DirectX::XMMatrixIdentity() * camera.get_transform();
+
+    update_constant_buffer(
+        context.Get(),
+        0,
+        (void*)&scene_consts,
+        sizeof(scene_consts),
+        scene_constant_buffer.Get()
+    );
+
+
+    bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
+
+
 }
 
 Renderer::~Renderer() = default;
@@ -191,20 +250,3 @@ void Renderer::imgui_frame_end()
     ImGui::Render();
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
-
-// void Renderer::create_render_pass_resources(char* passKey, PassDependencies deps, RenderPassResources* outPass)
-// {
-//     auto dev = device.Get();
-//     build_vertex_shader_and_input_layout(dev,
-//             deps.vertexShaderPath,
-//             deps.il,
-//             deps.ilSize,
-//             &outPass->vertexShader,
-//             &outPass->vertexInputLayout);
-
-//     build_pixel_shader(dev, deps.pixelShaderPath, &outPass->pixelShader);
-//     create_constant_buffer(dev, deps.constantBufferSize, &outPass->constantBuffer);
-//     create_dynamic_vertex_buffer(dev, &outPass->vertexBuffer, deps.vertexBufferSize);
-//     create_dynamic_index_buffer(dev, &outPass->indexBuffer, deps.indexBufferSize);
-//     alloc_texture_atlas(deps.atlasSlot, &outPass->textureAtlas);
-// }

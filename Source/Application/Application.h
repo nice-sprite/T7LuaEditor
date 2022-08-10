@@ -1,6 +1,7 @@
 #include "../Engine/renderer.h"
 #include "../Engine/scene.h"
 #include "../Engine/win32_lib.h"
+#include "../Engine/Camera.h"
 namespace app 
 {
     // APP CONFIG
@@ -20,4 +21,5 @@ namespace app
     static win32::Window mainWindow;
     static Renderer* rhi = nullptr;
     static Scene* scene = nullptr;
+   
 };

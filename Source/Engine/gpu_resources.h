@@ -26,7 +26,8 @@ HRESULT create_constant_buffer(ID3D11Device* device,
         ID3D11Buffer** ppBuffer);
 
 /* VERTEX BUFFER FUNCTIONS */ 
-HRESULT create_dynamic_vertex_buffer(ID3D11Device* device,
+HRESULT create_dynamic_vertex_buffer(
+        ID3D11Device* device,
         ID3D11Buffer** ppBuffer,
         int reserveSize); 
 

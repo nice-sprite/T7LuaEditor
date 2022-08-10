@@ -10,45 +10,49 @@ Camera::Camera(float fovRadians, float aspectRatio, float nearPlane, float farPl
     viewMat = DirectX::XMMatrixLookAtLH(
         DirectX::XMVECTOR{0.0, 0.0f, 800.f, 0.f},
         DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},
-        DirectX::XMVECTOR{0.f, -1.f, 0.f, 0.f});
+        DirectX::XMVECTOR{0.f, -1.f, 0.f, 0.f}
+    );
 
     projectionMat = DirectX::XMMatrixPerspectiveFovLH(
         fovRadians,
-        aspectRatio, zNear, zFar);
+        aspectRatio, 
+        zNear, 
+        zFar
+    );
 }
 
-void Camera::UpdateView(float timestep, DirectX::XMMATRIX view)
+void Camera::update_view(float timestep, DirectX::XMMATRIX view)
 {
     viewMat = view;
 }
 
-void Camera::UpdateProjection(float timestep, DirectX::XMMATRIX projection)
+void Camera::update_projection(float timestep, DirectX::XMMATRIX projection)
 {
     projectionMat = projection;
 }
 
-DirectX::XMMATRIX Camera::GetCameraTransform()
+DirectX::XMMATRIX Camera::get_transform()
 {
     return viewMat * projectionMat;
 }
 
-void Camera::SetAspectRatio(float aspectRatio)
+void Camera::set_aspect_ratio(float aspectRatio)
 {
     projectionMat = DirectX::XMMatrixPerspectiveFovLH(fov, aspectRatio, zNear, zFar);
 }
 
-void Camera::Translate(DirectX::XMFLOAT3 translation)
+void Camera::translate(DirectX::XMFLOAT3 translation)
 {
     viewMat *= DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&translation));
 }
 
 
-DirectX::XMMATRIX& Camera::GetProjection()
+DirectX::XMMATRIX& Camera::get_projection()
 {
     return projectionMat;
 }
 
-DirectX::XMMATRIX& Camera::GetView()
+DirectX::XMMATRIX& Camera::get_view()
 {
     return viewMat;
 }

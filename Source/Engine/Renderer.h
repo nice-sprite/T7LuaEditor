@@ -8,8 +8,24 @@
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 #include <DirectXMath.h>
+#include "Camera.h"
 
 using namespace Microsoft::WRL;
+struct VertexPosColorTexcoord
+{
+    DirectX::XMFLOAT3 pos;
+    DirectX::XMFLOAT4 color;
+    DirectX::XMFLOAT2 texcoord;
+};
+
+__declspec(align(16))
+struct PerSceneConsts
+{
+    DirectX::XMMATRIX modelViewProjection; // 64 bytes
+    DirectX::XMFLOAT4 timeTickDeltaFrame; // 16 bytes
+    DirectX::XMFLOAT2 viewportSize; // 8 bytes
+    DirectX::XMFLOAT2 windowSize; // 8 bytes
+};
 
 class Renderer
 {
@@ -26,13 +42,6 @@ public:
     void imgui_frame_begin();
     void imgui_frame_end();
 
-    /*
-     * given a description of all the resources a pass 
-     * depends on, will take care of initializing the resources and 
-     * returns a structure with references to the created GPU resources
-     */
-    //void create_render_pass_resources(char* passKey, PassDependencies dependencies, RenderPassResources* outPass);
-
 private:
     bool initialize_d3d();
     bool initialize_imgui();
@@ -40,13 +49,27 @@ private:
     void reset_backbuffer_views();
 
 public: 
+    static constexpr auto DEFAULT_SHADER = L"C:\\Users\\nice_sprite\\source\\repos\\Priscilla\\Source\\HLSL\\TexturedQuad.hlsl";
     float width, height;
     RenderGraph renderGraph;
 
-private:
-
     ComPtr<ID3D11Device5> device;
     ComPtr<ID3D11DeviceContext4> context;
+
+
+/*this will probably move but for now keep it here for simplicity*/
+    ComPtr<ID3D11Buffer> scene_vertex_buffer;
+    ComPtr<ID3D11Buffer> scene_index_buffer;
+    ComPtr<ID3D11InputLayout> vtx_pos_color_tex_il;
+    ComPtr<ID3D11VertexShader> scene_vertex_shader;
+    ComPtr<ID3D11PixelShader> scene_pixel_shader;
+
+    Camera camera;
+    PerSceneConsts       scene_consts;
+    ComPtr<ID3D11Buffer> scene_constant_buffer;
+
+private:
+
     ComPtr<IDXGISwapChain4> swapChain;
     // D3D
     D3D11_VIEWPORT viewport{};
@@ -56,6 +79,7 @@ private:
     ComPtr<IDXGIFactory7> dxgiFactory;
     ComPtr<ID3D11SamplerState> gridSS;
 
+    /**/
 
     DirectX::XMFLOAT4 clearColor;
     HWND hwnd;

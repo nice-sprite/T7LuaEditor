@@ -111,7 +111,12 @@ void append_dynamic_index_buffer(ID3D11DeviceContext* context, ID3D11Buffer* buf
     context->Unmap(buf, 0);
 }
 
-void update_dynamic_index_buffer(ID3D11DeviceContext *context, ID3D11Buffer *buf, int *indexData, size_t numIndices)
+void update_dynamic_index_buffer(
+    ID3D11DeviceContext *context,
+    ID3D11Buffer *buf,
+    int *indexData,
+    size_t numIndices
+    )
 {
 
     D3D11_MAPPED_SUBRESOURCE msr{};

@@ -9,14 +9,13 @@ class Camera
 {
 public:
     Camera(float fovRadians, float aspectRatio, float nearPlane, float farPlane);
-    void UpdateView(float timestep, DirectX::XMMATRIX view);
-    void UpdateProjection(float timestep, DirectX::XMMATRIX projection);
-    void Translate(DirectX::XMFLOAT3 translation);
-    DirectX::XMMATRIX GetCameraTransform();
-    void SetAspectRatio(float aspectRatio);
-    DirectX::XMMATRIX& GetProjection();
-    DirectX::XMMATRIX& GetView();
-
+    void update_view(float timestep, DirectX::XMMATRIX view);
+    void update_projection(float timestep, DirectX::XMMATRIX projection);
+    void translate(DirectX::XMFLOAT3 translation);
+    DirectX::XMMATRIX get_transform();
+    void set_aspect_ratio(float aspectRatio);
+    DirectX::XMMATRIX& get_projection();
+    DirectX::XMMATRIX& get_view();
 
 private:
     DirectX::XMMATRIX viewMat,

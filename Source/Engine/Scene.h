@@ -18,20 +18,15 @@ struct UIQuad
     int texture;
 };
 
-struct VertexPosColorTexcoord
-{
-    DirectX::XMFLOAT3 pos;
-    DirectX::XMFLOAT4 color;
-    DirectX::XMFLOAT2 texcoord;
-};
 
-class Scene
-{
+
+class Scene {
+
+public:
     static constexpr auto MaxQuads = 10000;
     static constexpr auto MaxIndices = 6 * MaxQuads; // there are 6 indices per quad
     static constexpr auto QuadShader = L"w:/Priscilla/Source/HLSL/TexturedQuad.hlsl";
 
-public:
     __declspec(align(16))
     struct PerSceneConsts
     {
@@ -47,12 +42,15 @@ public:
         float right, 
         float top, 
         float bottom, 
-        int texture = 0);
+        int texture = 0
+    );
+
+    void draw_scene(float timestep);
 
 public:
     size_t quadCount = 0;
     std::array<UIQuad, MaxQuads> quads; 
-    PassDependencies passDef;
+    
 private:
     PerSceneConsts sceneConstants;
     int width, height;
