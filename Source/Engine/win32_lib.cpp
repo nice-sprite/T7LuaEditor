@@ -7,15 +7,22 @@
 using namespace Microsoft::WRL;
 namespace win32 
 {
-    Window create_window(HINSTANCE hinst, const wchar_t *windowTitle,
-                  const wchar_t *classname,
-                  int width, int height, WNDPROC proc)
+    Window create_window(
+        HINSTANCE hinst,
+        const wchar_t *windowTitle,
+        const wchar_t *classname,
+        int width,
+        int height,
+        WNDPROC proc,
+        const wchar_t* window_icon_path
+    )
     {
         Window window;
         WNDCLASS wc = {};
         wc.lpfnWndProc = proc;
         wc.hInstance = hinst;
         wc.lpszClassName = classname;
+        wc.hIcon = (HICON)LoadImage(hinst, window_icon_path, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE); 
         RegisterClass(&wc);
         window.hwnd = CreateWindowEx( 0,
             classname,
@@ -35,10 +42,18 @@ namespace win32
     void set_window_icon(HWND hwnd, const wchar_t *iconPath)
     {
         HINSTANCE hinst = (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE);
+        auto icon = (LONG_PTR)LoadImage(hinst, iconPath, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE);
         SetClassLongPtr(
             hwnd, 
             GCLP_HICON, 
-            (LONG_PTR)LoadImage(hinst, iconPath, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE));
+            icon
+        );
+
+        SetClassLongPtr(
+            hwnd, 
+            GCLP_HICONSM, 
+            icon
+        );
     }
 
     DxgiAdapterList get_gpu_specs() {

@@ -72,7 +72,7 @@ namespace input
                 kbd[0].isExtended = true;                       // check if its an extended key
 
             auto charCode = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
-            kbd[0].key[charCode ] = charCode;
+            kbd[0].key[charCode] = charCode;
         }
         if(msg == WM_KEYUP)
         {

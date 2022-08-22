@@ -1,4 +1,5 @@
 @echo off
+cls
 setlocal EnableDelayedExpansion
 
 :: Using the following external dependencies

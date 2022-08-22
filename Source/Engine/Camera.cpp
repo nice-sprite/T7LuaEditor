@@ -8,9 +8,9 @@ Camera::Camera(float fovRadians, float aspectRatio, float nearPlane, float farPl
     zNear(nearPlane), zFar(farPlane), fov(fovRadians)
 {
     viewMat = DirectX::XMMatrixLookAtLH(
-        DirectX::XMVECTOR{0.0, 0.0f, 800.f, 0.f},
-        DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},
-        DirectX::XMVECTOR{0.f, -1.f, 0.f, 0.f}
+        DirectX::XMVECTOR{0.0, 0.0f, -800.f, 0.f}, // camera origin
+        DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f}, // focus point
+        DirectX::XMVECTOR{0.f, 1.f, 0.f, 0.f}    // up direction
     );
 
     projectionMat = DirectX::XMMatrixPerspectiveFovLH(

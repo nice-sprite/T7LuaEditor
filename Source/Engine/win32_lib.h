@@ -21,9 +21,15 @@ namespace win32
         RECT clientRect;
     };
 
-    Window create_window(HINSTANCE hinst, const wchar_t *windowTitle,
-                  const wchar_t *classname,
-                  int width, int height, WNDPROC proc);
+    Window create_window(
+        HINSTANCE hinst,
+        const wchar_t *windowTitle,
+        const wchar_t *classname,
+        int width,
+        int height,
+        WNDPROC proc,
+        const wchar_t* window_icon_path
+    );
 
     void set_window_icon(HWND hwnd, const wchar_t *iconPath);
 
