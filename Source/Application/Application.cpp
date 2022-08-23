@@ -37,17 +37,17 @@ namespace app
             VertexPosColorTexcoord quad_verts[] = {
                 {
                     DirectX::XMFLOAT3{q.left, q.top, 0.0f},
-                    DirectX::XMFLOAT4{1.0, 0.0, 0.0, 0.5},
+                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
                 {
                     DirectX::XMFLOAT3{q.right, q.top, 0.0f},
-                    DirectX::XMFLOAT4{0.0, 1.0, 0.0, 0.5},
+                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },
                 {
                     DirectX::XMFLOAT3{q.left, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{0.0, 0.0, 1.0, 0.5},
+                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 }, 
                 {

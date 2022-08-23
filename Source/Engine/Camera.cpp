@@ -3,6 +3,7 @@
 //
 
 #include "Camera.h"
+#include <imgui.h>
 
 Camera::Camera(float fovRadians, float aspectRatio, float nearPlane, float farPlane) :
     zNear(nearPlane), zFar(farPlane), fov(fovRadians)

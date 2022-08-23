@@ -64,8 +64,6 @@ private:
     void reset_backbuffer_views();
 
     void scene_pick(float x, float y);
-    void scene_pick_2(float x, float y);
-    void scene_pick_3(float x, float y);
 
 public: 
     static constexpr auto DEFAULT_SHADER = L"C:\\Users\\nice_sprite\\source\\repos\\Priscilla\\Source\\HLSL\\TexturedQuad.hlsl";
