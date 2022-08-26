@@ -17,8 +17,8 @@ namespace input
             x = pt.x;
             y = pt.y;
         }
-        mouse[0] = {x, y, wparam};
-        ++cacheMouse;
+       // mouse[0] = {x, y, wparam};
+       // ++cacheMouse;
     }
 
     void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
@@ -66,26 +66,59 @@ namespace input
             }
 
         }
+
         if(msg == WM_KEYDOWN)
         {
-            if(lparam & (1 << 24))
-                kbd[0].isExtended = true;                       // check if its an extended key
+            /* LPARAM
+            * !bits 0-15:   repeat count
+            * 16-23:        scan code (depends on OEM)
+            * !24:          indicates extended key (right ctrl/alt) 
+            * 25-28:        reserved
+            * 29:           context code, always 0 for WM_KEYDOWN
+            * 30:           previous key state. 1 if down before msg was sent, 0 if the key is up
+            * 31:           always 0 for wm_keydown
+            */
 
-            auto charCode = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
-            kbd[0].key[charCode] = charCode;
+            /* WPARAM
+             * the VK code of non-system key
+             */
+            unsigned int character_code = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
+            unsigned short repeat_count = (unsigned short)(lparam); // take lower 16 bits
+            bool is_extended_key = (lparam & (1 << 24)); // key is either right control or alt key
+            kbd_state.key[character_code].character_value = character_code;
+
+            // TODO test if this is correct way to handle windows default 
+            // key-held behavior (should have a delay before repeating)
+            kbd_state.key[character_code].held = repeat_count > 1; 
+            kbd_state.key[character_code].down = true;
+        //    return 0;
         }
+
         if(msg == WM_KEYUP)
         {
-            if(lparam & (1 << 24))
-                kbd[0].isExtended = true;                       // check if its an extended key
+            /* LPARAM
+            * !bits 0-15:   repeat count (always 1 for WM_KEYUP)
+            * 16-23:        scan code (depends on OEM)
+            * !24:          indicates extended key (right ctrl/alt) 
+            * 25-28:        reserved
+            * 29:           context code, always 0 for WM_KEYUP
+            * 30:           previous key state. Always 1 for WM_KEYUP
+            * 31:           always 1 for wm_keyup
+            */
+            unsigned int character_code = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
+            unsigned short repeat_count = (unsigned short)(lparam); // take lower 16 bits
+            bool is_extended_key = (lparam & (1 << 24)); // key is either right control or alt key
 
-            auto charCode = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
-            kbd[0].key[charCode ] = 0;
-
+            // TODO test if this is correct way to handle windows default 
+            // key-held behavior (should have a delay before repeating)
+            kbd_state.key[character_code].held = false;
+            kbd_state.key[character_code].down = false;
+            kbd_state.key[character_code].character_value = character_code;
+          //  return 0;
         }
-        ++cacheKeyboard;
     }
 
+    /*
     void register_mouse_move_callback(MouseMoveFn fn)
     {
         if (countMouseMove < MaxCallbacks)
@@ -113,10 +146,12 @@ namespace input
         }
     }
 
+    */
+
     void process_input_for_frame()
     {
         ZoneScoped("process_input");
-        if(true || cacheMouse > 0)
+        /*if(true || cacheMouse > 0)
         {
             auto cursor = mouse[0];
             for (auto i = 0u; i < countMouseMove; ++i)
@@ -136,6 +171,7 @@ namespace input
                 keyboardListeners[i](keys);
             cacheKeyboard = 0;
         }
+        */
     }
 
     bool Ctrl(WPARAM wparam)
@@ -174,3 +210,5 @@ namespace input
     }
 
 }
+
+

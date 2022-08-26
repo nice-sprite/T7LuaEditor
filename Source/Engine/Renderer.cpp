@@ -6,6 +6,7 @@
 #include <imgui_impl_dx11.h>
 #include <Tracy.hpp>
 #include "win32_input.h"
+#include "files.h"
 
 /*
  * Helper functions for debugging
@@ -57,16 +58,18 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         __debugbreak();
     }
 
+
+    auto default_shader_path = files::get_shader_root() / "TexturedQuad.hlsl";
     build_vertex_shader(
         device.Get(), 
-        DEFAULT_SHADER, 
+        default_shader_path.wstring().c_str(), 
         scene_vertex_shader.GetAddressOf(), 
         vtx_pos_color_tex_il.GetAddressOf()
     );
 
     build_pixel_shader(
         device.Get(), 
-        DEFAULT_SHADER,
+        default_shader_path.wstring().c_str(), 
         scene_pixel_shader.GetAddressOf()
     );
 

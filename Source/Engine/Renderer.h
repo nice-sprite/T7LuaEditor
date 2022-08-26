@@ -66,7 +66,6 @@ private:
     void scene_pick(float x, float y);
 
 public: 
-    static constexpr auto DEFAULT_SHADER = L"C:\\Users\\nice_sprite\\source\\repos\\Priscilla\\Source\\HLSL\\TexturedQuad.hlsl";
     float width, height;
     RenderGraph renderGraph;
 
