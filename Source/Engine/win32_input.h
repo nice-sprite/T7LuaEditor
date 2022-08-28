@@ -32,17 +32,23 @@
 
 namespace input
 {
-
     // contains position
     struct MouseState
     {
         float x, y;
-        bool left_button_down,
-             right_button_down,
-             left_dbl_click,
-             middle_down;
+        bool ctrl_down;
+        bool left_down;
+        bool right_down;
+        bool middle_down;
+        bool shift_down;
+        bool x1_down;
+        bool x2_down;
+        bool left_double_click;
+        bool right_double_click;
+        bool middle_double_click;
+        bool x1_double_click;
+        bool x2_double_click;
         int scroll_delta;
-        WPARAM stateFlags;
     };
 
 
@@ -58,9 +64,13 @@ namespace input
 
     struct KeyboardState
     {
-        KeyState key[256];
+        KeyState keys[256];
+        // modifier keys
         bool shift_down,
              tab_down,
+             backspace_down,
+             enter_down,
+             space_down,
              ctrl_down,
              caps_down;
 
@@ -73,12 +83,18 @@ namespace input
     static MouseState mouse_state;
     static KeyboardState kbd_state; 
 
+    using InputCallback = std::function<bool(MouseState const& , KeyboardState const& )>;
+    
+    constexpr size_t MaxCallbacks = 512; 
+    static std::array<InputCallback, MaxCallbacks> callbacks;
+    static size_t num_callbacks = 0;
+    bool register_callback(InputCallback fn);
+
     // extra holds the modifer keys like shift, ctrl, etc, what mouse buttons were down
     //    using MouseMoveFn = std::function<bool(float x, float y, WPARAM extra)>;
     //    using MouseClickFn = std::function<bool(mouse_t &mouse, float x, float y, WPARAM extra)>;
     //    using KeyboardFn = std::function<bool(keyboard_t &keyState)>;
 
-    static constexpr auto MaxCallbacks = 64u;
     /*static std::array<MouseMoveFn, MaxCallbacks> mouseMoveListeners{};
     static std::array<MouseClickFn, MaxCallbacks> mouseClickListeners{};
     static std::array<KeyboardFn, MaxCallbacks> keyboardListeners{};

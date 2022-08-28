@@ -35,7 +35,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
 {
     initialize_d3d();
     initialize_imgui();
-    clearColor = { 0.f, 0.f, 0.f, 1.0f}; // pitch black
+    clearColor = { 0.01f, 0.01f, 0.1f, 1.0f}; // pitch black
 
     /*create scene resources*/
     HRESULT buff_r = create_dynamic_vertex_buffer(device.Get(), 
@@ -92,18 +92,6 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
 
     bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
 
-    // register mouse move handler for debug mouse picking
-    input::register_mouse_move_callback([this](float x, float y, WPARAM extra) -> bool  {
-        static bool last_state = false;
-        scene_pick(x, y);
-        /*if (!last_state && input::Btn_Left(extra)) {
-            last_state = true;
-        } else if(last_state && !input::Btn_Left(extra)) {
-            last_state = false;
-        }
-        */
-        return true;
-    });
 
     /*build debug line resources*/
     create_dynamic_vertex_buffer(
@@ -112,6 +100,10 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         sizeof(DebugLine) * MAX_DEBUG_LINES
     );
 
+    input::register_callback([this](input::MouseState const& mouse, input::KeyboardState const& kbd ) -> bool {
+        scene_pick(mouse.x, mouse.y);
+        return true;
+    });
 }
 
 Renderer::~Renderer() = default;
@@ -361,7 +353,7 @@ void Renderer::scene_pick(float x, float y) {
     XMVECTOR intersects = XMPlaneIntersectLine(plane, line_end, line_begin);
     if(GetAsyncKeyState(VK_F1) & 1) {
         // do intersection test
-        if(XMVectorGetIntX(XMVectorIsNaN(intersects)) == true) {
+        if(XMVectorGetIntX(XMVectorIsNaN(intersects))) {
             add_debug_line_from_vector(line_end, line_begin,  XMFLOAT4(1.0, 0.0, 0.0, 1.0));
             //set_debug_line_from_vector(0, line_begin, line_end, XMFLOAT4(1.0, 0.0, 0.0, 1.0));
         } else {

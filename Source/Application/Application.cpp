@@ -18,12 +18,57 @@ namespace app
                      (rect.bottom - rect.top),
                      SWP_NOMOVE);
 
-        /*input::register_mouse_click_callback([&](input::mouse_t& mouse, float x, float y, WPARAM extra) ->bool  {
-            if(input::Btn_Left(mouse.stateFlags)){
-                rhi->add_debug_line(XMFLOAT3(100.0, 50.0, 0.0), XMFLOAT3(0.0, 0.0, 800.0), XMFLOAT4(1.0, 1.0, 1.0, 1.0) );
+        /* INPUT DEBUGGING and TESTING */
+        input::register_callback([](input::MouseState const& mouse, input::KeyboardState const& kbd) -> bool {
+                
+            if(ImGui::Begin("Keyboard Debug")) {
+                ImGui::Text("keyboard state debug");
+                ImGui::Text("shift_down, %d", kbd.shift_down);
+                ImGui::Text("tab_down, %d", kbd.tab_down);
+                ImGui::Text("backspace_down, %d", kbd.backspace_down);
+                ImGui::Text("enter_down, %d", kbd.enter_down);
+                ImGui::Text("space_down, %d", kbd.space_down);
+                ImGui::Text("ctrl_down, %d", kbd.ctrl_down);
+                ImGui::Text("caps_down, %d", kbd.caps_down);
+                size_t index = 0;
+                for(input::KeyState const& key : kbd.keys) {
+                    char value = key.character_value ? key.character_value : (char)index;
+                    ImGui::Text("%c | h: %d | d: %d", value, (int)key.held, (int)key.down);
+                    index++;
+                }
             }
+            ImGui::End();
+
+            if(ImGui::Begin("Mouse Debug")) {
+                ImGui::Text("%f %f", mouse.x, mouse.y);
+                ImGui::Separator();
+                ImGui::Text("scroll: %d", mouse.scroll_delta);
+                ImGui::Separator();
+
+                ImGui::Text("left_button: %d", mouse.left_down);
+                ImGui::Text("left_double: %d", mouse.left_double_click);
+                ImGui::Separator();
+
+                ImGui::Text("right_button: %d", mouse.right_down);
+                ImGui::Text("right_double: %d", mouse.right_double_click);
+                ImGui::Separator();
+
+                ImGui::Text("middle_button: %d", mouse.middle_down);
+                ImGui::Text("middle_double: %d", mouse.middle_double_click);
+                ImGui::Separator();
+
+                ImGui::Text("extra buttons");
+                ImGui::Text("x1_down: %d", mouse.x1_down);
+                ImGui::Text("x1_double: %d", mouse.x1_double_click);
+
+                ImGui::Text("\nx2_down: %d", mouse.x2_down);
+                ImGui::Text("x2_double: %d", mouse.x2_double_click);
+            }
+            ImGui::End();
             return true;
-        });*/
+        });
+
+
     }
 
     void draw_scene(float ts) {
@@ -62,14 +107,6 @@ namespace app
             upload_quads[i * 4 + 2] = quad_verts[2];
             upload_quads[i * 4 + 3] = quad_verts[3];
 
-            /* 
-           upload_indices[i * 6 + 0] = i * 4 + 0;
-           upload_indices[i * 6 + 1] = i * 4 + 1;
-           upload_indices[i * 6 + 2] = i * 4 + 2;
-           upload_indices[i * 6 + 3] = i * 4 + 1;
-           upload_indices[i * 6 + 4] = i * 4 + 3;
-           upload_indices[i * 6 + 5] = i * 4 + 2;
-           */ 
 
             upload_indices[i * 6 + 0] = i * 4 + 2;
             upload_indices[i * 6 + 1] = i * 4 + 3;
@@ -105,12 +142,19 @@ namespace app
             rhi->scene_index_buffer.Get()
         );
 
+        rhi->scene_consts.modelViewProjection = DirectX::XMMatrixIdentity() * rhi->camera.get_transform();
+        update_constant_buffer(
+            rhi->context.Get(),
+            0,
+            (void*)&rhi->scene_consts,
+            sizeof(rhi->scene_consts),
+            rhi->scene_constant_buffer.Get()
+        );
+
         bind_constant_buffer(rhi->context.Get(), 0, rhi->scene_constant_buffer.Get());
         rhi->context->IASetInputLayout(rhi->vtx_pos_color_tex_il.Get());
         rhi->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
         rhi->context->VSSetShader(rhi->scene_vertex_shader.Get(), NULL, NULL);
-
         rhi->context->PSSetShader(rhi->scene_pixel_shader.Get(), NULL, NULL);
         rhi->context->DrawIndexed(upload_indices.size(), 0, 0);
         ImGui::Text("num_quads: %d", scene->quadCount);
@@ -124,11 +168,11 @@ namespace app
 
         rhi->set_and_clear_backbuffer();
         rhi->imgui_frame_begin();
+
         input::process_input_for_frame();
 
-        static bool show = true;
+        static bool show = false;
         ImGui::ShowDemoWindow(&show);
-        
 
         draw_scene(timestep);
         rhi->draw_debug_lines();
@@ -152,13 +196,24 @@ namespace app
             }
             case WM_MOUSEWHEEL:
             case WM_MOUSEMOVE:
-            case WM_RBUTTONDBLCLK:
+
             case WM_RBUTTONDOWN:
             case WM_RBUTTONUP:
+            case WM_RBUTTONDBLCLK:
+
             case WM_LBUTTONDOWN:
             case WM_LBUTTONUP:
+            case WM_LBUTTONDBLCLK:
+
+            case WM_MBUTTONDOWN:
+            case WM_MBUTTONUP:
+            case WM_MBUTTONDBLCLK:
+
+            case WM_XBUTTONUP:
+            case WM_XBUTTONDOWN:
+            case WM_XBUTTONDBLCLK:
             {
-                input::cache_mouse_input_for_frame(hwnd, msg, wparam, lparam); // pushes events
+                input::cache_mouse_input_for_frame(hwnd, msg, wparam, lparam); 
                 break;
             }
             case WM_KEYDOWN:
