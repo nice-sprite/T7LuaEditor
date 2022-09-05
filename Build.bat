@@ -5,14 +5,13 @@ setlocal EnableDelayedExpansion
 :: Using the following external dependencies
 ::	https://github.com/fmtlib/fmt
 ::	https://github.com/ocornut/imgui/tree/docking
-::	https://github.com/skypjack/entt
 ::	https://github.com/nlohmann/json
 
 :: Documentation links
 ::	https://json.nlohmann.me/api/basic_json/
 ::	https://fmt.dev/latest/api.html
-::	https://github.com/skypjack/entt/wiki
-::	https://github.com/ocornut/imgui/wiki -- the imgui docs are kind of bad so you might just be better off looking in the actual code or googling your question
+::	https://github.com/ocornut/imgui/wiki -- the imgui docs are kind of bad so you might just be better off looking in 
+::                                           the imgui.h or googling your question
 
 :: /EHsc	enables stdcpp exception handling behavior
 :: /TP		treat all files as c++ regardless of file extension
@@ -22,7 +21,7 @@ setlocal EnableDelayedExpansion
 :: /c		compile without linking ( for building libs )
 :: /utf-8	use the UTF8 execution charset 
 SET "compiler_flags=/std:c++17 /W2 /GR- /Zi /EHsc /utf-8 /D UNICODE /D _UNICODE /nologo /D NOMINMAX /D TRACY_ENABLE"
-SET "link_to_libs=user32.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib"
+SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib"
 
 mkdir Build
 pushd Build
@@ -32,7 +31,13 @@ pushd Build
 	lib TracyClient.obj
 
 :: build Dear ImGui
-::	cl %compiler_flags% /c ..\Source\ThirdParty\imgui\imgui.cpp ..\Source\ThirdParty\imgui\imgui_draw.cpp ..\Source\ThirdParty\imgui\imgui_widgets.cpp ..\Source\ThirdParty\imgui\imgui_tables.cpp ..\Source\ThirdParty\imgui\imgui_demo.cpp /I ..\Source\ThirdParty\imgui
+::	cl %compiler_flags% /c 
+::    ..\Source\ThirdParty\imgui\imgui.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_draw.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_widgets.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_tables.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_demo.cpp ^
+::    /I ..\Source\ThirdParty\imgui
 ::	lib imgui.obj imgui_draw.obj imgui_widgets.obj imgui_tables.obj	imgui_demo.obj
 
 :: build {fmt}
@@ -46,6 +51,9 @@ pushd Build
     ..\Source\ThirdParty\imgui\imgui_impl_dx11.cpp ^
     ..\Source\ThirdParty\imgui\imgui_impl_win32.cpp ^
     %link_to_libs% ^
-    /I ..\Source\ThirdParty /I ..\Source\ThirdParty\entt\single_include /I ..\Source\ThirdParty\fmt\include /I ..\Source\ThirdParty\imgui /I ..\Source\ThirdParty\tracy /link /out:luieditor.exe
+    /I ..\Source\ThirdParty  ^
+    /I ..\Source\ThirdParty\fmt\include  ^
+    /I ..\Source\ThirdParty\imgui  ^
+    /I ..\Source\ThirdParty\tracy /link /out:luieditor.exe
 
 popd
