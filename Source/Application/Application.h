@@ -8,7 +8,7 @@ namespace app
     static constexpr auto AppIcon = L"w:/T7LuaEditor/T7LuaEditor/appicon.ico";
     static constexpr auto AppWidth = 1920;
     static constexpr auto AppHeight = 1080;
-    static constexpr auto AppTitle = "Priscilla";
+    static constexpr auto AppTitle = "equinox - by nice_sprite";
 
     void start(HINSTANCE hinst, const wchar_t* appname);
     void clean_and_exit();

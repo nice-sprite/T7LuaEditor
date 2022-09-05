@@ -1,6 +1,7 @@
 #include "win32_input.h"
 #include <windowsx.h>
 #include <Tracy.hpp>
+
 namespace input
 {
 
@@ -37,6 +38,7 @@ namespace input
                 
             case WM_RBUTTONUP:
                 mouse_state.right_down = false;
+                mouse_state.right_double_click = false;
                 mouse_state.x = x;
                 mouse_state.y = y;
                 break;
@@ -56,6 +58,7 @@ namespace input
                 
             case WM_LBUTTONUP:
                 mouse_state.left_down = false;
+                mouse_state.left_double_click = false;
                 mouse_state.x = x;
                 mouse_state.y = y;
                 break;
@@ -75,6 +78,7 @@ namespace input
 
             case WM_MBUTTONUP:
                 mouse_state.middle_down = false;
+                mouse_state.middle_double_click = false;
                 mouse_state.x = x;
                 mouse_state.y = y;
                 break;
@@ -95,10 +99,12 @@ namespace input
             case WM_XBUTTONUP:
                 if(GET_XBUTTON_WPARAM(wparam) == XBUTTON1) {
                     mouse_state.x1_down = false;
+                    mouse_state.x1_double_click = false;
                 }
 
                 if(GET_XBUTTON_WPARAM(wparam) == XBUTTON2) {
                     mouse_state.x2_down = false;
+                    mouse_state.x2_double_click = false;
                 }
                 mouse_state.x = x;
                 mouse_state.y = y;
@@ -279,36 +285,6 @@ namespace input
         }
     }
 
-    /*
-    void register_mouse_move_callback(MouseMoveFn fn)
-    {
-        if (countMouseMove < MaxCallbacks)
-        {
-            mouseMoveListeners.at(countMouseMove) = fn;
-            ++countMouseMove;
-        }
-    }
-
-    void register_mouse_click_callback(MouseClickFn fn)
-    {
-        if (countMouseClick < MaxCallbacks)
-        {
-            mouseClickListeners.at(countMouseClick) = fn;
-            ++countMouseClicks;
-        }
-    }
-
-    void register_keyboard_callback(KeyboardFn fn)
-    {
-        if (countKeyboard < MaxCallbacks)
-        {
-            keyboardListeners.at(countKeyboard) = fn;
-            ++countKeyboard;
-        }
-    }
-
-    */
-
     void process_input_for_frame()
     {
         ZoneScoped("process_input");
@@ -316,64 +292,7 @@ namespace input
             callbacks[i](mouse_state, kbd_state);
         }
         mouse_state.scroll_delta = 0;
-        /*if(true || cacheMouse > 0)
-        {
-            auto cursor = mouse[0];
-            for (auto i = 0u; i < countMouseMove; ++i)
-                mouseMoveListeners[i](cursor.x, cursor.y, cursor.stateFlags);
-
-            for (auto i = 0u; i < countMouseClick; ++i)
-                mouseClickListeners[i](cursor, 0.f, 1.f, cursor.stateFlags);
-
-
-            cacheMouse = 0;
-        }
-
-        if(true || cacheKeyboard > 0)
-        {
-            auto keys = kbd[0];
-            for (auto i = 0u; i < countKeyboard; ++i)
-                keyboardListeners[i](keys);
-            cacheKeyboard = 0;
-        }
-        */
     }
-
-    bool Ctrl(WPARAM wparam)
-    {
-        return (wparam & MK_CONTROL) != 0;
-    }
-
-    bool Btn_Left(WPARAM wparam)
-    {
-        return (wparam & MK_LBUTTON) != 0;
-    }
-
-    bool Btn_Right(WPARAM wparam)
-    {
-        return (wparam & MK_RBUTTON) != 0;
-    }
-
-    bool Btn_Mid(WPARAM wparam)
-    {
-        return wparam & MK_MBUTTON;
-    }
-
-    bool Shift(WPARAM wparam)
-    {
-        return wparam & MK_SHIFT;
-    }
-
-    bool Btn_XBtn1(WPARAM wparam)
-    {
-        return wparam & MK_XBUTTON1;
-    }
-
-    bool Btn_XBtn2(WPARAM wparam)
-    {
-        return wparam & MK_XBUTTON2;
-    }
-
 }
 
 

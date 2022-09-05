@@ -5,8 +5,10 @@
 #include "./Application/Application.h"
 #include <memory>
 
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
+
     CoInitialize(nullptr);
     app::start(hInstance, L"Priscilla");
     app::message_loop();

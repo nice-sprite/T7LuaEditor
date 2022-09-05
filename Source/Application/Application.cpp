@@ -12,6 +12,8 @@ namespace app
         scene = new Scene();  
 
         rhi = new Renderer(mainWindow.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
+        // DEBUG SELECTION RECT
+        rhi->add_selection_rect(-50.f, 50.f, -50.f, 50.f);
 
         SetWindowPos(mainWindow.hwnd, nullptr, 0, 0,
                      (rect.right - rect.left + 1), // the + 1 is because the WM_SIZE message doesn't go through if the size is the same
@@ -20,7 +22,6 @@ namespace app
 
         /* INPUT DEBUGGING and TESTING */
         input::register_callback([](input::MouseState const& mouse, input::KeyboardState const& kbd) -> bool {
-                
             if(ImGui::Begin("Keyboard Debug")) {
                 ImGui::Text("keyboard state debug");
                 ImGui::Text("shift_down, %d", kbd.shift_down);
@@ -65,6 +66,21 @@ namespace app
                 ImGui::Text("x2_double: %d", mouse.x2_double_click);
             }
             ImGui::End();
+
+            static float cursor_down_pos_x = 0.f; 
+            static float cursor_down_pos_y = 0.f; 
+            static bool held = false;
+            if(mouse.left_down && !held) {
+                cursor_down_pos_x = mouse.x; 
+                cursor_down_pos_y = mouse.y; 
+                held = true;
+            }else if(mouse.left_down && held) {
+                rhi->imgui_draw_screen_rect(cursor_down_pos_x, mouse.x, cursor_down_pos_y, mouse.y);
+            } else {
+                held = false;
+            }
+
+            //rhi->imgui_draw_screen_rect(-50.f, 50.f, -50.f, 50.f);
             return true;
         });
 
@@ -76,28 +92,30 @@ namespace app
         std::vector<VertexPosColorTexcoord> upload_quads{scene->quadCount * 4};
         std::vector<int> upload_indices{};
         upload_indices.resize(scene->quadCount * 6);
+
+        // tesselate the quads
         for(int i = 0; i < scene->quadCount; ++i) {
             auto q = scene->quads[i];
 
             VertexPosColorTexcoord quad_verts[] = {
                 {
                     DirectX::XMFLOAT3{q.left, q.top, 0.0f},
-                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
+                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
                 {
                     DirectX::XMFLOAT3{q.right, q.top, 0.0f},
-                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
+                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },
                 {
                     DirectX::XMFLOAT3{q.left, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
+                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 }, 
                 {
                     DirectX::XMFLOAT3{q.right, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{1.0, 1.0, 1.0, 1.0},
+                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
             };
@@ -169,12 +187,15 @@ namespace app
         rhi->set_and_clear_backbuffer();
         rhi->imgui_frame_begin();
 
-        input::process_input_for_frame();
+        if(!(ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)) {
+            input::process_input_for_frame();
+        }
 
         static bool show = false;
         ImGui::ShowDemoWindow(&show);
 
         draw_scene(timestep);
+        rhi->draw_selection_rect();
         rhi->draw_debug_lines();
 
         rhi->imgui_frame_end();

@@ -7,6 +7,7 @@
 #include <Tracy.hpp>
 #include "win32_input.h"
 #include "files.h"
+#include "ray_cast.h"
 
 /*
  * Helper functions for debugging
@@ -35,7 +36,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
 {
     initialize_d3d();
     initialize_imgui();
-    clearColor = { 0.01f, 0.01f, 0.1f, 1.0f}; // pitch black
+    clearColor = { 1.f, 1.f, 1.f, 1.0f}; 
 
     /*create scene resources*/
     HRESULT buff_r = create_dynamic_vertex_buffer(device.Get(), 
@@ -43,7 +44,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         sizeof(VertexPosColorTexcoord) * 10000
     );
 
-    if(!SUCCEEDED(buff_r)) {
+    if(FAILED(buff_r)) {
         // debug
         __debugbreak();
     }
@@ -54,7 +55,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         10000 * 6
     );
 
-    if(!SUCCEEDED(buff_r)) {
+    if(FAILED(buff_r)) { 
         __debugbreak();
     }
 
@@ -89,7 +90,6 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         scene_constant_buffer.Get()
     );
 
-
     bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
 
 
@@ -100,14 +100,55 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         sizeof(DebugLine) * MAX_DEBUG_LINES
     );
 
+
+    /*
+     * build selection drawing resources
+     * 1 quad = 4 vertices
+     * 1 quad = 6 indices
+     * 4 quads for Border + 1 quad for internal 
+     * num_verts = MaxSelections * (4 + 1)      * 4
+     *                              ^num quads  ^num verts per quad
+     * num_indices = MaxSelections * ( 4 + 1 ) * 6 
+     * this can be optimzied because there are shared vertices on the 
+     * edges of the rectangle
+     * 
+     * */
+
+    buff_r = create_dynamic_vertex_buffer(device.Get(), 
+        selection_vertex_buffer.GetAddressOf(), 
+        SelectionsVertexSize
+    );
+
+   
+
+    if(FAILED(buff_r)) {
+        // debug
+        __debugbreak();
+    }
+
+    buff_r = create_dynamic_index_buffer(
+        device.Get(), 
+        selection_index_buffer.GetAddressOf(), 
+        SelectionsIndexSize
+    );
+
+    if(FAILED(buff_r)) {
+        __debugbreak();
+    }
+
     input::register_callback([this](input::MouseState const& mouse, input::KeyboardState const& kbd ) -> bool {
         scene_pick(mouse.x, mouse.y);
         return true;
     });
+
+    /* DO DEBUG NAMES */
+    static const char selection_vbuf_name[] = "Selection Vertices";
+    static const char selection_index_name[] = "Selection Indices";
+    buff_r = selection_vertex_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(selection_vbuf_name) - 1, selection_vbuf_name);
+    buff_r = selection_index_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(selection_index_name) - 1, selection_index_name);
 }
 
 Renderer::~Renderer() = default;
-
 void Renderer::create_backbuffer_view()
 {
     ID3D11Texture2D *pBackBuffer;
@@ -154,7 +195,6 @@ bool Renderer::initialize_d3d()
     {
         baseCtx.As(&context); // upgrade context to revision 4
     }
-
     {
         ComPtr<IDXGIDevice4> dxgiDevice;
         ComPtr<IDXGIFactory> dxgiBaseFact;
@@ -210,11 +250,11 @@ bool Renderer::initialize_d3d()
     rasterDesc.CullMode = D3D11_CULL_BACK;
     rasterDesc.DepthBias = 0;
     rasterDesc.DepthBiasClamp = 0.0f;
-    rasterDesc.DepthClipEnable = false;
+    rasterDesc.DepthClipEnable = true; // TODO setup state for debug lines that has this as false?
     rasterDesc.FillMode = D3D11_FILL_SOLID;
     rasterDesc.FrontCounterClockwise = false;
     rasterDesc.MultisampleEnable = false;
-    rasterDesc.ScissorEnable = false;
+    rasterDesc.ScissorEnable = false; // TODO true?
     rasterDesc.SlopeScaledDepthBias = 0.0f;
     res = device->CreateRasterizerState2(&rasterDesc, rasterizerState.GetAddressOf());
     assert(SUCCEEDED(res));
@@ -267,6 +307,7 @@ bool Renderer::initialize_imgui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    auto font_consolas = ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
     ImGui_ImplDX11_Init(device.Get(), context.Get());
     ImGui_ImplWin32_Init(hwnd);
     return true;
@@ -286,7 +327,6 @@ void Renderer::imgui_frame_end()
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
-// this is the one that works
 void Renderer::scene_pick(float x, float y) {
     using namespace DirectX;
     XMFLOAT4X4 projection; 
@@ -300,78 +340,17 @@ void Renderer::scene_pick(float x, float y) {
 
     world = XMMatrixIdentity(); // default for now is just identity matrix
 
-    // store the camera vector matrices in addressable float matrices
-    XMStoreFloat4x4(&projection, camera.get_projection());
-    XMStoreFloat4x4(&view, camera.get_view());
-    XMStoreFloat4x4(&inverse_view, XMMatrixInverse(nullptr, camera.get_view()));
+    ray_cast::screen_to_world_ray(x, y, width, height, camera, world, ray_origin, ray_dir);
 
-    // transform point into view space
-    point_x = (((2.0f * x) / width) - 1.0f) / projection(0, 0);
-    point_y = -(((2.0f * y ) / height) - 1.0f) / projection(1, 1);
-    point_z = 1.0f;
-
-    ray_origin = XMVectorSet(0.0, 0.0, 0.0, 0.0);
-    ray_dir = XMVectorSet(point_x, point_y, point_z, 1.0);
-
-    ray_origin = XMVector3TransformCoord(ray_origin, XMMatrixInverse(nullptr, camera.get_view()));
-    ray_dir = XMVector3Normalize(XMVector3TransformNormal(ray_dir, XMMatrixInverse(nullptr, camera.get_view())));
-
-    ImGui::Text(
-        "viewspace mouse: %f, %f, %f",
-        point_x,
-        point_y,
-        point_z
-    );
-
-    print_vec("origin: ", ray_origin);
-    print_vec("dir   : ", ray_dir);
-    
-    // find the plane equation of our rectangular quad
-    XMVECTOR plane;
-    XMVECTOR left_top, left_bottom, right_bottom;
-
-    left_top = XMVectorSet( -720.0, -360.0, 0.0, 0.0);
-
-    left_bottom = XMVectorSet( -720.0, 360.0, 0.0, 0.0);
-
-    right_bottom = XMVectorSet( 720.0, 360.0, 0.0, 0.0);
-
-    plane = XMPlaneFromPoints(left_top, left_bottom, right_bottom);
-
-    print_vec("plane: ", plane);
-
-    XMVECTOR line_begin, line_end;
-    static float ray_distance = 5000.0;
-
-    ImGui::SliderFloat("ray_distance", &ray_distance, 1.0, 5000.0);
-    line_begin = ray_origin;
-    line_end = XMVectorAdd(ray_origin, XMVectorScale(ray_dir, ray_distance));
-
-    print_vec("begin: ", line_begin);
-    print_vec("end: ", line_end);
-
-    XMVECTOR intersects = XMPlaneIntersectLine(plane, line_end, line_begin);
-    if(GetAsyncKeyState(VK_F1) & 1) {
-        // do intersection test
-        if(XMVectorGetIntX(XMVectorIsNaN(intersects))) {
-            add_debug_line_from_vector(line_end, line_begin,  XMFLOAT4(1.0, 0.0, 0.0, 1.0));
-            //set_debug_line_from_vector(0, line_begin, line_end, XMFLOAT4(1.0, 0.0, 0.0, 1.0));
-        } else {
-            add_debug_line_from_vector(line_end, line_begin,  XMFLOAT4(0.0, 1.0, 0.0, 1.0));
-        }
-    }
-
-    if (XMVectorGetX(intersects) > -720.0 && XMVectorGetX(intersects) < 720.0 && 
-            XMVectorGetY(intersects) > -360.0 && XMVectorGetY(intersects) < 360.0) {
-        set_debug_line_from_vector(0, line_begin, line_end, XMFLOAT4(0.0, 1.0, 0.2, 1.0));
+    float left = -720.0, right = 720.0, top = -360.0, bottom = 360.0;
+    bool hit = ray_cast::against_quad(ray_origin, ray_dir, left, right, top, bottom);
+    if (hit) {
+        set_selection_rect(0, -720, 720, -360, 360);
     } else {
-        set_debug_line_from_vector(0, line_begin, line_end, XMFLOAT4(1.0, 0.0, 0.0, 1.0));
+        set_selection_rect(0, 0, 0, 0, 0);
     }
-    print_vec("intersection: ", intersects);
 
-    if(GetAsyncKeyState(VK_F2) & 1) {
-        clear_debug_lines();
-    }
+    return;
 }
 
 void Renderer::draw_debug_lines() {
@@ -434,4 +413,263 @@ void Renderer::clear_debug_lines() {
         debug_lines[debug_line_count] = DebugLine{ };
     }
     debug_line_count = 0;
+}
+
+void Renderer::add_selection_rect(float left, float right, float top, float bottom) {
+    if (selection_count < MaxSelections) {
+        selections[selection_count] = SelectionArea{left, right, top, bottom};
+        selection_count++;
+    }
+}
+
+void Renderer::set_selection_rect(int index, float left, float right, float top, float bottom) {
+    if (index < MaxSelections) {
+        selections[index] = SelectionArea{left, right, top, bottom};
+    }
+}
+
+void Renderer::draw_selection_rect() {
+
+    /*
+     * build selection drawing resources
+     * 1 quad = 4 vertices
+     * 1 quad = 6 indices
+     * 4 quads for Border + 1 quad for internal 
+     * num_verts = MaxSelections * (4 + 1)      * 4
+     *                              ^num quads  ^num verts per quad
+     * num_indices = MaxSelections * ( 4 + 1 ) * 6 
+     * this can be optimzied because there are shared vertices on the 
+     * edges of the rectangle
+     * 
+     * 
+       tesellate the selection rects
+      
+       +------------+
+       |            |    
+       |            |
+       |            |
+       |            |
+       +------------+
+    */
+    // 
+    constexpr auto VertexStride = 4 * 5; // there are 5 quads, 4 verts each
+    constexpr auto IndexStride  = 6 * 5; // there are 5 quads, 6 indices each 
+    float t = selection_border_thickness;
+     
+    // using vector here because a stack array would overflow the stack, we must use heap mem
+    std::vector<VertexPosColorTexcoord> selection_vertices;
+    std::vector<int> indices;
+
+    selection_vertices.resize(VertexStride * MaxSelections); // each selection is 5 quads, there are 4 verts per quad
+    indices.resize(IndexStride * MaxSelections);
+
+    for(int i = 0; i < selection_count; ++i) {
+        auto q = selections[i];
+        // the main quad
+        VertexPosColorTexcoord quad_verts[] = {
+            {
+                DirectX::XMFLOAT3{q.left, q.top, -1.0f},
+                selection_inner_color,
+                DirectX::XMFLOAT2{0.0f, 0.0f}
+            },   
+            {
+                DirectX::XMFLOAT3{q.right, q.top, -1.0f},
+                selection_inner_color,
+                DirectX::XMFLOAT2{0.0f, 0.0f}
+            },
+            {
+                DirectX::XMFLOAT3{q.left, q.bottom, -1.0f},
+                selection_inner_color,
+                DirectX::XMFLOAT2{0.0f, 0.0f}
+            }, 
+            {
+                DirectX::XMFLOAT3{q.right, q.bottom, -1.0f},
+                selection_inner_color,
+                DirectX::XMFLOAT2{0.0f, 0.0f}
+            },   
+        };
+
+        VertexPosColorTexcoord top_border[] = {
+            {
+                XMFLOAT3{q.left, q.top - t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+            {
+                XMFLOAT3{q.right, q.top - t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },
+            {
+                XMFLOAT3{q.left, q.top, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            }, 
+            {
+                XMFLOAT3{q.right, q.top, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+        };
+
+        VertexPosColorTexcoord left_border[] = {
+            {
+                XMFLOAT3{q.left- t , q.top - t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+            {
+                XMFLOAT3{q.left, q.top - t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },
+            {
+                XMFLOAT3{q.left - t, q.bottom + t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            }, 
+            {
+                XMFLOAT3{q.left, q.bottom + t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+        };
+
+        VertexPosColorTexcoord right_border[] = {
+            {
+                XMFLOAT3{q.right, q.top - t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+            {
+                XMFLOAT3{q.right + t, q.top - t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },
+            {
+                XMFLOAT3{q.right, q.bottom + t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            }, 
+            {
+                XMFLOAT3{q.right + t, q.bottom + t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+        };
+        VertexPosColorTexcoord bottom_border[] = {
+            {
+                XMFLOAT3{q.left, q.bottom, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+            {
+                XMFLOAT3{q.right, q.bottom, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },
+            {
+                XMFLOAT3{q.left, q.bottom + t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            }, 
+            {
+                XMFLOAT3{q.right, q.bottom + t, -1.0f},
+                selection_border_color,
+                XMFLOAT2{0.0f, 0.0f}
+            },   
+        };
+
+        selection_vertices[i * VertexStride + 0] = quad_verts[0];
+        selection_vertices[i * VertexStride + 1] = quad_verts[1];
+        selection_vertices[i * VertexStride + 2] = quad_verts[2];
+        selection_vertices[i * VertexStride + 3] = quad_verts[3];
+
+        selection_vertices[i * VertexStride + 4] = top_border[0];
+        selection_vertices[i * VertexStride + 5] = top_border[1];
+        selection_vertices[i * VertexStride + 6] = top_border[2];
+        selection_vertices[i * VertexStride + 7] = top_border[3];
+
+        selection_vertices[i * VertexStride + 8]  =  left_border[0];
+        selection_vertices[i * VertexStride + 9]  =  left_border[1];
+        selection_vertices[i * VertexStride + 10] = left_border[2];
+        selection_vertices[i * VertexStride + 11] = left_border[3];
+
+        selection_vertices[i * VertexStride + 12] =  bottom_border[0];
+        selection_vertices[i * VertexStride + 13] =  bottom_border[1];
+        selection_vertices[i * VertexStride + 14] = bottom_border[2];
+        selection_vertices[i * VertexStride + 15] = bottom_border[3];
+
+        selection_vertices[i * VertexStride + 16] = right_border[0];
+        selection_vertices[i * VertexStride + 17] = right_border[1];
+        selection_vertices[i * VertexStride + 18] = right_border[2];
+        selection_vertices[i * VertexStride + 19] = right_border[3];
+
+        indices[i * IndexStride + 0] =  i   * VertexStride + 2;
+        indices[i * IndexStride + 1] =  i   * VertexStride + 3;
+        indices[i * IndexStride + 2] =  i   * VertexStride + 1;
+        indices[i * IndexStride + 3] =  i   * VertexStride + 2;
+        indices[i * IndexStride + 4] =  i   * VertexStride + 1;
+        indices[i * IndexStride + 5] =  i   * VertexStride + 0;
+
+        indices[i * IndexStride + 6] =  i   * VertexStride + 2 + 4;
+        indices[i * IndexStride + 7] =  i   * VertexStride + 3 + 4;
+        indices[i * IndexStride + 8] =  i   * VertexStride + 1 + 4;
+        indices[i * IndexStride + 9] =  i   * VertexStride + 2 + 4;
+        indices[i * IndexStride + 10] = i   * VertexStride + 1 + 4;
+        indices[i * IndexStride + 11] = i   * VertexStride + 0 + 4;
+
+        indices[i * IndexStride + 12] = i   * VertexStride + 2 + 8;
+        indices[i * IndexStride + 13] = i   * VertexStride + 3 + 8;
+        indices[i * IndexStride + 14] = i   * VertexStride + 1 + 8;
+        indices[i * IndexStride + 15] = i   * VertexStride + 2 + 8;
+        indices[i * IndexStride + 16] = i   * VertexStride + 1 + 8;
+        indices[i * IndexStride + 17] = i   * VertexStride + 0 + 8;
+
+        indices[i * IndexStride + 18] = i   * VertexStride + 2 + 12;
+        indices[i * IndexStride + 19] = i   * VertexStride + 3 + 12;
+        indices[i * IndexStride + 20] = i   * VertexStride + 1 + 12;
+        indices[i * IndexStride + 21] = i   * VertexStride + 2 + 12;
+        indices[i * IndexStride + 22] = i   * VertexStride + 1 + 12;
+        indices[i * IndexStride + 23] = i   * VertexStride + 0 + 12;
+
+        indices[i * IndexStride + 24] = i   * VertexStride + 2 + 16;
+        indices[i * IndexStride + 25] = i   * VertexStride + 3 + 16;
+        indices[i * IndexStride + 26] = i   * VertexStride + 1 + 16;
+        indices[i * IndexStride + 27] = i   * VertexStride + 2 + 16;
+        indices[i * IndexStride + 28] = i   * VertexStride + 1 + 16;
+        indices[i * IndexStride + 29] = i   * VertexStride + 0 + 16;
+    }
+
+    update_dynamic_vertex_buffer(
+        context.Get(),
+        selection_vertex_buffer.Get(),
+        (void*)selection_vertices.data(),
+        sizeof(VertexPosColorTexcoord) * selection_vertices.size()
+    );
+
+    update_dynamic_index_buffer(
+        context.Get(), 
+        selection_index_buffer.Get(), 
+        indices.data(),
+        indices.size()
+    );
+
+    bind_dynamic_vertex_buffers(
+        context.Get(),
+        selection_vertex_buffer.GetAddressOf(),
+        sizeof(VertexPosColorTexcoord),
+        0
+    );
+
+    bind_dynamic_index_buffer(context.Get(), selection_index_buffer.Get());
+
+    context->DrawIndexed(indices.size(), 0, 0);
+}
+
+void Renderer::imgui_draw_screen_rect(float left, float right, float top, float bottom) {
+    auto draw_list = ImGui::GetForegroundDrawList();
+    // imgui does BRG 
+    draw_list->AddRectFilled(ImVec2(left, top), ImVec2(right, bottom), ImU32(0x70FFBE00));
+    draw_list->AddRect(ImVec2(left, top), ImVec2(right, bottom), ImU32(0xFFFFBE00));
 }

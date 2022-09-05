@@ -1,7 +1,6 @@
 #ifndef GFX_HELPERS_H
 #define GFX_HELPERS_H
 #include "gpu_resources.h"
-#include "render_graph.h"
 /*
 #include <d2d1_3.h>
 #include <d3d11_4.h>
@@ -35,6 +34,12 @@ struct PerSceneConsts
     XMFLOAT2 windowSize; // 8 bytes
 };
 
+// a rectangle describing the bounds of a selection and 
+struct SelectionArea {
+    float left, right, top, bottom;
+};
+
+void query_selection_area(SelectionArea selection);
 
 class Renderer
 {
@@ -57,6 +62,18 @@ public:
     void draw_debug_lines();
     void set_debug_line(unsigned int i, XMFLOAT3 begin, XMFLOAT3 end, XMFLOAT4 color);
     void set_debug_line_from_vector(unsigned int i, XMVECTOR begin, XMVECTOR end, XMFLOAT4 color);
+
+    /* Selection Rect API
+     * allows drawing of 3d selection rectangles to highlight 
+     * selected quads/items.
+     * */
+    // TODO change to take Z into account, so rotated elements have perfectly wrapped selection rects
+    void draw_selection_rect();
+    void add_selection_rect(float left, float right, float top, float bottom);
+    void set_selection_rect(int index, float left, float right, float top, float bottom);
+
+    // takes the 2d screen coordinates of where the box should be 
+    void imgui_draw_screen_rect(float left, float right, float top, float bottom);
 private:
     bool initialize_d3d();
     bool initialize_imgui();
@@ -67,7 +84,6 @@ private:
 
 public: 
     float width, height;
-    RenderGraph renderGraph;
 
     ComPtr<ID3D11Device5> device;
     ComPtr<ID3D11DeviceContext4> context;
@@ -79,6 +95,19 @@ public:
     ComPtr<ID3D11InputLayout> vtx_pos_color_tex_il;
     ComPtr<ID3D11VertexShader> scene_vertex_shader;
     ComPtr<ID3D11PixelShader> scene_pixel_shader;
+
+    // used for drawing tools and selections
+    // consider reserving a spot in an different vbuf?
+    XMFLOAT4 selection_border_color{0.0, 0.0, 1.0, 1.0};
+    XMFLOAT4 selection_inner_color {0.48, 0.75, 0.95, 1};
+    float selection_border_thickness = 3.f;
+    static constexpr size_t MaxSelections = 32;
+    static constexpr size_t SelectionsVertexSize = sizeof(VertexPosColorTexcoord) * MaxSelections * 5 * 4;
+    static constexpr size_t SelectionsIndexSize = sizeof(VertexPosColorTexcoord) * MaxSelections * 5 * 6;
+    SelectionArea selections[MaxSelections];
+    size_t selection_count = 0;
+    ComPtr<ID3D11Buffer> selection_vertex_buffer;
+    ComPtr<ID3D11Buffer> selection_index_buffer;
 
     Camera camera;
     PerSceneConsts       scene_consts;
@@ -93,7 +122,6 @@ public:
 
 
 private:
-
     ComPtr<IDXGISwapChain4> swapChain;
     // D3D
     D3D11_VIEWPORT viewport{};

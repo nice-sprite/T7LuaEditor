@@ -76,10 +76,6 @@ namespace input
 
     };
 
-    /*static constexpr auto MaxInputCache = 16u;
-    static MouseState mouse[MaxInputCache]{};
-    static keyboard_t kbd[MaxInputCache]{};
-    */
     static MouseState mouse_state;
     static KeyboardState kbd_state; 
 
@@ -88,26 +84,9 @@ namespace input
     constexpr size_t MaxCallbacks = 512; 
     static std::array<InputCallback, MaxCallbacks> callbacks;
     static size_t num_callbacks = 0;
+
     bool register_callback(InputCallback fn);
 
-    // extra holds the modifer keys like shift, ctrl, etc, what mouse buttons were down
-    //    using MouseMoveFn = std::function<bool(float x, float y, WPARAM extra)>;
-    //    using MouseClickFn = std::function<bool(mouse_t &mouse, float x, float y, WPARAM extra)>;
-    //    using KeyboardFn = std::function<bool(keyboard_t &keyState)>;
-
-    /*static std::array<MouseMoveFn, MaxCallbacks> mouseMoveListeners{};
-    static std::array<MouseClickFn, MaxCallbacks> mouseClickListeners{};
-    static std::array<KeyboardFn, MaxCallbacks> keyboardListeners{};
-    */
-    static size_t countMouseMove = 0;
-    static size_t countMouseClick = 0;
-    static size_t countKeyboard = 0;
-
-    /*
-    void register_mouse_move_callback(MouseMoveFn fn);
-    void register_mouse_click_callback(MouseClickFn fn);
-    void register_keyboard_callback(KeyboardFn fn);
-    */
     void process_input_for_frame();
 
     void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);

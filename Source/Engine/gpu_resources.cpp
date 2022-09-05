@@ -54,7 +54,7 @@ HRESULT create_constant_buffer(ID3D11Device* device, void* data, size_t bufferSi
 HRESULT create_dynamic_index_buffer(ID3D11Device* device, ID3D11Buffer** ppBuffer, int numIndices) 
 {
     D3D11_BUFFER_DESC bd{};
-    bd.ByteWidth = numIndices;
+    bd.ByteWidth = sizeof(int) * numIndices;
     bd.Usage = D3D11_USAGE_DYNAMIC;
     bd.BindFlags = D3D11_BIND_INDEX_BUFFER;
     bd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;

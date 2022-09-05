@@ -7,18 +7,18 @@
 #include "win32_input.h"
 
 
-Camera::Camera(float fovRadians, float aspectRatio, float nearPlane, float farPlane) :
-    zNear(nearPlane), zFar(farPlane), fov(fovRadians)
+Camera::Camera(float fov_radians, float aspect_ratio, float near_plane, float far_plane) :
+    zNear(near_plane), zFar(far_plane), fov(fov_radians)
 {
-    viewMat = DirectX::XMMatrixLookAtLH(
-        DirectX::XMVECTOR{0.0, 0.0f, -800.f, 0.f}, // camera origin
-        DirectX::XMVECTOR{0.0f, 0.0f, 0.0f, 0.f}, // focus point
-        DirectX::XMVECTOR{0.f, 1.f, 0.f, 0.f}    // up direction
+    view_matrix = XMMatrixLookAtLH(
+        XMVECTOR{0.0, 0.0f, -800.f, 0.f}, // camera origin
+        XMVECTOR{0.0f, 0.0f, 0.0f, 0.f}, // focus point
+        XMVECTOR{0.f, 1.f, 0.f, 0.f}    // up direction
     );
 
-    projectionMat = DirectX::XMMatrixPerspectiveFovLH(
-        fovRadians,
-        aspectRatio, 
+    projection_matrix = XMMatrixPerspectiveFovLH(
+        fov_radians,
+        aspect_ratio, 
         zNear, 
         zFar
     );
@@ -44,56 +44,55 @@ void Camera::zoom(int delta) {
     // dolly is moving the origin closer or further 
     // zoom is varying the FOV
     // another approach is to scale the world matrix
-    translate_from_vector(DirectX::XMVectorSet(0.0, 0.0, (float)delta * zoom_speed_scale, 0.0));
+    translate_from_vector(XMVectorSet(0.0, 0.0, (float)delta * zoom_speed_scale, 0.0));
 }
 
 void Camera::pan(float x, float y) {
-    DirectX::XMVECTOR delta = DirectX::XMVectorSet(x-last_x, -(y - last_y), 0, 0);
+    XMVECTOR delta = XMVectorSet(x-last_x, -(y - last_y), 0, 0);
     translate_from_vector(
-        DirectX::XMVectorAdd(origin, delta)
+        XMVectorAdd(origin, delta)
     );
     last_x = x;
     last_y = y;
 }
 
-void Camera::update_view(float timestep, DirectX::XMMATRIX view)
+void Camera::update_view(float timestep, XMMATRIX view)
 {
-    viewMat = view;
+    view_matrix = view;
 }
 
-void Camera::update_projection(float timestep, DirectX::XMMATRIX projection)
+void Camera::update_projection(float timestep, XMMATRIX projection)
 {
-    projectionMat = projection;
+    projection_matrix = projection;
 }
 
-DirectX::XMMATRIX Camera::get_transform()
+XMMATRIX Camera::get_transform()
 {
-    return viewMat * projectionMat;
+    return view_matrix * projection_matrix;
 }
 
-void Camera::set_aspect_ratio(float aspectRatio)
+void Camera::set_aspect_ratio(float aspect_ratio)
 {
-    projectionMat = DirectX::XMMatrixPerspectiveFovLH(fov, aspectRatio, zNear, zFar);
+    projection_matrix = XMMatrixPerspectiveFovLH(fov, aspect_ratio, zNear, zFar);
 }
 
-void Camera::translate_from_vector(DirectX::XMVECTOR translation) {
+void Camera::translate_from_vector(XMVECTOR translation) {
 
-    viewMat *= DirectX::XMMatrixTranslationFromVector(translation);
+    view_matrix *= XMMatrixTranslationFromVector(translation);
 
 }
 
-void Camera::translate(DirectX::XMFLOAT3 translation)
+void Camera::translate(XMFLOAT3 translation)
 {
-    viewMat *= DirectX::XMMatrixTranslationFromVector(DirectX::XMLoadFloat3(&translation));
+    view_matrix *= XMMatrixTranslationFromVector(XMLoadFloat3(&translation));
 }
 
-
-DirectX::XMMATRIX& Camera::get_projection()
+XMMATRIX const& Camera::get_projection() const
 {
-    return projectionMat;
+    return projection_matrix;
 }
 
-DirectX::XMMATRIX& Camera::get_view()
+XMMATRIX const& Camera::get_view() const
 {
-    return viewMat;
+    return view_matrix;
 }

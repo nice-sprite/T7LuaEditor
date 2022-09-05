@@ -4,6 +4,7 @@
 #include <d3d11_4.h>
 #include <Windows.h>
 #include <fmt/format.h>
+#include <dwmapi.h>
 using namespace Microsoft::WRL;
 namespace win32 
 {
@@ -17,22 +18,30 @@ namespace win32
         const wchar_t* window_icon_path
     )
     {
+        BOOL attribute_state = TRUE;
         Window window;
         WNDCLASS wc = {};
         wc.lpfnWndProc = proc;
         wc.hInstance = hinst;
         wc.lpszClassName = classname;
+        wc.style = CS_DBLCLKS;
         wc.hIcon = (HICON)LoadImage(hinst, window_icon_path, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE); 
         RegisterClass(&wc);
-        window.hwnd = CreateWindowEx( 0,
+
+        DWORD style = WS_OVERLAPPEDWINDOW;
+        window.hwnd = CreateWindowEx( 
+            0,
             classname,
             windowTitle,
-            WS_OVERLAPPEDWINDOW,
+            style,
             CW_USEDEFAULT, CW_USEDEFAULT, width, height,
             nullptr,
             nullptr,
             hinst,
-            nullptr);
+            nullptr
+        );
+
+        DwmSetWindowAttribute(window.hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &attribute_state, sizeof(attribute_state));
         ShowWindow(window.hwnd, SW_SHOWDEFAULT);
         UpdateWindow(window.hwnd);
         GetWindowRect(window.hwnd, &window.clientRect);
