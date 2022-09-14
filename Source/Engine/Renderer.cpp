@@ -36,7 +36,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
 {
     initialize_d3d();
     initialize_imgui();
-    clearColor = { 1.f, 1.f, 1.f, 1.0f}; 
+    clearColor = { 0.1, 0.1, 0.1, 1.0f}; 
 
     /*create scene resources*/
     HRESULT buff_r = create_dynamic_vertex_buffer(device.Get(), 
@@ -149,16 +149,34 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
 }
 
 Renderer::~Renderer() = default;
+
 void Renderer::create_backbuffer_view()
 {
     ID3D11Texture2D *pBackBuffer;
     swapChain->GetBuffer(0, IID_PPV_ARGS(&pBackBuffer));
     device->CreateRenderTargetView(pBackBuffer, nullptr, &rtv);
     pBackBuffer->Release();
+
+    D3D11_TEXTURE2D_DESC d;
+    d.Width = (float)width;
+    d.Height = (float)height;
+    d.MipLevels =1;
+    d.ArraySize =1 ;
+    d.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
+    d.SampleDesc.Count = 1;
+    d.SampleDesc.Quality = 0;
+    d.Usage = D3D11_USAGE_DEFAULT;
+    d.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    d.CPUAccessFlags = 0;
+    d.MiscFlags = 0;
+
+    device->CreateTexture2D(&d, NULL, depth_stencil_texture.GetAddressOf());
+    device->CreateDepthStencilView(depth_stencil_texture.Get(), NULL, depth_stencil_view.GetAddressOf());
 }
 
 void Renderer::reset_backbuffer_views()
 {
+    depth_stencil_view.Reset();
     rtv.Reset();
 }
 
@@ -246,14 +264,14 @@ bool Renderer::initialize_d3d()
 
     // setup raster state
     D3D11_RASTERIZER_DESC2 rasterDesc{};
-    rasterDesc.AntialiasedLineEnable = false;
+    rasterDesc.AntialiasedLineEnable = true;
     rasterDesc.CullMode = D3D11_CULL_BACK;
     rasterDesc.DepthBias = 0;
     rasterDesc.DepthBiasClamp = 0.0f;
     rasterDesc.DepthClipEnable = true; // TODO setup state for debug lines that has this as false?
     rasterDesc.FillMode = D3D11_FILL_SOLID;
     rasterDesc.FrontCounterClockwise = false;
-    rasterDesc.MultisampleEnable = false;
+    rasterDesc.MultisampleEnable = true;
     rasterDesc.ScissorEnable = false; // TODO true?
     rasterDesc.SlopeScaledDepthBias = 0.0f;
     res = device->CreateRasterizerState2(&rasterDesc, rasterizerState.GetAddressOf());
@@ -285,6 +303,7 @@ bool Renderer::initialize_d3d()
     device->CreateSamplerState(&gridSampler, &gridSS);
 
     create_backbuffer_view();
+
     return true;
 }
 
@@ -292,7 +311,8 @@ void Renderer::set_and_clear_backbuffer()
 {
     ZoneScoped("clearbb");
     context->RSSetViewports(1, &viewport);
-    context->OMSetRenderTargets(1, rtv.GetAddressOf(), nullptr);
+    context->OMSetRenderTargets(1, rtv.GetAddressOf(), depth_stencil_view.Get());
+    context->ClearDepthStencilView(depth_stencil_view.Get(), D3D11_CLEAR_DEPTH|D3D11_CLEAR_STENCIL, 1.0f, 0);
     context->ClearRenderTargetView(rtv.Get(), (float *)&clearColor);
 }
 
@@ -397,6 +417,13 @@ void Renderer::set_debug_line(unsigned int i, XMFLOAT3 begin, XMFLOAT3 end, XMFL
             VertexPosColorTexcoord{begin, color, {0.f, 0.f}},
             VertexPosColorTexcoord{end, color, {0.f, 0.f}},
         };
+    }
+}
+
+void Renderer::set_debug_line_color(unsigned int i, XMFLOAT4 color) {
+    if(i < MAX_DEBUG_LINES) {
+        debug_lines[i].begin.color = color;
+        debug_lines[i].end.color = color;
     }
 }
 
@@ -672,4 +699,20 @@ void Renderer::imgui_draw_screen_rect(float left, float right, float top, float 
     // imgui does BRG 
     draw_list->AddRectFilled(ImVec2(left, top), ImVec2(right, bottom), ImU32(0x70FFBE00));
     draw_list->AddRect(ImVec2(left, top), ImVec2(right, bottom), ImU32(0xFFFFBE00));
+}
+
+// use debug lines array for now
+void Renderer::create_world_grid() {
+    XMFLOAT4 line_color{0.7, 0.7, 0.7, 1.f};
+    static bool draw = true;
+    static int grid_size = 64;
+    static int max_lines = 500;// 250 horizontal and 250 vertical (y axis)
+    static float span = (float)(grid_size * max_lines); 
+
+
+    for(int i = -(max_lines/2); i < max_lines/2; ++i) {
+        add_debug_line_from_vector(XMVectorSet(grid_size * i, -span, 0.0, 0.0), XMVectorSet(grid_size * i, span, 0.0, 0.0), line_color);
+        add_debug_line_from_vector(XMVectorSet( -span, grid_size * i, 0.0, 0.0), XMVectorSet(span, grid_size*i,  0.0, 0.0), line_color);
+    }
+
 }

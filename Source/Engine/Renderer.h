@@ -62,6 +62,10 @@ public:
     void draw_debug_lines();
     void set_debug_line(unsigned int i, XMFLOAT3 begin, XMFLOAT3 end, XMFLOAT4 color);
     void set_debug_line_from_vector(unsigned int i, XMVECTOR begin, XMVECTOR end, XMFLOAT4 color);
+    void set_debug_line_color(unsigned int i, XMFLOAT4 color);
+    
+    // draws the grid plane
+    void create_world_grid();
 
     /* Selection Rect API
      * allows drawing of 3d selection rectangles to highlight 
@@ -99,7 +103,7 @@ public:
     // used for drawing tools and selections
     // consider reserving a spot in an different vbuf?
     XMFLOAT4 selection_border_color{0.0, 0.0, 1.0, 1.0};
-    XMFLOAT4 selection_inner_color {0.48, 0.75, 0.95, 1};
+    XMFLOAT4 selection_inner_color {0.48f, 0.75f, 0.95f, 1.f};
     float selection_border_thickness = 3.f;
     static constexpr size_t MaxSelections = 32;
     static constexpr size_t SelectionsVertexSize = sizeof(VertexPosColorTexcoord) * MaxSelections * 5 * 4;
@@ -130,6 +134,8 @@ private:
     ComPtr<ID3D11RenderTargetView> rtv;
     ComPtr<IDXGIFactory7> dxgiFactory;
     ComPtr<ID3D11SamplerState> gridSS;
+    ComPtr<ID3D11Texture2D> depth_stencil_texture;
+    ComPtr<ID3D11DepthStencilView> depth_stencil_view;
 
     /**/
 

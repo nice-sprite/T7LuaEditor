@@ -2,10 +2,12 @@
 #include <Windows.h>
 #include <imgui.h>
 #include <Tracy.hpp> 
+#include "../Engine/camera_controller.h"
 namespace app 
 {
     void start(HINSTANCE hinst, const wchar_t *appname)
     {
+        input::start_game_input();
         mainWindow = win32::create_window(hinst, appname, L"luaeditor", AppWidth, AppHeight, win32_message_callback, AppIcon);
         auto rect = mainWindow.clientRect;
 
@@ -14,7 +16,7 @@ namespace app
         rhi = new Renderer(mainWindow.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
         // DEBUG SELECTION RECT
         rhi->add_selection_rect(-50.f, 50.f, -50.f, 50.f);
-
+        rhi->create_world_grid();
         SetWindowPos(mainWindow.hwnd, nullptr, 0, 0,
                      (rect.right - rect.left + 1), // the + 1 is because the WM_SIZE message doesn't go through if the size is the same
                      (rect.bottom - rect.top),
@@ -100,22 +102,22 @@ namespace app
             VertexPosColorTexcoord quad_verts[] = {
                 {
                     DirectX::XMFLOAT3{q.left, q.top, 0.0f},
-                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
+                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
                 {
                     DirectX::XMFLOAT3{q.right, q.top, 0.0f},
-                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
+                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },
                 {
                     DirectX::XMFLOAT3{q.left, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
+                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 }, 
                 {
                     DirectX::XMFLOAT3{q.right, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{0.5, 0.5, 0.5, 1.0},
+                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
             };
@@ -191,8 +193,69 @@ namespace app
             input::process_input_for_frame();
         }
 
+        auto mouse = input::poll_mouse();
+        auto gamepad = input::poll_gamepad();
+        input::poll_keys();
+
+        // DEBUG GAMEINPUT
+        if(ImGui::Begin("GAMEINPUT DEBUG")) {
+            float left_stick[2] = {gamepad.leftThumbstickX, gamepad.leftThumbstickY};
+            float right_stick[2] = {gamepad.rightThumbstickX, gamepad.rightThumbstickY};
+            ImGui::Text("MOUSE");
+            ImGui::Text("deltas: %d %d", mouse.positionX, mouse.positionY);
+            ImGui::Text("wheel: %d %d", mouse.wheelX, mouse.wheelY);
+            ImGui::Text("buttons: %d %d %d %d %d %d %d",
+                    mouse.buttons & GameInputMouseLeftButton, 
+                    mouse.buttons & GameInputMouseRightButton,
+                    mouse.buttons & GameInputMouseMiddleButton,
+                    mouse.buttons & GameInputMouseButton4,
+                    mouse.buttons & GameInputMouseButton5,
+                    mouse.buttons & GameInputMouseWheelTiltLeft,
+                    mouse.buttons & GameInputMouseWheelTiltRight
+            );
+            ImGui::Separator();
+
+            ImGui::Text("Controlla Playa?!?!?!");
+            ImGui::SliderFloat("LT", &gamepad.leftTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
+            ImGui::SliderFloat("RT", &gamepad.rightTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
+            ImGui::DragFloat2("Left Stick", left_stick);
+            ImGui::DragFloat2("Right Stick", right_stick);
+
+            ImGui::Text(
+                "None %d\n,  Menu %d\n,  View %d\n,  A %d\n,  B %d\n,  X %d\n,  Y %d\n,  DPadUp %d\n,  DPadDown %d\n,  DPadLeft %d\n,  DPadRight %d\n,  LeftShoulder %d\n,  RightShoulder %d\n,  LeftThumbstick %d\n,  RightThumbstick %d", 
+                gamepad.buttons & GameInputGamepadNone ,  
+                gamepad.buttons & GameInputGamepadMenu ,  
+                gamepad.buttons & GameInputGamepadView ,  
+                gamepad.buttons & GameInputGamepadA ,  
+                gamepad.buttons & GameInputGamepadB ,  
+                gamepad.buttons & GameInputGamepadX ,  
+                gamepad.buttons & GameInputGamepadY ,  
+                gamepad.buttons & GameInputGamepadDPadUp ,  
+                gamepad.buttons & GameInputGamepadDPadDown ,  
+                gamepad.buttons & GameInputGamepadDPadLeft ,  
+                gamepad.buttons & GameInputGamepadDPadRight ,  
+                gamepad.buttons & GameInputGamepadLeftShoulder ,  
+                gamepad.buttons & GameInputGamepadRightShoulder ,  
+                gamepad.buttons & GameInputGamepadLeftThumbstick ,  
+                gamepad.buttons & GameInputGamepadRightThumbstick
+            );
+
+            ImGui::Separator();
+            ImGui::Text("KEYBOARD");
+            ImGui::Text("max_keys: %llu", input::max_keys);
+            ImGui::Text("active_keys: %llu", input::active_keys);
+            if(input::key_down('W')) ImGui::Text("Forward");
+            if(input::key_down('A')) ImGui::Text("Left");
+            if(input::key_down('S')) ImGui::Text("Back");
+            if(input::key_down('D')) ImGui::Text("Right");
+        } 
+        ImGui::End();
+
         static bool show = false;
         ImGui::ShowDemoWindow(&show);
+
+        camera_controller::flycam_fps(timestep, rhi->camera, mouse);
+        
 
         draw_scene(timestep);
         rhi->draw_selection_rect();
@@ -279,6 +342,7 @@ namespace app
             }
             tick(get_timer_ms(&frameTimer));
         }
+        input::shutdown_game_input();
     }
     // this is where the program exits: 
     // TODO: call shutdown and free memory

@@ -10,8 +10,8 @@ class Camera
 {
 public:
     Camera(float fov_radians, float aspect_ratio, float near_plane, float far_plane);
-    void update_view(float timestep, XMMATRIX view);
-    void update_projection(float timestep, XMMATRIX projection);
+    void update_view(XMMATRIX view);
+    void update_projection(XMMATRIX projection);
     void translate(XMFLOAT3 translation);
     void translate_from_vector(XMVECTOR translation);
 
@@ -25,10 +25,14 @@ public:
     // and sensitivity, panning, zoom, etc
     void zoom(int delta);
     void pan(float x, float y);
+
+    float pitch, yaw, roll;
+    XMMATRIX rotation;
+    XMVECTOR forward, up, right;
+    XMVECTOR origin;
 private:
     XMMATRIX view_matrix, projection_matrix; // can be orthographic or perspective
     
-    XMVECTOR origin;
 
     float last_x{}, last_y{};
     float zoom_amount;

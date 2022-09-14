@@ -5,6 +5,11 @@
 namespace input
 {
 
+    unsigned int max_keys = 0;
+    unsigned int active_keys = 0;
+
+    GameInputKeyState* keystate = nullptr;
+
     void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
     {
         ZoneScoped("cache_mouse_for_frame");
@@ -293,6 +298,96 @@ namespace input
         }
         mouse_state.scroll_delta = 0;
     }
+
+    // GameInput stuff
+    HRESULT start_game_input() {
+        HRESULT result = GameInputCreate(game_input.GetAddressOf());
+        game_input->SetFocusPolicy(GameInputDisableBackgroundInput);
+        return result;
+    }
+
+    GameInputGamepadState poll_gamepad() {
+        IGameInputReading* reading;
+        GameInputGamepadState state;
+        if(SUCCEEDED(game_input->GetCurrentReading(GameInputKindGamepad, gamepad.Get(), &reading))) {
+            if(gamepad.Get() == nullptr) {
+                reading->GetDevice(gamepad.GetAddressOf());
+            }
+            reading->GetGamepadState(&state);
+            reading->Release();
+            return state;
+        } else if(gamepad.Get()) {
+            gamepad.Reset();
+        }
+        return {};
+    }
+
+    GameInputMouseState poll_mouse() {
+        IGameInputReading* reading;
+        GameInputMouseState state;
+        if(SUCCEEDED(game_input->GetCurrentReading(GameInputKindMouse, mouse.Get(), &reading))) {
+            if(mouse.Get() == nullptr) {
+                reading->GetMouseState(&state);
+                if(state.buttons != 0 || state.positionX != 0 || state.positionY != 0 || state.wheelX != 0 || state.wheelY != 0) {
+                    // use this device only if there is a non-zero field, prevents ghost device from 'stealing' input
+                    reading->GetDevice(mouse.GetAddressOf());
+                }
+                //mouse_device_info = (GameInputDeviceInfo*)mouse->GetDeviceInfo();
+            }
+            reading->GetMouseState(&state);
+            reading->Release();
+            return state;
+        } else if(mouse.Get()) {
+            mouse.Reset();
+        }
+        return {};
+    }
+    
+    void poll_keys() {
+
+        IGameInputReading* reading;
+
+        if(SUCCEEDED(game_input->GetCurrentReading(GameInputKindKeyboard, nullptr, &reading))) {
+            if(kbd.Get() == nullptr) {
+                reading->GetDevice(kbd.GetAddressOf());
+                keyboard_device_info = (GameInputDeviceInfo*)kbd->GetDeviceInfo();
+                if(keyboard_device_info->keyboardInfo->maxSimultaneousKeys > 0) {
+                    max_keys = keyboard_device_info->keyboardInfo->maxSimultaneousKeys;
+                    keystate = new GameInputKeyState[max_keys]; 
+                } else {
+                    kbd.Reset();
+                }
+            }
+
+            if(kbd.Get() != nullptr && keystate != nullptr) {
+                active_keys = reading->GetKeyCount();
+                reading->GetKeyState(active_keys, keystate);
+            }
+            reading->Release();
+        } else if(kbd.Get()) {
+            kbd.Reset();
+        }
+        //return {};
+
+    }
+
+    bool key_down(uint8_t vk) {
+        for(int i = 0; i < active_keys; ++i)
+            if(keystate[i].virtualKey == vk) return true;
+        return false;
+    }
+
+    bool key_combo(uint8_t a, uint8_t b) {
+        return key_down(a) && key_down(b);
+    }
+
+    HRESULT shutdown_game_input() {
+        gamepad.Reset();
+        mouse.Reset();
+        kbd.Reset();
+        return HRESULT{};
+    }
+
 }
 
 

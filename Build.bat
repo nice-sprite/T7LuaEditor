@@ -2,6 +2,8 @@
 cls
 setlocal EnableDelayedExpansion
 
+ 
+
 :: Using the following external dependencies
 ::	https://github.com/fmtlib/fmt
 ::	https://github.com/ocornut/imgui/tree/docking
@@ -20,18 +22,19 @@ setlocal EnableDelayedExpansion
 :: /Zi		Generates complete debugging information.
 :: /c		compile without linking ( for building libs )
 :: /utf-8	use the UTF8 execution charset 
-SET "compiler_flags=/std:c++17 /W2 /GR- /Zi /EHsc /utf-8 /D UNICODE /D _UNICODE /nologo /D NOMINMAX /D TRACY_ENABLE"
-SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib"
+:: /MP      Parallelize compilation of source files
+SET "compiler_flags=/std:c++17 /W2 /MP /GR- /Zi /EHsc /utf-8  /D UNICODE /D _UNICODE /nologo /D NOMINMAX /D TRACY_ENABLE"
+SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib" and 
 
 mkdir Build
 pushd Build
 
 :: build tracy 
-	cl %compiler_flags% /c ..\Source\ThirdParty\tracy\TracyClient.cpp
-	lib TracyClient.obj
+	:: cl.exe %compiler_flags% /c ..\Source\ThirdParty\tracy\TracyClient.cpp
+	:: lib TracyClient.obj
 
 :: build Dear ImGui
-::	cl %compiler_flags% /c 
+::	cl.exe %compiler_flags% /c 
 ::    ..\Source\ThirdParty\imgui\imgui.cpp ^
 ::    ..\Source\ThirdParty\imgui\imgui_draw.cpp ^
 ::    ..\Source\ThirdParty\imgui\imgui_widgets.cpp ^
@@ -41,19 +44,23 @@ pushd Build
 ::	lib imgui.obj imgui_draw.obj imgui_widgets.obj imgui_tables.obj	imgui_demo.obj
 
 :: build {fmt}
-::	cl %compiler_flags% /c ..\Source\ThirdParty\fmt\src\format.cc ..\Source\ThirdParty\fmt\src\os.cc /I ..\Source\ThirdParty\fmt\include
+::	cl.exe %compiler_flags% /c ..\Source\ThirdParty\fmt\src\format.cc ..\Source\ThirdParty\fmt\src\os.cc /I ..\Source\ThirdParty\fmt\include
 ::	lib format.obj os.obj	
 
 :: compile and link
-	cl %compiler_flags% ..\Source\main.cpp ^
+	cl.exe %compiler_flags% ..\Source\main.cpp ^
     ..\Source\Application\*.cpp ^
     ..\Source\Engine\*.cpp ^
     ..\Source\ThirdParty\imgui\imgui_impl_dx11.cpp ^
     ..\Source\ThirdParty\imgui\imgui_impl_win32.cpp ^
     %link_to_libs% ^
+    "C:\Program Files (x86)\Microsoft GDK\220602\GRDK\GameKit\Lib\amd64\GameInput.lib"^
+    "C:\Program Files (x86)\Microsoft GDK\220602\GRDK\GameKit\Lib\amd64\xgameruntime.lib"^
     /I ..\Source\ThirdParty  ^
     /I ..\Source\ThirdParty\fmt\include  ^
     /I ..\Source\ThirdParty\imgui  ^
-    /I ..\Source\ThirdParty\tracy /link /out:luieditor.exe
+    /I ..\Source\ThirdParty\tracy ^
+    /I "C:\Program Files (x86)\Microsoft GDK\220602\GRDK\GameKit\Include"^
+    /link /incremental /DEBUG:FULL /out:luieditor.exe
 
 popd

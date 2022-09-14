@@ -29,7 +29,10 @@
 #include <Windows.h>
 #include <array>
 #include <functional>
+#include <GameInput.h>
+#include <wrl/client.h>
 
+using namespace Microsoft::WRL;
 namespace input
 {
     // contains position
@@ -86,11 +89,35 @@ namespace input
     static size_t num_callbacks = 0;
 
     bool register_callback(InputCallback fn);
-
     void process_input_for_frame();
-
     void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
     void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
+    // GameInput stuff
+    static ComPtr<IGameInput> game_input;
+    static ComPtr<IGameInputDevice> kbd = nullptr;
+    static GameInputDeviceInfo* mouse_device_info = nullptr;
+    HRESULT start_game_input();
+    HRESULT shutdown_game_input();
+
+    static ComPtr<IGameInputDevice> gamepad = nullptr;
+    GameInputGamepadState poll_gamepad();
+
+    // MOUSE
+    static ComPtr<IGameInputDevice> mouse = nullptr;
+    GameInputMouseState poll_mouse();
+
+    // KEYBOARD
+    static GameInputDeviceInfo* keyboard_device_info = nullptr;
+    extern GameInputKeyState* keystate;
+    extern unsigned int max_keys;
+    extern unsigned int active_keys;
+    void poll_keys();
+    bool key_down(uint8_t vk);
+    bool key_combo(uint8_t a, uint8_t b);
+
+
 }
+
 
 #endif
