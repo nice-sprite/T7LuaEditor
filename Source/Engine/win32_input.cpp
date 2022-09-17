@@ -4,23 +4,31 @@
 
 namespace Input
 {
+    bool window_has_focus = false;
+    void focus_changed(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+        if(msg == WM_ACTIVATE) {
+            window_has_focus = (LOWORD(wparam) == WA_ACTIVE || LOWORD(wparam) == WA_CLICKACTIVE);
+        }
+    }
     namespace Ui {
 
-        void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+        void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         {
             ZoneScoped("cache_mouse_for_frame");
             float x = (float)GET_X_LPARAM(lparam);
             float y = (float)GET_Y_LPARAM(lparam);
-            int keys = GET_KEYSTATE_WPARAM(wparam);
+            __int64 keys = GET_KEYSTATE_WPARAM(wparam);
             POINT screen_point{};
 
-            mouse_state.ctrl_down = LOWORD(wparam) & MK_CONTROL;
-            mouse_state.left_down = LOWORD(wparam) & MK_LBUTTON;
-            mouse_state.right_down = LOWORD(wparam) & MK_RBUTTON;
-            mouse_state.middle_down = LOWORD(wparam) & MK_MBUTTON;
-            mouse_state.shift_down = LOWORD(wparam) & MK_SHIFT;
-            mouse_state.x1_down = LOWORD(wparam) & MK_XBUTTON1;
-            mouse_state.x2_down = LOWORD(wparam) & MK_XBUTTON2;
+           // mouse_state.ctrl_down = LOWORD(wparam) & MK_CONTROL;
+           // mouse_state.left_down = LOWORD(wparam) & MK_LBUTTON;
+           // mouse_state.right_down = LOWORD(wparam) & MK_RBUTTON;
+           // mouse_state.middle_down = LOWORD(wparam) & MK_MBUTTON;
+           // mouse_state.shift_down = LOWORD(wparam) & MK_SHIFT;
+           // mouse_state.x1_down = LOWORD(wparam) & MK_XBUTTON1;
+           // mouse_state.x2_down = LOWORD(wparam) & MK_XBUTTON2;
+            mouse_state.x = x;
+            mouse_state.y = y;
             switch(msg) {
                 case WM_MOUSEWHEEL:
                     // WM_MOUSEWHEEL doesnt send client relative coords for some reason...
@@ -40,8 +48,6 @@ namespace Input
                 case WM_RBUTTONUP:
                     mouse_state.right_down = false;
                     mouse_state.right_double_click = false;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
                     break;
 
                 case WM_RBUTTONDOWN:
@@ -139,7 +145,7 @@ namespace Input
             }
         }
 
-        void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
+        void parse_keyboard(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         {
             ZoneScoped("cache_keyboard_for_frame");
             if(msg == WM_CHAR)
@@ -293,17 +299,12 @@ namespace Input
             mouse_state.scroll_delta = 0;
         }
 
-        void handle_activate(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-            if(msg == WM_ACTIVATE) {
-                window_has_focus = (LOWORD(wparam) == WA_ACTIVE || LOWORD(wparam) == WA_CLICKACTIVE);
-            }
-        }
 
     };
+
 }
 
 namespace Input {
-
     namespace GameInput {
         IGameInput* game_input = nullptr;
         IGameInputDevice* gamepad = nullptr;

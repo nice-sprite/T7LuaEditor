@@ -17,7 +17,7 @@ namespace app
         rhi = new Renderer(mainWindow.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
         // DEBUG SELECTION RECT
         rhi->add_selection_rect(-50.f, 50.f, -50.f, 50.f);
-        rhi->create_world_grid();
+        rhi->create_world_grid_horizon();
         SetWindowPos(mainWindow.hwnd, nullptr, 0, 0,
                      (rect.right - rect.left + 1), // the + 1 is because the WM_SIZE message doesn't go through if the size is the same
                      (rect.bottom - rect.top),
@@ -194,9 +194,9 @@ namespace app
 
         if(!(ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)) {
             Input::Ui::process_input_for_frame();
-            Input::GameInput::update();
         }
 
+        Input::GameInput::update();
         //auto mouse = Input::GameInput::poll_mouse();
         //auto gamepad = Input::GameInput::poll_gamepad();
         //Input::GameInput::poll_keys();
@@ -323,13 +323,13 @@ namespace app
             case WM_XBUTTONDOWN:
             case WM_XBUTTONDBLCLK:
             {
-                Input::Ui::cache_mouse_input_for_frame(hwnd, msg, wparam, lparam); 
+                Input::Ui::parse_mouse(hwnd, msg, wparam, lparam); 
                 break;
             }
             case WM_KEYDOWN:
             case WM_KEYUP:
             {
-                Input::Ui::cache_keyboard_input_for_frame(hwnd, msg, wparam, lparam);
+                Input::Ui::parse_keyboard(hwnd, msg, wparam, lparam);
                 break;
             }
             case WM_SIZE:
@@ -346,7 +346,7 @@ namespace app
 
             case WM_ACTIVATE:
             {
-                //Input::handle_activate(hwnd, msg, wparam, lparam);
+                Input::focus_changed(hwnd, msg, wparam, lparam);
                 break;
             }
 

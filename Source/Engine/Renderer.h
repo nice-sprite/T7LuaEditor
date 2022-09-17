@@ -66,6 +66,7 @@ public:
     
     // draws the grid plane
     void create_world_grid();
+    void create_world_grid_horizon();
 
     /* Selection Rect API
      * allows drawing of 3d selection rectangles to highlight 

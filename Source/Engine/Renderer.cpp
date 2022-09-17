@@ -136,10 +136,10 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         __debugbreak();
     }
 
-    //Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd ) -> bool {
-    //    scene_pick(mouse.x, mouse.y);
-    //    return true;
-    //});
+    Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd ) -> bool {
+        scene_pick(mouse.x, mouse.y);
+        return true;
+    });
 
     /* DO DEBUG NAMES */
     static const char selection_vbuf_name[] = "Selection Vertices";
@@ -716,4 +716,28 @@ void Renderer::create_world_grid() {
         add_debug_line_from_vector(XMVectorSet( -span, grid_size * (float)i, 0.0f, 0.0f), XMVectorSet(span, grid_size*(float)i,  0.0f, 0.0f), line_color);
     }
 
+}
+
+// use debug lines array for now
+void Renderer::create_world_grid_horizon() {
+    XMFLOAT4 line_color{0.7f, 0.7f, 0.7f, 1.0f};
+    static bool draw = true;
+    static float grid_size = 64.0f;
+    static int max_lines = 500;// 250 horizontal and 250 vertical (y axis)
+    static float span = (float)(grid_size * max_lines); 
+
+
+    for(int i = -(max_lines/2); i < max_lines/2; ++i) {
+        add_debug_line_from_vector(
+            XMVectorSet(grid_size * (float)i, 0, -span, 0.0), 
+            XMVectorSet(grid_size * (float)i, 0, span, 0),
+            line_color
+        );
+
+        add_debug_line_from_vector(
+            XMVectorSet( -span, 0.0f, grid_size * (float)i, 0), 
+            XMVectorSet(span, 0.0f, grid_size*(float)i, 0.0f), 
+            line_color
+        );
+    }
 }

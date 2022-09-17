@@ -44,7 +44,15 @@
 using namespace Microsoft::WRL;
 namespace Input
 {
-    void handle_activate(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+    enum CurrentFocus {
+        ImGui,
+        Scene,
+        Element,
+        None
+    };
+    extern bool window_has_focus;
+    void focus_changed(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+    void decide_focus(bool imgui_wants);
 
     // Ui input for controls, typing text in boxes, mouse picking
     namespace Ui {
@@ -52,6 +60,8 @@ namespace Input
         struct MouseState
         {
             float x, y;
+            __int64 buttons;
+            __int64 scroll_delta;
             bool ctrl_down;
             bool left_down;
             bool right_down;
@@ -64,7 +74,6 @@ namespace Input
             bool middle_double_click;
             bool x1_double_click;
             bool x2_double_click;
-            int scroll_delta;
         };
 
         struct KeyState {
@@ -103,8 +112,8 @@ namespace Input
 
         bool register_callback(InputCallback fn);
         void process_input_for_frame();
-        void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-        void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+        void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+        void parse_keyboard(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
     };
 
     namespace GameInput {

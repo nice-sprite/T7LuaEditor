@@ -18,29 +18,31 @@ namespace camera_controller {
         XMMATRIX temp_y_matrix;
         static float movement_speed = 5.0f;
 
-        camera.pitch += 0.003 * (float)(Input::GameInput::mouse_delta().dy);
-        camera.yaw   += 0.003 * (float)(Input::GameInput::mouse_delta().dx);
 
-        camera.pitch = clamp_float(camera.pitch, (float)( -XM_PIDIV2 + 0.001 ), (float)( XM_PIDIV2 - 0.001 ));
+        if(Input::GameInput::mouse_button_down(GameInputMouseRightButton)) {
+            camera.pitch += 0.003 * (float)(Input::GameInput::mouse_delta().dy);
+            camera.yaw   += 0.003 * (float)(Input::GameInput::mouse_delta().dx);
+            camera.pitch = clamp_float(camera.pitch, (float)( -XM_PIDIV2 + 0.001 ), (float)( XM_PIDIV2 - 0.001 ));
+
+            if (Input::GameInput::key_down('W')) {
+                camera_offset = XMVectorAdd(camera_offset, XMVectorSet(0.0, 0.0, 1.0, 0.0));
+            }
+
+            if (Input::GameInput::key_down('S')) {
+                camera_offset = XMVectorAdd(camera_offset, XMVectorSet(0.0, 0.0, -1.0, 0.0));
+            }
+
+            if(Input::GameInput::key_down('A')) {
+                camera_offset = XMVectorAdd(camera_offset, XMVectorSet(-1.0, 0.0, 0.0, 0.0));
+            }
+
+            if(Input::GameInput::key_down('D')) {
+                camera_offset = XMVectorAdd(camera_offset, XMVectorSet(1.0, 0.0, 0.0, 0.0));
+            }
+        }
 
         rotation = XMMatrixRotationRollPitchYaw(camera.pitch, camera.yaw, camera.roll);
         temp_y_matrix = XMMatrixRotationY(camera.yaw);
-
-        if (Input::GameInput::key_down('W')) {
-            camera_offset = XMVectorAdd(camera_offset, XMVectorSet(0.0, 0.0, 1.0, 0.0));
-        }
-
-        if (Input::GameInput::key_down('S')) {
-            camera_offset = XMVectorAdd(camera_offset, XMVectorSet(0.0, 0.0, -1.0, 0.0));
-        }
-
-        if(Input::GameInput::key_down('A')) {
-            camera_offset = XMVectorAdd(camera_offset, XMVectorSet(-1.0, 0.0, 0.0, 0.0));
-        }
-
-        if(Input::GameInput::key_down('D')) {
-            camera_offset = XMVectorAdd(camera_offset, XMVectorSet(1.0, 0.0, 0.0, 0.0));
-        }
 
         camera.origin += movement_speed * XMVector3Normalize(XMVector3TransformCoord(camera_offset, rotation));
 
@@ -97,7 +99,7 @@ namespace camera_controller {
             if(Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {
                 camera_offset += XMVectorSet(
                     -(float)(Input::GameInput::mouse_delta().dx),
-                    -(float)(Input::GameInput::mouse_delta().dy),
+                    (float)(Input::GameInput::mouse_delta().dy),
                     0.0, 
                     0.0
                 );
