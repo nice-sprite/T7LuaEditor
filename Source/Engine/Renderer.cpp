@@ -36,7 +36,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
 {
     initialize_d3d();
     initialize_imgui();
-    clearColor = { 0.1, 0.1, 0.1, 1.0f}; 
+    clearColor = { 0.1f, 0.1f, 0.1f, 1.0f}; 
 
     /*create scene resources*/
     HRESULT buff_r = create_dynamic_vertex_buffer(device.Get(), 
@@ -136,10 +136,10 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
         __debugbreak();
     }
 
-    input::register_callback([this](input::MouseState const& mouse, input::KeyboardState const& kbd ) -> bool {
-        scene_pick(mouse.x, mouse.y);
-        return true;
-    });
+    //Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd ) -> bool {
+    //    scene_pick(mouse.x, mouse.y);
+    //    return true;
+    //});
 
     /* DO DEBUG NAMES */
     static const char selection_vbuf_name[] = "Selection Vertices";
@@ -158,8 +158,8 @@ void Renderer::create_backbuffer_view()
     pBackBuffer->Release();
 
     D3D11_TEXTURE2D_DESC d;
-    d.Width = (float)width;
-    d.Height = (float)height;
+    d.Width = (UINT)width;
+    d.Height = (UINT)height;
     d.MipLevels =1;
     d.ArraySize =1 ;
     d.Format = DXGI_FORMAT_D24_UNORM_S8_UINT;
@@ -327,6 +327,7 @@ bool Renderer::initialize_imgui()
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+
     auto font_consolas = ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
     ImGui_ImplDX11_Init(device.Get(), context.Get());
     ImGui_ImplWin32_Init(hwnd);
@@ -703,16 +704,16 @@ void Renderer::imgui_draw_screen_rect(float left, float right, float top, float 
 
 // use debug lines array for now
 void Renderer::create_world_grid() {
-    XMFLOAT4 line_color{0.7, 0.7, 0.7, 1.f};
+    XMFLOAT4 line_color{0.7f, 0.7f, 0.7f, 1.0f};
     static bool draw = true;
-    static int grid_size = 64;
+    static float grid_size = 64.0f;
     static int max_lines = 500;// 250 horizontal and 250 vertical (y axis)
     static float span = (float)(grid_size * max_lines); 
 
 
     for(int i = -(max_lines/2); i < max_lines/2; ++i) {
-        add_debug_line_from_vector(XMVectorSet(grid_size * i, -span, 0.0, 0.0), XMVectorSet(grid_size * i, span, 0.0, 0.0), line_color);
-        add_debug_line_from_vector(XMVectorSet( -span, grid_size * i, 0.0, 0.0), XMVectorSet(span, grid_size*i,  0.0, 0.0), line_color);
+        add_debug_line_from_vector(XMVectorSet(grid_size * (float)i, -span, 0.0f, 0.0f), XMVectorSet(grid_size * (float)i, span, 0.0f, 0.0f), line_color);
+        add_debug_line_from_vector(XMVectorSet( -span, grid_size * (float)i, 0.0f, 0.0f), XMVectorSet(span, grid_size*(float)i,  0.0f, 0.0f), line_color);
     }
 
 }

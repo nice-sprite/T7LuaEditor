@@ -17,7 +17,7 @@ namespace app
     void tick(float timestep);
     void draw_scene(float ts);
 
-    static win32::Timer frameTimer;
+    static win32::Timer timer;
     static win32::Window mainWindow;
     static Renderer* rhi = nullptr;
     static Scene* scene = nullptr;

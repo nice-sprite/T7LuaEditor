@@ -26,6 +26,15 @@ setlocal EnableDelayedExpansion
 SET "compiler_flags=/std:c++17 /W2 /MP /GR- /Zi /EHsc /utf-8  /D UNICODE /D _UNICODE /nologo /D NOMINMAX /D TRACY_ENABLE"
 SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib" and 
 
+:: available debug cfgs:
+:: /D <flag>
+:: DEBUG_WIN32_INPUT
+:: DEBUG_GAME_INPUT
+:: DEBUG_IMGUI_WINDOW
+:: DEBUG_CAMERA
+SET "debug_configs=/D DEBUG_CAMERA /D DEBUG_IMGUI_WINDOW /D DEBUG_GAME_INPUT"
+
+
 mkdir Build
 pushd Build
 
@@ -34,21 +43,22 @@ pushd Build
 	:: lib TracyClient.obj
 
 :: build Dear ImGui
-::	cl.exe %compiler_flags% /c 
-::    ..\Source\ThirdParty\imgui\imgui.cpp ^
-::    ..\Source\ThirdParty\imgui\imgui_draw.cpp ^
-::    ..\Source\ThirdParty\imgui\imgui_widgets.cpp ^
-::    ..\Source\ThirdParty\imgui\imgui_tables.cpp ^
-::    ..\Source\ThirdParty\imgui\imgui_demo.cpp ^
-::    /I ..\Source\ThirdParty\imgui
-::	lib imgui.obj imgui_draw.obj imgui_widgets.obj imgui_tables.obj	imgui_demo.obj
+	cl.exe %compiler_flags% /c ^
+    ..\Source\ThirdParty\imgui\imgui.cpp ^
+    ..\Source\ThirdParty\imgui\imgui_draw.cpp ^
+    ..\Source\ThirdParty\imgui\imgui_widgets.cpp ^
+    ..\Source\ThirdParty\imgui\imgui_tables.cpp ^
+    ..\Source\ThirdParty\imgui\imgui_demo.cpp ^
+    /I ..\Source\ThirdParty\imgui
+
+	lib imgui.obj imgui_draw.obj imgui_widgets.obj imgui_tables.obj	imgui_demo.obj
 
 :: build {fmt}
 ::	cl.exe %compiler_flags% /c ..\Source\ThirdParty\fmt\src\format.cc ..\Source\ThirdParty\fmt\src\os.cc /I ..\Source\ThirdParty\fmt\include
 ::	lib format.obj os.obj	
 
 :: compile and link
-	cl.exe %compiler_flags% ..\Source\main.cpp ^
+	cl.exe %compiler_flags% %debug_configs% ..\Source\main.cpp ^
     ..\Source\Application\*.cpp ^
     ..\Source\Engine\*.cpp ^
     ..\Source\ThirdParty\imgui\imgui_impl_dx11.cpp ^

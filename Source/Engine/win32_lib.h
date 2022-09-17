@@ -35,13 +35,22 @@ namespace win32
 
     struct Timer
     {
-        LARGE_INTEGER clockFrequency;
-        LARGE_INTEGER start, end, elapsed;
-    };
+        __int64 frequency;
+        __int64 a;
+        __int64 b;
+        __int64 paused;
+        double seconds_per_count;
+        double elapsed;
 
-    void start_timer(Timer* t);
-    float get_timer_ms(Timer* t);
-    void zero_timer(Timer* t);
+        Timer();
+
+        double elapsed_ms();
+        void tick();
+        void start();
+        void stop();
+        void reset();
+
+    };
 
     using DxgiAdapterList = std::vector<DXGI_ADAPTER_DESC1>;
 

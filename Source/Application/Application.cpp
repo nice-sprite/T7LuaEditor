@@ -3,11 +3,12 @@
 #include <imgui.h>
 #include <Tracy.hpp> 
 #include "../Engine/camera_controller.h"
+
 namespace app 
 {
     void start(HINSTANCE hinst, const wchar_t *appname)
     {
-        input::start_game_input();
+        Input::GameInput::start();
         mainWindow = win32::create_window(hinst, appname, L"luaeditor", AppWidth, AppHeight, win32_message_callback, AppIcon);
         auto rect = mainWindow.clientRect;
 
@@ -23,7 +24,8 @@ namespace app
                      SWP_NOMOVE);
 
         /* INPUT DEBUGGING and TESTING */
-        input::register_callback([](input::MouseState const& mouse, input::KeyboardState const& kbd) -> bool {
+#ifdef DEBUG_WIN32_INPUT
+        Input::Ui::register_callback([](Input::MouseState const& mouse, Input::KeyboardState const& kbd) -> bool {
             if(ImGui::Begin("Keyboard Debug")) {
                 ImGui::Text("keyboard state debug");
                 ImGui::Text("shift_down, %d", kbd.shift_down);
@@ -34,7 +36,7 @@ namespace app
                 ImGui::Text("ctrl_down, %d", kbd.ctrl_down);
                 ImGui::Text("caps_down, %d", kbd.caps_down);
                 size_t index = 0;
-                for(input::KeyState const& key : kbd.keys) {
+                for(Input::KeyState const& key : kbd.keys) {
                     char value = key.character_value ? key.character_value : (char)index;
                     ImGui::Text("%c | h: %d | d: %d", value, (int)key.held, (int)key.down);
                     index++;
@@ -85,7 +87,7 @@ namespace app
             //rhi->imgui_draw_screen_rect(-50.f, 50.f, -50.f, 50.f);
             return true;
         });
-
+#endif
 
     }
 
@@ -102,22 +104,22 @@ namespace app
             VertexPosColorTexcoord quad_verts[] = {
                 {
                     DirectX::XMFLOAT3{q.left, q.top, 0.0f},
-                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
+                    DirectX::XMFLOAT4{0.9f, 0.9f, 0.9f, 1.0f},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
                 {
                     DirectX::XMFLOAT3{q.right, q.top, 0.0f},
-                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
+                    DirectX::XMFLOAT4{0.9f, 0.9f, 0.9f, 1.0f},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },
                 {
                     DirectX::XMFLOAT3{q.left, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
+                    DirectX::XMFLOAT4{0.9f, 0.9f, 0.9f, 1.0f},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 }, 
                 {
                     DirectX::XMFLOAT3{q.right, q.bottom, 0.0f},
-                    DirectX::XMFLOAT4{0.9, 0.9, 0.9, 1.0},
+                    DirectX::XMFLOAT4{0.9f, 0.9f, 0.9f, 1.0f},
                     DirectX::XMFLOAT2{0.0f, 0.0f}
                 },   
             };
@@ -177,7 +179,7 @@ namespace app
         rhi->context->VSSetShader(rhi->scene_vertex_shader.Get(), NULL, NULL);
         rhi->context->PSSetShader(rhi->scene_pixel_shader.Get(), NULL, NULL);
         rhi->context->DrawIndexed(upload_indices.size(), 0, 0);
-        ImGui::Text("num_quads: %d", scene->quadCount);
+        //ImGui::Text("num_quads: %d", scene->quadCount);
     }
 
 
@@ -188,76 +190,100 @@ namespace app
 
         rhi->set_and_clear_backbuffer();
         rhi->imgui_frame_begin();
+        ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
         if(!(ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)) {
-            input::process_input_for_frame();
+            Input::Ui::process_input_for_frame();
+            Input::GameInput::update();
         }
 
-        auto mouse = input::poll_mouse();
-        auto gamepad = input::poll_gamepad();
-        input::poll_keys();
+        //auto mouse = Input::GameInput::poll_mouse();
+        //auto gamepad = Input::GameInput::poll_gamepad();
+        //Input::GameInput::poll_keys();
 
         // DEBUG GAMEINPUT
-        if(ImGui::Begin("GAMEINPUT DEBUG")) {
-            float left_stick[2] = {gamepad.leftThumbstickX, gamepad.leftThumbstickY};
-            float right_stick[2] = {gamepad.rightThumbstickX, gamepad.rightThumbstickY};
-            ImGui::Text("MOUSE");
-            ImGui::Text("deltas: %d %d", mouse.positionX, mouse.positionY);
-            ImGui::Text("wheel: %d %d", mouse.wheelX, mouse.wheelY);
-            ImGui::Text("buttons: %d %d %d %d %d %d %d",
-                    mouse.buttons & GameInputMouseLeftButton, 
-                    mouse.buttons & GameInputMouseRightButton,
-                    mouse.buttons & GameInputMouseMiddleButton,
-                    mouse.buttons & GameInputMouseButton4,
-                    mouse.buttons & GameInputMouseButton5,
-                    mouse.buttons & GameInputMouseWheelTiltLeft,
-                    mouse.buttons & GameInputMouseWheelTiltRight
-            );
-            ImGui::Separator();
+#ifdef DEBUG_GAME_INPUT
+        //if(ImGui::Begin("GAMEINPUT DEBUG")) {
+        //    float left_stick[2] = {gamepad.leftThumbstickX, gamepad.leftThumbstickY};
+        //    float right_stick[2] = {gamepad.rightThumbstickX, gamepad.rightThumbstickY};
+        //    ImGui::Text("MOUSE");
+        //    ImGui::Text("deltas: %d %d", mouse.positionX, mouse.positionY);
+        //    ImGui::Text("wheel: %d %d", mouse.wheelX, mouse.wheelY);
+        //    ImGui::Text("buttons: %d %d %d %d %d %d %d",
+        //            mouse.buttons & GameInputMouseLeftButton, 
+        //            mouse.buttons & GameInputMouseRightButton,
+        //            mouse.buttons & GameInputMouseMiddleButton,
+        //            mouse.buttons & GameInputMouseButton4,
+        //            mouse.buttons & GameInputMouseButton5,
+        //            mouse.buttons & GameInputMouseWheelTiltLeft,
+        //            mouse.buttons & GameInputMouseWheelTiltRight
+        //    );
+        //    ImGui::Separator();
 
-            ImGui::Text("Controlla Playa?!?!?!");
-            ImGui::SliderFloat("LT", &gamepad.leftTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
-            ImGui::SliderFloat("RT", &gamepad.rightTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
-            ImGui::DragFloat2("Left Stick", left_stick);
-            ImGui::DragFloat2("Right Stick", right_stick);
+        //    ImGui::Text("Controlla Playa?!?!?!");
+        //    ImGui::SliderFloat("LT", &gamepad.leftTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
+        //    ImGui::SliderFloat("RT", &gamepad.rightTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
+        //    ImGui::DragFloat2("Left Stick", left_stick);
+        //    ImGui::DragFloat2("Right Stick", right_stick);
 
-            ImGui::Text(
-                "None %d\n,  Menu %d\n,  View %d\n,  A %d\n,  B %d\n,  X %d\n,  Y %d\n,  DPadUp %d\n,  DPadDown %d\n,  DPadLeft %d\n,  DPadRight %d\n,  LeftShoulder %d\n,  RightShoulder %d\n,  LeftThumbstick %d\n,  RightThumbstick %d", 
-                gamepad.buttons & GameInputGamepadNone ,  
-                gamepad.buttons & GameInputGamepadMenu ,  
-                gamepad.buttons & GameInputGamepadView ,  
-                gamepad.buttons & GameInputGamepadA ,  
-                gamepad.buttons & GameInputGamepadB ,  
-                gamepad.buttons & GameInputGamepadX ,  
-                gamepad.buttons & GameInputGamepadY ,  
-                gamepad.buttons & GameInputGamepadDPadUp ,  
-                gamepad.buttons & GameInputGamepadDPadDown ,  
-                gamepad.buttons & GameInputGamepadDPadLeft ,  
-                gamepad.buttons & GameInputGamepadDPadRight ,  
-                gamepad.buttons & GameInputGamepadLeftShoulder ,  
-                gamepad.buttons & GameInputGamepadRightShoulder ,  
-                gamepad.buttons & GameInputGamepadLeftThumbstick ,  
-                gamepad.buttons & GameInputGamepadRightThumbstick
-            );
+        //    ImGui::Text(
+        //        "None %d\n,  Menu %d\n,  View %d\n,  A %d\n,  B %d\n,  X %d\n,  Y %d\n,  DPadUp %d\n,  DPadDown %d\n,  DPadLeft %d\n,  DPadRight %d\n,  LeftShoulder %d\n,  RightShoulder %d\n,  LeftThumbstick %d\n,  RightThumbstick %d", 
+        //        gamepad.buttons & GameInputGamepadNone ,  
+        //        gamepad.buttons & GameInputGamepadMenu ,  
+        //        gamepad.buttons & GameInputGamepadView ,  
+        //        gamepad.buttons & GameInputGamepadA ,  
+        //        gamepad.buttons & GameInputGamepadB ,  
+        //        gamepad.buttons & GameInputGamepadX ,  
+        //        gamepad.buttons & GameInputGamepadY ,  
+        //        gamepad.buttons & GameInputGamepadDPadUp ,  
+        //        gamepad.buttons & GameInputGamepadDPadDown ,  
+        //        gamepad.buttons & GameInputGamepadDPadLeft ,  
+        //        gamepad.buttons & GameInputGamepadDPadRight ,  
+        //        gamepad.buttons & GameInputGamepadLeftShoulder ,  
+        //        gamepad.buttons & GameInputGamepadRightShoulder ,  
+        //        gamepad.buttons & GameInputGamepadLeftThumbstick ,  
+        //        gamepad.buttons & GameInputGamepadRightThumbstick
+        //    );
 
-            ImGui::Separator();
-            ImGui::Text("KEYBOARD");
-            ImGui::Text("max_keys: %llu", input::max_keys);
-            ImGui::Text("active_keys: %llu", input::active_keys);
-            if(input::key_down('W')) ImGui::Text("Forward");
-            if(input::key_down('A')) ImGui::Text("Left");
-            if(input::key_down('S')) ImGui::Text("Back");
-            if(input::key_down('D')) ImGui::Text("Right");
-        } 
-        ImGui::End();
+        //    ImGui::Separator();
+        //    ImGui::Text("KEYBOARD");
+        //    ImGui::Text("max_keys: %llu", Input::max_keys);
+        //    ImGui::Text("active_keys: %llu", Input::active_keys);
+        //    if(Input::key_down('W')) ImGui::Text("Forward");
+        //    if(Input::key_down('A')) ImGui::Text("Left");
+        //    if(Input::key_down('S')) ImGui::Text("Back");
+        //    if(Input::key_down('D')) ImGui::Text("Right");
+        //    if(Input::key_down(VK_LCONTROL)) ImGui::Text("CTRL");
+        //} 
+        //ImGui::End();
+#endif
 
+#ifdef DEBUG_IMGUI_WINDOW
         static bool show = false;
         ImGui::ShowDemoWindow(&show);
+#endif
 
-        camera_controller::flycam_fps(timestep, rhi->camera, mouse);
-        
+        static bool camera_mode = false;
+
+        if(Input::GameInput::key_oneshot(VK_F1)) {
+            camera_mode = !camera_mode;
+        }
+
+        //if(Input::GameInput::key_down(VK_F1)) {
+        //    camera_mode = true;
+        //}
+        //if(Input::GameInput::key_down(VK_F2)) {
+        //    camera_mode = false;
+        //}
+
+        if(camera_mode) {
+            camera_controller::flycam_fps(timestep, rhi->camera);
+        } else {
+            camera_controller::dollycam(timestep, rhi->camera);
+        }
 
         draw_scene(timestep);
+
         rhi->draw_selection_rect();
         rhi->draw_debug_lines();
 
@@ -297,13 +323,13 @@ namespace app
             case WM_XBUTTONDOWN:
             case WM_XBUTTONDBLCLK:
             {
-                input::cache_mouse_input_for_frame(hwnd, msg, wparam, lparam); 
+                Input::Ui::cache_mouse_input_for_frame(hwnd, msg, wparam, lparam); 
                 break;
             }
             case WM_KEYDOWN:
             case WM_KEYUP:
             {
-                input::cache_keyboard_input_for_frame(hwnd, msg, wparam, lparam);
+                Input::Ui::cache_keyboard_input_for_frame(hwnd, msg, wparam, lparam);
                 break;
             }
             case WM_SIZE:
@@ -318,6 +344,13 @@ namespace app
                 break;
             }
 
+            case WM_ACTIVATE:
+            {
+                //Input::handle_activate(hwnd, msg, wparam, lparam);
+                break;
+            }
+
+
         }
 
         return DefWindowProc(hwnd, msg, wparam, lparam);
@@ -325,11 +358,11 @@ namespace app
 
     void message_loop()
     {
-        start_timer(&frameTimer);
         MSG msg;
         bool shouldClose = false;
         while (!shouldClose)
         {
+            timer.tick();
             if (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE))
             {
                 TranslateMessage(&msg);
@@ -340,12 +373,12 @@ namespace app
                     break;
                 }
             }
-            tick(get_timer_ms(&frameTimer));
+            tick(timer.elapsed_ms());
         }
-        input::shutdown_game_input();
+        // this is where the program exits: 
+        // TODO: call shutdown and free memory
+        Input::GameInput::shutdown();
     }
-    // this is where the program exits: 
-    // TODO: call shutdown and free memory
 
 
 };

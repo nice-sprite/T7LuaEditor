@@ -9,7 +9,7 @@
  *  key combos and action mappings
  *
  * Mouse: 
- *  interested in mouse absolute position (relative to clinet window) for interaction with UI and selections
+ *  mouse absolute position (relative to clinet window) for interaction with UI and selections
  *  relative mouse coordinates (eg: +20, -50) for camera controls
  *  mouse button states *and* keyboard states that map to actions; ctrl + scroll_forward -> zoom in, shift+lmb_down+mouse_move means pan camera.
  *  double click has its own window msg, so I won't consider it combo-able and it will have its own callback-type 
@@ -22,6 +22,15 @@
  *
  * Ideally, input should be "usable" by the time it gets to a callback. 
  *
+ * Processing: 
+ *  Some actions are meant to be "one-shot", meaning they are ran once when their condition is true.
+ *  Example: user clicks on a text box. The text box should not re-select every frame, and should not have to spam static last_state = false; everywhere through teh code. 
+ *  Text box should be able to do this in its update thing; 
+ *  if(input::mouse_query(LEFT_BUTTON, oneshot = true)) { // run once }
+ *  mouse_query should have all the states from the previous frame, and if oneshot == true && last_mouse_state.buttons & LEFT_BUTTON > 0 then 
+ *  it should return false.
+ *
+ *  Keyboard query should work the same
  *
  */
 #ifndef INPUT_H
@@ -33,91 +42,121 @@
 #include <wrl/client.h>
 
 using namespace Microsoft::WRL;
-namespace input
+namespace Input
 {
-    // contains position
-    struct MouseState
-    {
-        float x, y;
-        bool ctrl_down;
-        bool left_down;
-        bool right_down;
-        bool middle_down;
-        bool shift_down;
-        bool x1_down;
-        bool x2_down;
-        bool left_double_click;
-        bool right_double_click;
-        bool middle_double_click;
-        bool x1_double_click;
-        bool x2_double_click;
-        int scroll_delta;
+    void handle_activate(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+
+    // Ui input for controls, typing text in boxes, mouse picking
+    namespace Ui {
+
+        struct MouseState
+        {
+            float x, y;
+            bool ctrl_down;
+            bool left_down;
+            bool right_down;
+            bool middle_down;
+            bool shift_down;
+            bool x1_down;
+            bool x2_down;
+            bool left_double_click;
+            bool right_double_click;
+            bool middle_double_click;
+            bool x1_double_click;
+            bool x2_double_click;
+            int scroll_delta;
+        };
+
+        struct KeyState {
+            /* The ascii text value of this keycode. 
+             * differs from the index into the KeyboardState::key[] 
+             * can be capital or uppercase depending on shift key and caps key state
+             */
+            char character_value;  
+            bool held; // whether the windows default "held" behavior is active or not
+            bool down; 
+        };
+
+        struct KeyboardState
+        {
+            KeyState keys[256];
+            // modifier keys
+            bool shift_down,
+                 tab_down,
+                 backspace_down,
+                 enter_down,
+                 space_down,
+                 ctrl_down,
+                 caps_down;
+
+        };
+
+        static MouseState    mouse_state;
+        static KeyboardState kbd_state; 
+
+        // i think no :)
+        using InputCallback = std::function<bool(MouseState const& , KeyboardState const& )>;
+
+        constexpr size_t MaxCallbacks = 512; 
+        static std::array<InputCallback, MaxCallbacks> callbacks;
+        static size_t num_callbacks = 0;
+
+        bool register_callback(InputCallback fn);
+        void process_input_for_frame();
+        void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+        void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
     };
 
+    namespace GameInput {
+        // MOUSE
+        struct GIMouseDelta {
+            __int64 dx;
+            __int64 dy;
+            __int64 wheel_x;
+            __int64 wheel_y;
+        };
 
-    struct KeyState {
-        /* The ascii text value of this keycode. 
-         * differs from the index into the KeyboardState::key[] 
-         * can be capital or uppercase depending on shift key and caps key state
-         */
-        char character_value;  
-        bool held; // whether the windows default "held" behavior is active or not
-        bool down; 
+        struct GIMouseGlob {
+            IGameInputDevice* device = nullptr;
+            GameInputDeviceInfo* device_info = nullptr;
+            GameInputMouseState curr_mouse_state{};
+            GameInputMouseState prev_mouse_state{};
+            GIMouseDelta deltas();
+        };
+
+        // KEYBOARD
+        struct GIKeyboardGlob {
+            IGameInputDevice* device = nullptr;
+            GameInputDeviceInfo* device_info = nullptr;
+            GameInputKeyState* curr_keystate = nullptr;
+            GameInputKeyState* prev_keystate = nullptr;  
+            uint32_t curr_active;
+            uint32_t prev_active;
+            uint32_t max_simultaneous_keys;
+        };
+
+        // GameInput 
+        extern IGameInput* game_input;
+        extern IGameInputDevice* gamepad;
+        extern GIMouseGlob mouse;
+        extern GIKeyboardGlob keyboard;
+
+        HRESULT start();
+        HRESULT shutdown();
+
+        void poll_gamepad();
+        void poll_mouse();
+        void poll_keyboard();
+        void update(); 
+
+        bool key_down(uint8_t vk);
+        bool key_combo(uint8_t a, uint8_t b);
+        bool key_oneshot(uint8_t vk);
+
+        GIMouseDelta mouse_delta();
+        bool mouse_button_down(GameInputMouseButtons button);
+        bool mouse_button_oneshot(GameInputMouseButtons button);
     };
-
-    struct KeyboardState
-    {
-        KeyState keys[256];
-        // modifier keys
-        bool shift_down,
-             tab_down,
-             backspace_down,
-             enter_down,
-             space_down,
-             ctrl_down,
-             caps_down;
-
-    };
-
-    static MouseState mouse_state;
-    static KeyboardState kbd_state; 
-
-    using InputCallback = std::function<bool(MouseState const& , KeyboardState const& )>;
-    
-    constexpr size_t MaxCallbacks = 512; 
-    static std::array<InputCallback, MaxCallbacks> callbacks;
-    static size_t num_callbacks = 0;
-
-    bool register_callback(InputCallback fn);
-    void process_input_for_frame();
-    void cache_mouse_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-    void cache_keyboard_input_for_frame(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
-
-    // GameInput stuff
-    static ComPtr<IGameInput> game_input;
-    static ComPtr<IGameInputDevice> kbd = nullptr;
-    static GameInputDeviceInfo* mouse_device_info = nullptr;
-    HRESULT start_game_input();
-    HRESULT shutdown_game_input();
-
-    static ComPtr<IGameInputDevice> gamepad = nullptr;
-    GameInputGamepadState poll_gamepad();
-
-    // MOUSE
-    static ComPtr<IGameInputDevice> mouse = nullptr;
-    GameInputMouseState poll_mouse();
-
-    // KEYBOARD
-    static GameInputDeviceInfo* keyboard_device_info = nullptr;
-    extern GameInputKeyState* keystate;
-    extern unsigned int max_keys;
-    extern unsigned int active_keys;
-    void poll_keys();
-    bool key_down(uint8_t vk);
-    bool key_combo(uint8_t a, uint8_t b);
-
 
 }
-
-
 #endif

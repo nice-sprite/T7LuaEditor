@@ -219,38 +219,70 @@ namespace win32
             size_t numConverted;
             char cstrDescription[128]{};
             wcstombs_s(&numConverted, cstrDescription, 128, def.Description, _TRUNCATE);
-            auto strRep = fmt::format(formatStr, cstrDescription, def.VendorId, def.DeviceId, def.SubSysId, def.Revision,
-                                      bytes_to_gigabytes(def.DedicatedVideoMemory),
-                                      bytes_to_gigabytes(def.DedicatedSystemMemory), bytes_to_gigabytes(def.SharedSystemMemory),
-                                      def.AdapterLuid.LowPart, def.Flags);
+            auto strRep = fmt::format(
+                formatStr,
+                cstrDescription,
+                def.VendorId,
+                def.DeviceId,
+                def.SubSysId,
+                def.Revision,
+                bytes_to_gigabytes(def.DedicatedVideoMemory),
+                bytes_to_gigabytes(def.DedicatedSystemMemory),
+                bytes_to_gigabytes(def.SharedSystemMemory),
+                def.AdapterLuid.LowPart,
+                def.Flags
+            );
 
             defStrings.push_back(strRep);
 
         }
         return defStrings;
-
     }
 
    
 
-    void start_timer(Timer* t)
-    {
-        QueryPerformanceFrequency(&(t->clockFrequency));
-        QueryPerformanceCounter(&(t->start));
+    Timer::Timer() {
+        a = 0;
+        b = 0;
+        elapsed = 0;
+        QueryPerformanceFrequency((LARGE_INTEGER*)&frequency);
+        seconds_per_count = 1.0/(double)frequency;
     }
 
-    void zero_timer(Timer* t)
-    {
-        QueryPerformanceCounter(&(t->start));
-        t->end = t->start;
+    double Timer::elapsed_ms() {
+        return elapsed;
     }
 
-    float get_timer_ms(Timer* t)
-    {
-        QueryPerformanceCounter(&(t->end));
-        t->elapsed.QuadPart = t->end.QuadPart - t->start.QuadPart;
-        t->elapsed.QuadPart *= 1000000;
-        t->elapsed.QuadPart /= t->clockFrequency.QuadPart;
-        return 0.001 * t->elapsed.QuadPart;
+    void Timer::tick() {
+        __int64 current_time;
+        if(paused > 0) { 
+            elapsed = 0;
+            return;
+        }
+        QueryPerformanceCounter((LARGE_INTEGER*)&current_time);
+        b = current_time;
+        elapsed = (b - a) * seconds_per_count;
+        a = b;
+        if(elapsed < 0.0) elapsed = 0.0;
+ 
     }
+
+    void Timer::start() {
+        paused = 0;
+    }
+
+    void Timer::stop() {
+
+        paused = 1;
+    }
+
+    void Timer::reset() {
+        a = 0;
+        b = 0;
+        elapsed = 0;
+    }
+
+
+
+
 };
