@@ -18,17 +18,25 @@ namespace win32
         const wchar_t* window_icon_path
     )
     {
-        BOOL attribute_state = TRUE;
         Window window;
+        BOOL attribute_state = TRUE;
+        DWORD style = WS_OVERLAPPEDWINDOW;
+
         WNDCLASS wc = {};
         wc.lpfnWndProc = proc;
         wc.hInstance = hinst;
         wc.lpszClassName = classname;
         wc.style = CS_DBLCLKS;
-        wc.hIcon = (HICON)LoadImage(hinst, window_icon_path, IMAGE_ICON, 0, 0, LR_DEFAULTSIZE | LR_LOADFROMFILE); 
+        wc.hIcon = (HICON)LoadImage(
+            hinst, 
+			window_icon_path, 
+			IMAGE_ICON, 
+			0, 
+			0, 
+			LR_DEFAULTSIZE | LR_LOADFROMFILE
+        ); 
         RegisterClass(&wc);
 
-        DWORD style = WS_OVERLAPPEDWINDOW;
         window.hwnd = CreateWindowEx( 
             0,
             classname,
@@ -41,10 +49,15 @@ namespace win32
             nullptr
         );
 
-        DwmSetWindowAttribute(window.hwnd, DWMWA_TRANSITIONS_FORCEDISABLED, &attribute_state, sizeof(attribute_state));
+        DwmSetWindowAttribute(
+            window.hwnd, 
+			DWMWA_TRANSITIONS_FORCEDISABLED, 
+			&attribute_state, 
+			sizeof(attribute_state)
+        );
         ShowWindow(window.hwnd, SW_SHOWDEFAULT);
         UpdateWindow(window.hwnd);
-        GetWindowRect(window.hwnd, &window.clientRect);
+        GetWindowRect(window.hwnd, &window.client_rect);
         return window;
     }
 

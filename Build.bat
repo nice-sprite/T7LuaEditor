@@ -32,7 +32,7 @@ SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.
 :: DEBUG_GAME_INPUT
 :: DEBUG_IMGUI_WINDOW
 :: DEBUG_CAMERA
-SET "debug_configs=/D DEBUG_CAMERA /D DEBUG_IMGUI_WINDOW /D DEBUG_GAME_INPUT"
+SET "debug_configs=/D DEBUG_CAMERA  /D DEBUG_GAME_INPUT"
 
 
 mkdir Build

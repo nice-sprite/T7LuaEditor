@@ -64,7 +64,7 @@ public:
     void set_debug_line_from_vector(unsigned int i, XMVECTOR begin, XMVECTOR end, XMFLOAT4 color);
     void set_debug_line_color(unsigned int i, XMFLOAT4 color);
     
-    // draws the grid plane
+    // creates the grid plane
     void create_world_grid();
     void create_world_grid_horizon();
 
@@ -77,7 +77,7 @@ public:
     void add_selection_rect(float left, float right, float top, float bottom);
     void set_selection_rect(int index, float left, float right, float top, float bottom);
 
-    // takes the 2d screen coordinates of where the box should be 
+    // takes the 2d screen coordinates of where the rectangle should be 
     void imgui_draw_screen_rect(float left, float right, float top, float bottom);
 private:
     bool initialize_d3d();

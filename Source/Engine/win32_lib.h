@@ -18,7 +18,7 @@ namespace win32
     struct Window
     {
         HWND hwnd;
-        RECT clientRect;
+        RECT client_rect;
     };
 
     Window create_window(
@@ -49,7 +49,6 @@ namespace win32
         void start();
         void stop();
         void reset();
-
     };
 
     using DxgiAdapterList = std::vector<DXGI_ADAPTER_DESC1>;

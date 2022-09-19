@@ -60,7 +60,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
     }
 
 
-    auto default_shader_path = files::get_shader_root() / "TexturedQuad.hlsl";
+    auto default_shader_path = Files::get_shader_root() / "TexturedQuad.hlsl";
     build_vertex_shader(
         device.Get(), 
         default_shader_path.wstring().c_str(), 
@@ -328,7 +328,7 @@ bool Renderer::initialize_imgui()
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-    auto font_consolas = ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
+    //auto font_consolas = ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
     ImGui_ImplDX11_Init(device.Get(), context.Get());
     ImGui_ImplWin32_Init(hwnd);
     return true;
@@ -354,17 +354,17 @@ void Renderer::scene_pick(float x, float y) {
     XMFLOAT4X4 view; 
     XMFLOAT4X4 inverse_view;
     XMMATRIX world;
-    XMVECTOR ray_origin, ray_dir; 
+    ray_cast::Ray ray;
     float point_x;
     float point_y;
     float point_z;
 
     world = XMMatrixIdentity(); // default for now is just identity matrix
 
-    ray_cast::screen_to_world_ray(x, y, width, height, camera, world, ray_origin, ray_dir);
+    ray = ray_cast::screen_to_world_ray(x, y, width, height, camera, world);
 
     float left = -720.0, right = 720.0, top = -360.0, bottom = 360.0;
-    bool hit = ray_cast::against_quad(ray_origin, ray_dir, left, right, top, bottom);
+    bool hit = ray_cast::against_quad(ray, left, right, top, bottom);
     if (hit) {
         set_selection_rect(0, -720, 720, -360, 360);
     } else {

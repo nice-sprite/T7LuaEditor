@@ -41,6 +41,7 @@
 #include <GameInput.h>
 #include <wrl/client.h>
 
+
 using namespace Microsoft::WRL;
 namespace Input
 {
@@ -114,6 +115,7 @@ namespace Input
         void process_input_for_frame();
         void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
         void parse_keyboard(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+        void debug_win32_input();
     };
 
     namespace GameInput {
@@ -144,9 +146,16 @@ namespace Input
             uint32_t max_simultaneous_keys;
         };
 
+        struct GIGamepadGlob {
+            IGameInputDevice* device = nullptr;
+            GameInputDeviceInfo* device_info = nullptr;
+            GameInputGamepadState state;
+        };
+
+
         // GameInput 
         extern IGameInput* game_input;
-        extern IGameInputDevice* gamepad;
+        extern GIGamepadGlob gamepad;
         extern GIMouseGlob mouse;
         extern GIKeyboardGlob keyboard;
 
@@ -165,6 +174,8 @@ namespace Input
         GIMouseDelta mouse_delta();
         bool mouse_button_down(GameInputMouseButtons button);
         bool mouse_button_oneshot(GameInputMouseButtons button);
+
+        void draw_input_debug();
     };
 
 }

@@ -2,6 +2,10 @@
 #include <windowsx.h>
 #include <Tracy.hpp>
 
+#if defined DEBUG_GAME_INPUT || defined DEBUG_WIN32_INPUT
+    #include <imgui.h>
+#endif
+
 namespace Input
 {
     bool window_has_focus = false;
@@ -11,6 +15,74 @@ namespace Input
         }
     }
     namespace Ui {
+
+        void debug_win32_input() {
+        /* INPUT DEBUGGING and TESTING */
+#ifdef DEBUG_WIN32_INPUT
+            Input::Ui::register_callback([](Input::MouseState const& mouse, Input::KeyboardState const& kbd) -> bool {
+                if(ImGui::Begin("Keyboard Debug")) {
+                    ImGui::Text("keyboard state debug");
+                    ImGui::Text("shift_down, %d", kbd.shift_down);
+                    ImGui::Text("tab_down, %d", kbd.tab_down);
+                    ImGui::Text("backspace_down, %d", kbd.backspace_down);
+                    ImGui::Text("enter_down, %d", kbd.enter_down);
+                    ImGui::Text("space_down, %d", kbd.space_down);
+                    ImGui::Text("ctrl_down, %d", kbd.ctrl_down);
+                    ImGui::Text("caps_down, %d", kbd.caps_down);
+                    size_t index = 0;
+                    for(Input::KeyState const& key : kbd.keys) {
+                        char value = key.character_value ? key.character_value : (char)index;
+                        ImGui::Text("%c | h: %d | d: %d", value, (int)key.held, (int)key.down);
+                        index++;
+                    }
+                }
+                ImGui::End();
+
+                if(ImGui::Begin("Mouse Debug")) {
+                    ImGui::Text("%f %f", mouse.x, mouse.y);
+                    ImGui::Separator();
+                    ImGui::Text("scroll: %d", mouse.scroll_delta);
+                    ImGui::Separator();
+
+                    ImGui::Text("left_button: %d", mouse.left_down);
+                    ImGui::Text("left_double: %d", mouse.left_double_click);
+                    ImGui::Separator();
+
+                    ImGui::Text("right_button: %d", mouse.right_down);
+                    ImGui::Text("right_double: %d", mouse.right_double_click);
+                    ImGui::Separator();
+
+                    ImGui::Text("middle_button: %d", mouse.middle_down);
+                    ImGui::Text("middle_double: %d", mouse.middle_double_click);
+                    ImGui::Separator();
+
+                    ImGui::Text("extra buttons");
+                    ImGui::Text("x1_down: %d", mouse.x1_down);
+                    ImGui::Text("x1_double: %d", mouse.x1_double_click);
+
+                    ImGui::Text("\nx2_down: %d", mouse.x2_down);
+                    ImGui::Text("x2_double: %d", mouse.x2_double_click);
+                }
+                ImGui::End();
+
+                static float cursor_down_pos_x = 0.f; 
+                static float cursor_down_pos_y = 0.f; 
+                static bool held = false;
+                if(mouse.left_down && !held) {
+                    cursor_down_pos_x = mouse.x; 
+                    cursor_down_pos_y = mouse.y; 
+                    held = true;
+                }else if(mouse.left_down && held) {
+                    rhi->imgui_draw_screen_rect(cursor_down_pos_x, mouse.x, cursor_down_pos_y, mouse.y);
+                } else {
+                    held = false;
+                }
+
+                //rhi->imgui_draw_screen_rect(-50.f, 50.f, -50.f, 50.f);
+                return true;
+            });
+#endif
+        }
 
         void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         {
@@ -307,9 +379,9 @@ namespace Input
 namespace Input {
     namespace GameInput {
         IGameInput* game_input = nullptr;
-        IGameInputDevice* gamepad = nullptr;
         GIMouseGlob mouse{};
         GIKeyboardGlob keyboard{};
+        GIGamepadGlob gamepad{};
 
         HRESULT start() {
             HRESULT result = GameInputCreate(&game_input);
@@ -323,6 +395,17 @@ namespace Input {
 
 
         void poll_gamepad() {
+            IGameInputReading* reading;
+            if(SUCCEEDED(game_input->GetCurrentReading(GameInputKindGamepad, gamepad.device, &reading))) {
+                if(gamepad.device == nullptr) {
+                    reading->GetDevice(&gamepad.device);
+                }
+                reading->GetGamepadState(&gamepad.state);
+                reading->Release();
+            } else if(mouse.device != nullptr) {
+                gamepad.device->Release();
+                gamepad.device = nullptr;
+            }
 		}
 
         void poll_mouse() {
@@ -420,6 +503,65 @@ namespace Input {
             return false;
 		}
 
+        void draw_input_debug() {
+            #ifdef DEBUG_GAME_INPUT 
+                if(ImGui::Begin("GameInput Debug View")) {
+
+                    float left_stick[2] = {gamepad.state.leftThumbstickX, gamepad.state.leftThumbstickY};
+                    float right_stick[2] = {gamepad.state.rightThumbstickX, gamepad.state.rightThumbstickY};
+                    ImGui::Text("MOUSE");
+                    ImGui::Text("deltas: %d %d", mouse.curr_mouse_state.positionX, mouse.curr_mouse_state.positionY);
+                    ImGui::Text("wheel: %d %d", mouse.curr_mouse_state.wheelX, mouse.curr_mouse_state.wheelY);
+                    ImGui::Text(
+                        "buttons: %d %d %d %d %d %d %d",
+                        mouse.curr_mouse_state.buttons & GameInputMouseLeftButton, 
+                        mouse.curr_mouse_state.buttons & GameInputMouseRightButton,
+                        mouse.curr_mouse_state.buttons & GameInputMouseMiddleButton,
+                        mouse.curr_mouse_state.buttons & GameInputMouseButton4,
+                        mouse.curr_mouse_state.buttons & GameInputMouseButton5,
+                        mouse.curr_mouse_state.buttons & GameInputMouseWheelTiltLeft,
+                        mouse.curr_mouse_state.buttons & GameInputMouseWheelTiltRight
+                    );
+                    ImGui::Separator();
+
+                    ImGui::Text("Gamepad");
+                    ImGui::SliderFloat("LT", &gamepad.state.leftTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
+                    ImGui::SliderFloat("RT", &gamepad.state.rightTrigger, 0.0f, 1.0f, "%.2f", 1.0f);
+                    ImGui::DragFloat2("Left Stick", left_stick);
+                    ImGui::DragFloat2("Right Stick", right_stick);
+
+                    ImGui::Text(
+                       "None %d\n,  Menu %d\n,  View %d\n,  A %d\n,  B %d\n,  X %d\n,  Y %d\n,  DPadUp %d\n,  DPadDown %d\n,  DPadLeft %d\n,  DPadRight %d\n,  LeftShoulder %d\n,  RightShoulder %d\n,  LeftThumbstick %d\n,  RightThumbstick %d", 
+                       gamepad.state.buttons & GameInputGamepadNone ,  
+                       gamepad.state.buttons & GameInputGamepadMenu ,  
+                       gamepad.state.buttons & GameInputGamepadView ,  
+                       gamepad.state.buttons & GameInputGamepadA ,  
+                       gamepad.state.buttons & GameInputGamepadB ,  
+                       gamepad.state.buttons & GameInputGamepadX ,  
+                       gamepad.state.buttons & GameInputGamepadY ,  
+                       gamepad.state.buttons & GameInputGamepadDPadUp ,  
+                       gamepad.state.buttons & GameInputGamepadDPadDown ,  
+                       gamepad.state.buttons & GameInputGamepadDPadLeft ,  
+                       gamepad.state.buttons & GameInputGamepadDPadRight ,  
+                       gamepad.state.buttons & GameInputGamepadLeftShoulder ,  
+                       gamepad.state.buttons & GameInputGamepadRightShoulder ,  
+                       gamepad.state.buttons & GameInputGamepadLeftThumbstick ,  
+                       gamepad.state.buttons & GameInputGamepadRightThumbstick
+                    );
+
+                    ImGui::Separator();
+                    ImGui::Text("KEYBOARD");
+                    ImGui::Text("max_keys: %llu", keyboard.max_simultaneous_keys);
+                    ImGui::Text("active_keys: %llu", keyboard.curr_active);
+                    if(key_down('W')) ImGui::Text("Forward");
+                    if(key_down('A')) ImGui::Text("Left");
+                    if(key_down('S')) ImGui::Text("Back");
+                    if(key_down('D')) ImGui::Text("Right");
+                    if(key_down(VK_LCONTROL)) ImGui::Text("CTRL");
+                } 
+                ImGui::End();
+            #endif
+        }
 
     };
 };

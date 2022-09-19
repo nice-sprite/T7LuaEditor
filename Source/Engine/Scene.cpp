@@ -11,7 +11,7 @@ using namespace DirectX;
 using namespace std::string_literals;
 
 // scene keeps track of all the screen quads 
-Scene::Scene() : sceneConstants{} {
+Scene::Scene() {
     add_quad( -720.f, 720.f, -360.f, 360.f, 0);
     Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd) ->  bool {
 

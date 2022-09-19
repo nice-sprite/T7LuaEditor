@@ -1,18 +1,16 @@
 #include "ray_cast.h"
 namespace ray_cast {
 
-    void screen_to_world_ray(float x,
+    Ray screen_to_world_ray(float x,
         float y,
         float width,
         float height,
         const Camera& camera,
-        XMMATRIX world,
-        XMVECTOR& ray_origin,
-        XMVECTOR& ray_dir
+        XMMATRIX world
     ) {
- 
         XMFLOAT4X4 projection;
         XMFLOAT4X4 inverse_view;
+        XMVECTOR ray_origin, ray_dir;
         //XMVECTOR ray_origin, ray_dir;
 
         // load the matrices into addressible form
@@ -30,7 +28,7 @@ namespace ray_cast {
         XMMATRIX vi = XMMatrixInverse(nullptr, camera.get_view());
         ray_origin = XMVector3TransformCoord(ray_origin,  vi);
         ray_dir = XMVector3Normalize(XMVector3TransformNormal(ray_dir, vi));
-
+        return Ray{ray_origin, ray_dir};
     }
 
     inline XMVECTOR plane_from_quad(
@@ -51,8 +49,7 @@ namespace ray_cast {
     // casts the given ray against a quad, returns true if the ray intersects the plane embedding the quad 
     // at a point inside the quad
     bool against_quad(
-        XMVECTOR const& ray_origin,
-        XMVECTOR const& ray_dir,
+        Ray const& ray,
         float left,
         float right,
         float top,
@@ -62,10 +59,10 @@ namespace ray_cast {
         XMVECTOR intersects;
 
         intersects = XMPlaneIntersectLine(
-                plane_from_quad(left, right, top, bottom), 
-                ray_origin, 
-                XMVectorAdd(ray_origin, ray_dir)
-                );
+            plane_from_quad(left, right, top, bottom), 
+            ray.origin, 
+            XMVectorAdd(ray.origin, ray.direction)
+        );
 
         return !XMVectorGetIntX(XMVectorIsNaN(intersects)) && 
             XMVectorGetX(intersects) > left && 
