@@ -43,13 +43,13 @@ pushd Build
 	:: lib TracyClient.obj
 
 :: build Dear ImGui
-	cl.exe %compiler_flags% /c ^
-    ..\Source\ThirdParty\imgui\imgui.cpp ^
-    ..\Source\ThirdParty\imgui\imgui_draw.cpp ^
-    ..\Source\ThirdParty\imgui\imgui_widgets.cpp ^
-    ..\Source\ThirdParty\imgui\imgui_tables.cpp ^
-    ..\Source\ThirdParty\imgui\imgui_demo.cpp ^
-    /I ..\Source\ThirdParty\imgui
+::	cl.exe %compiler_flags% /c ^
+::    ..\Source\ThirdParty\imgui\imgui.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_draw.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_widgets.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_tables.cpp ^
+::    ..\Source\ThirdParty\imgui\imgui_demo.cpp ^
+::    /I ..\Source\ThirdParty\imgui
 
 	lib imgui.obj imgui_draw.obj imgui_widgets.obj imgui_tables.obj	imgui_demo.obj
 
@@ -71,6 +71,6 @@ pushd Build
     /I ..\Source\ThirdParty\imgui  ^
     /I ..\Source\ThirdParty\tracy ^
     /I "C:\Program Files (x86)\Microsoft GDK\220602\GRDK\GameKit\Include"^
-    /link /incremental /DEBUG:FULL /out:luieditor.exe
+    /link /incremental /DEBUG:FULL /out:luieditor.exe | rg --passthru -i "warning|error"
 
 popd

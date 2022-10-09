@@ -26,7 +26,19 @@ namespace ray_cast {
         float top,
         float bottom
     );
+    
+    inline XMVECTOR plane_from_quad(
+        float left,
+        float right,
+        float top,
+        float bottom);
 
+
+
+    bool against_quad(
+        Ray const& ray,
+        XMFLOAT4 const& bounds
+    );
 }
 
 

@@ -70,4 +70,13 @@ namespace ray_cast {
             XMVectorGetY(intersects) > top && 
             XMVectorGetY(intersects) < bottom;
     }
+
+    bool against_quad(
+        Ray const& ray,
+        XMFLOAT4 const& bounds
+    ) {
+        return against_quad(ray, bounds.x, bounds.y, bounds.z, bounds.w);
+    }
 }
+
+

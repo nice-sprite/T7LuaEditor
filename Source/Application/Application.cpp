@@ -5,6 +5,9 @@
 #include "../Engine/camera_controller.h"
 #include "../Engine/files.h"
 
+
+
+
 namespace app 
 {
     void start(HINSTANCE hinst, const wchar_t *appname)
@@ -23,6 +26,7 @@ namespace app
         auto rect = main_window.client_rect;
 
         scene = new Scene();  // NO
+        scene->add_lots_of_quads();
 
         // NO again
         rhi = new Renderer(main_window.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
@@ -37,6 +41,97 @@ namespace app
             (rect.bottom - rect.top),
             SWP_NOMOVE
         );
+    }
+
+    void alt_draw_scene() {
+        ZoneScoped("");
+        std::vector<VertexPosColorTexcoord> upload_quads{scene->num_quads * 4};
+        std::vector<int> upload_indices{};
+        upload_indices.resize(scene->num_quads * 6);
+
+        for(int i = 0; i < scene->num_quads; ++i) {
+            XMFLOAT4 pos = scene->bounding_boxs[i];
+            XMFLOAT4 color = scene->colors[i]; 
+            
+            VertexPosColorTexcoord quad_verts[] = {
+                {
+                    DirectX::XMFLOAT3{pos.x, pos.z, 0.f},
+                    color,
+                    DirectX::XMFLOAT2{0.0f, 0.0f}
+                },   
+                {
+                    DirectX::XMFLOAT3{pos.y, pos.z, 0.f},
+                    color,
+                    DirectX::XMFLOAT2{0.0f, 0.0f}
+                },
+                {
+                    DirectX::XMFLOAT3{pos.x, pos.w, 0.f},
+                    color,
+                    DirectX::XMFLOAT2{0.0f, 0.0f}
+                }, 
+                {
+                    DirectX::XMFLOAT3{pos.y, pos.w, 0.f},
+                    color,
+                    DirectX::XMFLOAT2{0.0f, 0.0f}
+                },   
+            };
+
+            upload_quads[i * 4 + 0] = quad_verts[0];
+            upload_quads[i * 4 + 1] = quad_verts[1];
+            upload_quads[i * 4 + 2] = quad_verts[2];
+            upload_quads[i * 4 + 3] = quad_verts[3];
+
+            upload_indices[i * 6 + 0] = i * 4 + 2;
+            upload_indices[i * 6 + 1] = i * 4 + 3;
+            upload_indices[i * 6 + 2] = i * 4 + 1;
+            upload_indices[i * 6 + 3] = i * 4 + 2;
+            upload_indices[i * 6 + 4] = i * 4 + 1;
+            upload_indices[i * 6 + 5] = i * 4 + 0;
+        }
+
+
+        update_dynamic_vertex_buffer(
+            rhi->context.Get(),
+            rhi->scene_vertex_buffer.Get(), 
+            (void*)(upload_quads.data()),
+            sizeof(VertexPosColorTexcoord) * upload_quads.size()
+        );
+
+        update_dynamic_index_buffer(
+            rhi->context.Get(), 
+            rhi->scene_index_buffer.Get(), 
+            (upload_indices.data()),
+            upload_indices.size()
+        );
+
+        bind_dynamic_vertex_buffers(
+            rhi->context.Get(),
+            rhi->scene_vertex_buffer.GetAddressOf(),
+            sizeof(VertexPosColorTexcoord),
+            0
+        );
+
+        bind_dynamic_index_buffer(
+            rhi->context.Get(),
+            rhi->scene_index_buffer.Get()
+        );
+
+        rhi->scene_consts.modelViewProjection = DirectX::XMMatrixIdentity() * rhi->camera.get_transform();
+        update_constant_buffer(
+            rhi->context.Get(),
+            0,
+            (void*)&rhi->scene_consts,
+            sizeof(rhi->scene_consts),
+            rhi->scene_constant_buffer.Get()
+        );
+
+        bind_constant_buffer(rhi->context.Get(), 0, rhi->scene_constant_buffer.Get());
+        rhi->context->IASetInputLayout(rhi->vtx_pos_color_tex_il.Get());
+        rhi->context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        rhi->context->VSSetShader(rhi->scene_vertex_shader.Get(), NULL, NULL);
+        rhi->context->PSSetShader(rhi->scene_pixel_shader.Get(), NULL, NULL);
+        rhi->context->DrawIndexed(upload_indices.size(), 0, 0);
+
     }
 
     // TODO this should not be here 
@@ -140,12 +235,13 @@ namespace app
         rhi->imgui_frame_begin();
         ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
-        if(!(ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)) {
-            Input::Ui::process_input_for_frame();
-        }
+        //if(!(ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard)) {
+        //    Input::Ui::process_input_for_frame();
+        //}
 
         Input::GameInput::update();
         Input::GameInput::draw_input_debug();
+        Input::Ui::debug_ui_input();
 
 #ifdef DEBUG_IMGUI_WINDOW
         static bool show = false;
@@ -164,10 +260,13 @@ namespace app
             camera_controller::dollycam(timestep, rhi->camera);
         }
 
-        draw_scene(timestep);
+        scene->update(timestep, rhi->camera);
 
-        rhi->draw_selection_rect();
-        rhi->draw_debug_lines();
+        //draw_scene(timestep);
+        alt_draw_scene();
+
+//        rhi->draw_selection_rect();
+//        rhi->draw_debug_lines();
 
         rhi->imgui_frame_end();
         rhi->present();
@@ -222,6 +321,8 @@ namespace app
                     auto newHeight = HIWORD(lparam);
                     auto wasMini = wparam == SIZE_MINIMIZED;
                     rhi->resize_swapchain_backbuffer(newWidth, newHeight, wasMini);
+                    scene->width = newWidth;
+                    scene->height = newHeight;
                 }
                 break;
             }

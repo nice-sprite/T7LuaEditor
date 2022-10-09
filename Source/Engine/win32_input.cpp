@@ -16,6 +16,20 @@ namespace Input
     }
     namespace Ui {
 
+        MouseState    mouse_state{};
+        KeyboardState kbd_state{}; 
+        void debug_ui_input() {
+                if(ImGui::Begin("double click")) {
+                    ImGui::Text("%f %f", mouse_state.x, mouse_state.y);
+                    ImGui::Text("left_double: %d", mouse_state.left_double_click);
+                    ImGui::Text("right_double: %d", mouse_state.right_double_click);
+                    ImGui::Text("middle_double: %d", mouse_state.middle_double_click);
+                    ImGui::Text("x1_double: %d", mouse_state.x1_double_click);
+                    ImGui::Text("x2_double: %d", mouse_state.x2_double_click);
+                }
+                ImGui::End();
+        }
+
         void debug_win32_input() {
         /* INPUT DEBUGGING and TESTING */
 #ifdef DEBUG_WIN32_INPUT
@@ -37,8 +51,7 @@ namespace Input
                     }
                 }
                 ImGui::End();
-
-                if(ImGui::Begin("Mouse Debug")) {
+                if(false && ImGui::Begin("Mouse Debug")) {
                     ImGui::Text("%f %f", mouse.x, mouse.y);
                     ImGui::Separator();
                     ImGui::Text("scroll: %d", mouse.scroll_delta);
@@ -84,135 +97,45 @@ namespace Input
 #endif
         }
 
+        // we get everything except double clicks from GameInput, and mouse doesnt really need anything besides the 
+        // client coordinates of the mouse, literally why not just call GetCursorPos!
         void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
         {
-            ZoneScoped("cache_mouse_for_frame");
-            float x = (float)GET_X_LPARAM(lparam);
-            float y = (float)GET_Y_LPARAM(lparam);
-            __int64 keys = GET_KEYSTATE_WPARAM(wparam);
-            POINT screen_point{};
+            ZoneScoped("");
 
-           // mouse_state.ctrl_down = LOWORD(wparam) & MK_CONTROL;
-           // mouse_state.left_down = LOWORD(wparam) & MK_LBUTTON;
-           // mouse_state.right_down = LOWORD(wparam) & MK_RBUTTON;
-           // mouse_state.middle_down = LOWORD(wparam) & MK_MBUTTON;
-           // mouse_state.shift_down = LOWORD(wparam) & MK_SHIFT;
-           // mouse_state.x1_down = LOWORD(wparam) & MK_XBUTTON1;
-           // mouse_state.x2_down = LOWORD(wparam) & MK_XBUTTON2;
-            mouse_state.x = x;
-            mouse_state.y = y;
+            mouse_state.left_double_click = 0;
+            mouse_state.right_double_click = 0;
+            mouse_state.x1_double_click = 0;
+            mouse_state.x2_double_click = 0;
+            mouse_state.middle_double_click = 0;
             switch(msg) {
-                case WM_MOUSEWHEEL:
-                    // WM_MOUSEWHEEL doesnt send client relative coords for some reason...
-                    screen_point.x = int(x); 
-                    screen_point.y = int(y);
-                    ScreenToClient(hwnd, &screen_point);
-                    mouse_state.x = (float)screen_point.x;
-                    mouse_state.y = (float)screen_point.y;
-                    mouse_state.scroll_delta = GET_WHEEL_DELTA_WPARAM(wparam);
-                    break;
 
                 case WM_MOUSEMOVE:
-                    mouse_state.x = x;
-                    mouse_state.y = y;
+                    mouse_state.x = (float)GET_X_LPARAM(lparam);
+                    mouse_state.y = (float)GET_Y_LPARAM(lparam);
                     break;
 
-                case WM_RBUTTONUP:
-                    mouse_state.right_down = false;
-                    mouse_state.right_double_click = false;
-                    break;
-
-                case WM_RBUTTONDOWN:
-                    mouse_state.right_down = true;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
+                // handle double clicks
                 case WM_RBUTTONDBLCLK:
-                    mouse_state.right_down = true;
                     mouse_state.right_double_click = true;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
-                case WM_LBUTTONUP:
-                    mouse_state.left_down = false;
-                    mouse_state.left_double_click = false;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
-                case WM_LBUTTONDOWN:
-                    mouse_state.left_down = true;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
                     break;
 
                 case WM_LBUTTONDBLCLK:
-                    mouse_state.left_down = true;
                     mouse_state.left_double_click = true;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
-                case WM_MBUTTONUP:
-                    mouse_state.middle_down = false;
-                    mouse_state.middle_double_click = false;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
-                case WM_MBUTTONDOWN:
-                    mouse_state.middle_down = true;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
                     break;
 
                 case WM_MBUTTONDBLCLK:
-                    mouse_state.middle_down = true;
                     mouse_state.middle_double_click = true;
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
-                case WM_XBUTTONUP:
-                    if(GET_XBUTTON_WPARAM(wparam) == XBUTTON1) {
-                        mouse_state.x1_down = false;
-                        mouse_state.x1_double_click = false;
-                    }
-
-                    if(GET_XBUTTON_WPARAM(wparam) == XBUTTON2) {
-                        mouse_state.x2_down = false;
-                        mouse_state.x2_double_click = false;
-                    }
-                    mouse_state.x = x;
-                    mouse_state.y = y;
-                    break;
-
-                case WM_XBUTTONDOWN:
-                    if(GET_XBUTTON_WPARAM(wparam) == XBUTTON1) {
-                        mouse_state.x1_down = true;
-                    }
-
-                    if(GET_XBUTTON_WPARAM(wparam) == XBUTTON2) {
-                        mouse_state.x2_down = true;
-                    }
-                    mouse_state.x = x;
-                    mouse_state.y = y;
                     break;
 
                 case WM_XBUTTONDBLCLK:
                     if(GET_XBUTTON_WPARAM(wparam) == XBUTTON1) {
-                        mouse_state.x1_down = true;
                         mouse_state.x1_double_click = true;
                     }
 
                     if(GET_XBUTTON_WPARAM(wparam) == XBUTTON2) {
-                        mouse_state.x2_down = true;
                         mouse_state.x2_double_click = true;
                     }
-                    mouse_state.x = x;
-                    mouse_state.y = y;
                     break;
             }
         }
@@ -298,14 +221,13 @@ namespace Input
                         kbd_state.caps_down = true;
                         break;
                     default: {
-                                 unsigned int character_code = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
-                                 unsigned short repeat_count = (unsigned short)(lparam); // take lower 16 bits
-                                 bool is_extended_key = (lparam & (1 << 24)); // key is either right control or alt key
-                                 kbd_state.keys[character_code].held = lparam & (1<<30); 
-                                 kbd_state.keys[character_code].down = true;
-                                 kbd_state.keys[character_code].character_value = character_code;
-                             }
-
+                        unsigned int ccode = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
+                        unsigned short repeat_count = (unsigned short)(lparam); // take lower 16 bits
+                        bool is_extended_key = (lparam & (1 << 24)); // key is either right control or alt key
+                        kbd_state.keys[ccode].held = lparam & (1<<30); 
+                        kbd_state.keys[ccode].down = true;
+                        kbd_state.keys[ccode].character_value = ccode;
+                    }
                 }
             }
 
@@ -340,16 +262,17 @@ namespace Input
                         kbd_state.caps_down = false;
                         break;
                     default: {
-                                 unsigned int character_code = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
-                                 unsigned short repeat_count = (unsigned short)(lparam); // take lower 16 bits
-                                 bool is_extended_key = (lparam & (1 << 24)); // key is either right control or alt key
-                                 kbd_state.keys[character_code].held = false; //  should be false
-                                 kbd_state.keys[character_code].down = false;
-                                 kbd_state.keys[character_code].character_value = character_code;
-                             }
+                         unsigned int ccode = MapVirtualKey(wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
+                         unsigned short repeat_count = (unsigned short)(lparam); // take lower 16 bits
+                         bool is_extended_key = (lparam & (1 << 24)); // key is either right control or alt key
+                         kbd_state.keys[ccode].held = false; //  should be false
+                         kbd_state.keys[ccode].down = false;
+                         kbd_state.keys[ccode].character_value = ccode;
+                    }
                 }
             }
         }
+
 
         bool register_callback(InputCallback fn) {
             if(num_callbacks < MaxCallbacks) {
@@ -365,12 +288,12 @@ namespace Input
         void process_input_for_frame()
         {
             ZoneScoped("process_input");
-            for(int i = 0; i < num_callbacks; ++i) {
-                callbacks[i](mouse_state, kbd_state);
-            }
-            mouse_state.scroll_delta = 0;
+//            for(int i = 0; i < num_callbacks; ++i) {
+//                callbacks[i](mouse_state, kbd_state);
+//            }
         }
 
+        Cursor cursor() { return Cursor{mouse_state.x, mouse_state.y}; } 
 
     };
 

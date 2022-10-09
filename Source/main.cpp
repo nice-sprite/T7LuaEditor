@@ -3,7 +3,13 @@
 
 #include "main.h"
 #include "./Application/Application.h"
-#include <memory>
+//#include <memory>
+
+
+void do_it() {
+
+
+}
 
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)

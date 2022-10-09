@@ -58,18 +58,13 @@ namespace Input
     // Ui input for controls, typing text in boxes, mouse picking
     namespace Ui {
 
+        struct Cursor {
+            float x, y;
+        };
+
         struct MouseState
         {
             float x, y;
-            __int64 buttons;
-            __int64 scroll_delta;
-            bool ctrl_down;
-            bool left_down;
-            bool right_down;
-            bool middle_down;
-            bool shift_down;
-            bool x1_down;
-            bool x2_down;
             bool left_double_click;
             bool right_double_click;
             bool middle_double_click;
@@ -101,8 +96,8 @@ namespace Input
 
         };
 
-        static MouseState    mouse_state;
-        static KeyboardState kbd_state; 
+        extern MouseState    mouse_state;
+        extern KeyboardState kbd_state; 
 
         // i think no :)
         using InputCallback = std::function<bool(MouseState const& , KeyboardState const& )>;
@@ -115,7 +110,11 @@ namespace Input
         void process_input_for_frame();
         void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
         void parse_keyboard(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
+        //void end_of_frame();// zeros out transient input fields like dbl_clicks and scroll delta
         void debug_win32_input();
+        void debug_ui_input();
+
+        Cursor cursor();
     };
 
     namespace GameInput {
@@ -132,7 +131,6 @@ namespace Input
             GameInputDeviceInfo* device_info = nullptr;
             GameInputMouseState curr_mouse_state{};
             GameInputMouseState prev_mouse_state{};
-            GIMouseDelta deltas();
         };
 
         // KEYBOARD
