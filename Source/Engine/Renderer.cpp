@@ -34,7 +34,7 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
     debug_lines{},
     debug_line_count{0}
 {
-    initialize_d3d();
+    init_gfx();
     initialize_imgui();
     clearColor = { 0.1f, 0.1f, 0.1f, 1.0f}; 
 
@@ -114,38 +114,38 @@ Renderer::Renderer(HWND _hwnd, float _width, float _height) :
      * 
      * */
 
-    buff_r = create_dynamic_vertex_buffer(device.Get(), 
-        selection_vertex_buffer.GetAddressOf(), 
-        SelectionsVertexSize
-    );
+    //buff_r = create_dynamic_vertex_buffer(device.Get(), 
+    //    selection_vertex_buffer.GetAddressOf(), 
+    //    SelectionsVertexSize
+    //);
 
    
 
-    if(FAILED(buff_r)) {
-        // debug
-        __debugbreak();
-    }
+    //if(FAILED(buff_r)) {
+    //    // debug
+    //    __debugbreak();
+    //}
 
-    buff_r = create_dynamic_index_buffer(
-        device.Get(), 
-        selection_index_buffer.GetAddressOf(), 
-        SelectionsIndexSize
-    );
+    //buff_r = create_dynamic_index_buffer(
+    //    device.Get(), 
+    //    selection_index_buffer.GetAddressOf(), 
+    //    SelectionsIndexSize
+    //);
 
-    if(FAILED(buff_r)) {
-        __debugbreak();
-    }
+    //if(FAILED(buff_r)) {
+    //    __debugbreak();
+    //}
 
-    Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd ) -> bool {
-        scene_pick(mouse.x, mouse.y);
-        return true;
-    });
+//    Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd ) -> bool {
+//        scene_pick(mouse.x, mouse.y);
+//        return true;
+//    });
 
     /* DO DEBUG NAMES */
-    static const char selection_vbuf_name[] = "Selection Vertices";
-    static const char selection_index_name[] = "Selection Indices";
-    buff_r = selection_vertex_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(selection_vbuf_name) - 1, selection_vbuf_name);
-    buff_r = selection_index_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(selection_index_name) - 1, selection_index_name);
+    //static const char selection_vbuf_name[] = "Selection Vertices";
+    //static const char selection_index_name[] = "Selection Indices";
+    //buff_r = selection_vertex_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(selection_vbuf_name) - 1, selection_vbuf_name);
+    //buff_r = selection_index_buffer->SetPrivateData(WKPDID_D3DDebugObjectName, sizeof(selection_index_name) - 1, selection_index_name);
 }
 
 Renderer::~Renderer() = default;
@@ -195,7 +195,7 @@ void Renderer::resize_swapchain_backbuffer(int newWidth, int newHeight, bool min
     }
 }
 
-bool Renderer::initialize_d3d()
+bool Renderer::init_gfx()
 {
     UINT createDeviceFlags = D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
     D3D_FEATURE_LEVEL featureLevel;
@@ -366,9 +366,9 @@ void Renderer::scene_pick(float x, float y) {
     float left = -720.0, right = 720.0, top = -360.0, bottom = 360.0;
     bool hit = ray_cast::against_quad(ray, left, right, top, bottom);
     if (hit) {
-        set_selection_rect(0, -720, 720, -360, 360);
+        //set_selection_rect(0, -720, 720, -360, 360);
     } else {
-        set_selection_rect(0, 0, 0, 0, 0);
+        //set_selection_rect(0, 0, 0, 0, 0);
     }
 
     return;
@@ -443,264 +443,258 @@ void Renderer::clear_debug_lines() {
     debug_line_count = 0;
 }
 
-void Renderer::add_selection_rect(float left, float right, float top, float bottom) {
-    if (selection_count < MaxSelections) {
-        selections[selection_count] = SelectionArea{left, right, top, bottom};
-        selection_count++;
-    }
-}
+//void Renderer::add_selection_rect(float left, float right, float top, float bottom) {
+//    if (selection_count < MaxSelections) {
+//        selections[selection_count] = SelectionArea{left, right, top, bottom};
+//        selection_count++;
+//    }
+//}
+//
+//void Renderer::set_selection_rect(int index, float left, float right, float top, float bottom) {
+//    if (index < MaxSelections) {
+//        selections[index] = SelectionArea{left, right, top, bottom};
+//    }
+//}
+//
+//void Renderer::draw_selection_rect() {
+//
+//    /*
+//     * build selection drawing resources
+//     * 1 quad = 4 vertices
+//     * 1 quad = 6 indices
+//     * 4 quads for Border + 1 quad for internal 
+//     * num_verts = MaxSelections * (4 + 1)      * 4
+//     *                              ^num quads  ^num verts per quad
+//     * num_indices = MaxSelections * ( 4 + 1 ) * 6 
+//     * this can be optimzied because there are shared vertices on the 
+//     * edges of the rectangle
+//     * 
+//     * 
+//       tesellate the selection rects
+//      
+//       +------------+
+//       |            |    
+//       |            |
+//       |            |
+//       |            |
+//       +------------+
+//    */
+//    // 
+//    constexpr auto VertexStride = 4 * 5; // there are 5 quads, 4 verts each
+//    constexpr auto IndexStride  = 6 * 5; // there are 5 quads, 6 indices each 
+//    float t = selection_border_thickness;
+//     
+//    // using vector here because a stack array would overflow the stack, we must use heap mem
+//    std::vector<VertexPosColorTexcoord> selection_vertices;
+//    std::vector<int> indices;
+//
+//    selection_vertices.resize(VertexStride * MaxSelections); // each selection is 5 quads, there are 4 verts per quad
+//    indices.resize(IndexStride * MaxSelections);
+//
+//    for(int i = 0; i < selection_count; ++i) {
+//        auto q = selections[i];
+//        // the main quad
+//        VertexPosColorTexcoord quad_verts[] = {
+//            {
+//                DirectX::XMFLOAT3{q.left, q.top, -1.0f},
+//                selection_inner_color,
+//                DirectX::XMFLOAT2{0.0f, 0.0f}
+//            },   
+//            {
+//                DirectX::XMFLOAT3{q.right, q.top, -1.0f},
+//                selection_inner_color,
+//                DirectX::XMFLOAT2{0.0f, 0.0f}
+//            },
+//            {
+//                DirectX::XMFLOAT3{q.left, q.bottom, -1.0f},
+//                selection_inner_color,
+//                DirectX::XMFLOAT2{0.0f, 0.0f}
+//            }, 
+//            {
+//                DirectX::XMFLOAT3{q.right, q.bottom, -1.0f},
+//                selection_inner_color,
+//                DirectX::XMFLOAT2{0.0f, 0.0f}
+//            },   
+//        };
+//
+//        VertexPosColorTexcoord top_border[] = {
+//            {
+//                XMFLOAT3{q.left, q.top - t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//            {
+//                XMFLOAT3{q.right, q.top - t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },
+//            {
+//                XMFLOAT3{q.left, q.top, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            }, 
+//            {
+//                XMFLOAT3{q.right, q.top, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//        };
+//
+//        VertexPosColorTexcoord left_border[] = {
+//            {
+//                XMFLOAT3{q.left- t , q.top - t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//            {
+//                XMFLOAT3{q.left, q.top - t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },
+//            {
+//                XMFLOAT3{q.left - t, q.bottom + t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            }, 
+//            {
+//                XMFLOAT3{q.left, q.bottom + t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//        };
+//
+//        VertexPosColorTexcoord right_border[] = {
+//            {
+//                XMFLOAT3{q.right, q.top - t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//            {
+//                XMFLOAT3{q.right + t, q.top - t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },
+//            {
+//                XMFLOAT3{q.right, q.bottom + t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            }, 
+//            {
+//                XMFLOAT3{q.right + t, q.bottom + t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//        };
+//        VertexPosColorTexcoord bottom_border[] = {
+//            {
+//                XMFLOAT3{q.left, q.bottom, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//            {
+//                XMFLOAT3{q.right, q.bottom, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },
+//            {
+//                XMFLOAT3{q.left, q.bottom + t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            }, 
+//            {
+//                XMFLOAT3{q.right, q.bottom + t, -1.0f},
+//                selection_border_color,
+//                XMFLOAT2{0.0f, 0.0f}
+//            },   
+//        };
+//
+//        selection_vertices[i * VertexStride + 0] = quad_verts[0];
+//        selection_vertices[i * VertexStride + 1] = quad_verts[1];
+//        selection_vertices[i * VertexStride + 2] = quad_verts[2];
+//        selection_vertices[i * VertexStride + 3] = quad_verts[3];
+//
+//        selection_vertices[i * VertexStride + 4] = top_border[0];
+//        selection_vertices[i * VertexStride + 5] = top_border[1];
+//        selection_vertices[i * VertexStride + 6] = top_border[2];
+//        selection_vertices[i * VertexStride + 7] = top_border[3];
+//
+//        selection_vertices[i * VertexStride + 8]  =  left_border[0];
+//        selection_vertices[i * VertexStride + 9]  =  left_border[1];
+//        selection_vertices[i * VertexStride + 10] = left_border[2];
+//        selection_vertices[i * VertexStride + 11] = left_border[3];
+//
+//        selection_vertices[i * VertexStride + 12] =  bottom_border[0];
+//        selection_vertices[i * VertexStride + 13] =  bottom_border[1];
+//        selection_vertices[i * VertexStride + 14] = bottom_border[2];
+//        selection_vertices[i * VertexStride + 15] = bottom_border[3];
+//
+//        selection_vertices[i * VertexStride + 16] = right_border[0];
+//        selection_vertices[i * VertexStride + 17] = right_border[1];
+//        selection_vertices[i * VertexStride + 18] = right_border[2];
+//        selection_vertices[i * VertexStride + 19] = right_border[3];
+//
+//        indices[i * IndexStride + 0] =  i   * VertexStride + 2;
+//        indices[i * IndexStride + 1] =  i   * VertexStride + 3;
+//        indices[i * IndexStride + 2] =  i   * VertexStride + 1;
+//        indices[i * IndexStride + 3] =  i   * VertexStride + 2;
+//        indices[i * IndexStride + 4] =  i   * VertexStride + 1;
+//        indices[i * IndexStride + 5] =  i   * VertexStride + 0;
+//
+//        indices[i * IndexStride + 6] =  i   * VertexStride + 2 + 4;
+//        indices[i * IndexStride + 7] =  i   * VertexStride + 3 + 4;
+//        indices[i * IndexStride + 8] =  i   * VertexStride + 1 + 4;
+//        indices[i * IndexStride + 9] =  i   * VertexStride + 2 + 4;
+//        indices[i * IndexStride + 10] = i   * VertexStride + 1 + 4;
+//        indices[i * IndexStride + 11] = i   * VertexStride + 0 + 4;
+//
+//        indices[i * IndexStride + 12] = i   * VertexStride + 2 + 8;
+//        indices[i * IndexStride + 13] = i   * VertexStride + 3 + 8;
+//        indices[i * IndexStride + 14] = i   * VertexStride + 1 + 8;
+//        indices[i * IndexStride + 15] = i   * VertexStride + 2 + 8;
+//        indices[i * IndexStride + 16] = i   * VertexStride + 1 + 8;
+//        indices[i * IndexStride + 17] = i   * VertexStride + 0 + 8;
+//
+//        indices[i * IndexStride + 18] = i   * VertexStride + 2 + 12;
+//        indices[i * IndexStride + 19] = i   * VertexStride + 3 + 12;
+//        indices[i * IndexStride + 20] = i   * VertexStride + 1 + 12;
+//        indices[i * IndexStride + 21] = i   * VertexStride + 2 + 12;
+//        indices[i * IndexStride + 22] = i   * VertexStride + 1 + 12;
+//        indices[i * IndexStride + 23] = i   * VertexStride + 0 + 12;
+//
+//        indices[i * IndexStride + 24] = i   * VertexStride + 2 + 16;
+//        indices[i * IndexStride + 25] = i   * VertexStride + 3 + 16;
+//        indices[i * IndexStride + 26] = i   * VertexStride + 1 + 16;
+//        indices[i * IndexStride + 27] = i   * VertexStride + 2 + 16;
+//        indices[i * IndexStride + 28] = i   * VertexStride + 1 + 16;
+//        indices[i * IndexStride + 29] = i   * VertexStride + 0 + 16;
+//    }
+//
+//    update_dynamic_vertex_buffer(
+//        context.Get(),
+//        selection_vertex_buffer.Get(),
+//        (void*)selection_vertices.data(),
+//        sizeof(VertexPosColorTexcoord) * selection_vertices.size()
+//    );
+//
+//    update_dynamic_index_buffer(
+//        context.Get(), 
+//        selection_index_buffer.Get(), 
+//        indices.data(),
+//        indices.size()
+//    );
+//
+//    bind_dynamic_vertex_buffers(
+//        context.Get(),
+//        selection_vertex_buffer.GetAddressOf(),
+//        sizeof(VertexPosColorTexcoord),
+//        0
+//    );
+//
+//    bind_dynamic_index_buffer(context.Get(), selection_index_buffer.Get());
+//
+//    context->DrawIndexed(indices.size(), 0, 0);
+//}
 
-void Renderer::set_selection_rect(int index, float left, float right, float top, float bottom) {
-    if (index < MaxSelections) {
-        selections[index] = SelectionArea{left, right, top, bottom};
-    }
-}
-
-void Renderer::draw_selection_rect() {
-
-    /*
-     * build selection drawing resources
-     * 1 quad = 4 vertices
-     * 1 quad = 6 indices
-     * 4 quads for Border + 1 quad for internal 
-     * num_verts = MaxSelections * (4 + 1)      * 4
-     *                              ^num quads  ^num verts per quad
-     * num_indices = MaxSelections * ( 4 + 1 ) * 6 
-     * this can be optimzied because there are shared vertices on the 
-     * edges of the rectangle
-     * 
-     * 
-       tesellate the selection rects
-      
-       +------------+
-       |            |    
-       |            |
-       |            |
-       |            |
-       +------------+
-    */
-    // 
-    constexpr auto VertexStride = 4 * 5; // there are 5 quads, 4 verts each
-    constexpr auto IndexStride  = 6 * 5; // there are 5 quads, 6 indices each 
-    float t = selection_border_thickness;
-     
-    // using vector here because a stack array would overflow the stack, we must use heap mem
-    std::vector<VertexPosColorTexcoord> selection_vertices;
-    std::vector<int> indices;
-
-    selection_vertices.resize(VertexStride * MaxSelections); // each selection is 5 quads, there are 4 verts per quad
-    indices.resize(IndexStride * MaxSelections);
-
-    for(int i = 0; i < selection_count; ++i) {
-        auto q = selections[i];
-        // the main quad
-        VertexPosColorTexcoord quad_verts[] = {
-            {
-                DirectX::XMFLOAT3{q.left, q.top, -1.0f},
-                selection_inner_color,
-                DirectX::XMFLOAT2{0.0f, 0.0f}
-            },   
-            {
-                DirectX::XMFLOAT3{q.right, q.top, -1.0f},
-                selection_inner_color,
-                DirectX::XMFLOAT2{0.0f, 0.0f}
-            },
-            {
-                DirectX::XMFLOAT3{q.left, q.bottom, -1.0f},
-                selection_inner_color,
-                DirectX::XMFLOAT2{0.0f, 0.0f}
-            }, 
-            {
-                DirectX::XMFLOAT3{q.right, q.bottom, -1.0f},
-                selection_inner_color,
-                DirectX::XMFLOAT2{0.0f, 0.0f}
-            },   
-        };
-
-        VertexPosColorTexcoord top_border[] = {
-            {
-                XMFLOAT3{q.left, q.top - t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-            {
-                XMFLOAT3{q.right, q.top - t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },
-            {
-                XMFLOAT3{q.left, q.top, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            }, 
-            {
-                XMFLOAT3{q.right, q.top, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-        };
-
-        VertexPosColorTexcoord left_border[] = {
-            {
-                XMFLOAT3{q.left- t , q.top - t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-            {
-                XMFLOAT3{q.left, q.top - t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },
-            {
-                XMFLOAT3{q.left - t, q.bottom + t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            }, 
-            {
-                XMFLOAT3{q.left, q.bottom + t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-        };
-
-        VertexPosColorTexcoord right_border[] = {
-            {
-                XMFLOAT3{q.right, q.top - t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-            {
-                XMFLOAT3{q.right + t, q.top - t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },
-            {
-                XMFLOAT3{q.right, q.bottom + t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            }, 
-            {
-                XMFLOAT3{q.right + t, q.bottom + t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-        };
-        VertexPosColorTexcoord bottom_border[] = {
-            {
-                XMFLOAT3{q.left, q.bottom, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-            {
-                XMFLOAT3{q.right, q.bottom, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },
-            {
-                XMFLOAT3{q.left, q.bottom + t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            }, 
-            {
-                XMFLOAT3{q.right, q.bottom + t, -1.0f},
-                selection_border_color,
-                XMFLOAT2{0.0f, 0.0f}
-            },   
-        };
-
-        selection_vertices[i * VertexStride + 0] = quad_verts[0];
-        selection_vertices[i * VertexStride + 1] = quad_verts[1];
-        selection_vertices[i * VertexStride + 2] = quad_verts[2];
-        selection_vertices[i * VertexStride + 3] = quad_verts[3];
-
-        selection_vertices[i * VertexStride + 4] = top_border[0];
-        selection_vertices[i * VertexStride + 5] = top_border[1];
-        selection_vertices[i * VertexStride + 6] = top_border[2];
-        selection_vertices[i * VertexStride + 7] = top_border[3];
-
-        selection_vertices[i * VertexStride + 8]  =  left_border[0];
-        selection_vertices[i * VertexStride + 9]  =  left_border[1];
-        selection_vertices[i * VertexStride + 10] = left_border[2];
-        selection_vertices[i * VertexStride + 11] = left_border[3];
-
-        selection_vertices[i * VertexStride + 12] =  bottom_border[0];
-        selection_vertices[i * VertexStride + 13] =  bottom_border[1];
-        selection_vertices[i * VertexStride + 14] = bottom_border[2];
-        selection_vertices[i * VertexStride + 15] = bottom_border[3];
-
-        selection_vertices[i * VertexStride + 16] = right_border[0];
-        selection_vertices[i * VertexStride + 17] = right_border[1];
-        selection_vertices[i * VertexStride + 18] = right_border[2];
-        selection_vertices[i * VertexStride + 19] = right_border[3];
-
-        indices[i * IndexStride + 0] =  i   * VertexStride + 2;
-        indices[i * IndexStride + 1] =  i   * VertexStride + 3;
-        indices[i * IndexStride + 2] =  i   * VertexStride + 1;
-        indices[i * IndexStride + 3] =  i   * VertexStride + 2;
-        indices[i * IndexStride + 4] =  i   * VertexStride + 1;
-        indices[i * IndexStride + 5] =  i   * VertexStride + 0;
-
-        indices[i * IndexStride + 6] =  i   * VertexStride + 2 + 4;
-        indices[i * IndexStride + 7] =  i   * VertexStride + 3 + 4;
-        indices[i * IndexStride + 8] =  i   * VertexStride + 1 + 4;
-        indices[i * IndexStride + 9] =  i   * VertexStride + 2 + 4;
-        indices[i * IndexStride + 10] = i   * VertexStride + 1 + 4;
-        indices[i * IndexStride + 11] = i   * VertexStride + 0 + 4;
-
-        indices[i * IndexStride + 12] = i   * VertexStride + 2 + 8;
-        indices[i * IndexStride + 13] = i   * VertexStride + 3 + 8;
-        indices[i * IndexStride + 14] = i   * VertexStride + 1 + 8;
-        indices[i * IndexStride + 15] = i   * VertexStride + 2 + 8;
-        indices[i * IndexStride + 16] = i   * VertexStride + 1 + 8;
-        indices[i * IndexStride + 17] = i   * VertexStride + 0 + 8;
-
-        indices[i * IndexStride + 18] = i   * VertexStride + 2 + 12;
-        indices[i * IndexStride + 19] = i   * VertexStride + 3 + 12;
-        indices[i * IndexStride + 20] = i   * VertexStride + 1 + 12;
-        indices[i * IndexStride + 21] = i   * VertexStride + 2 + 12;
-        indices[i * IndexStride + 22] = i   * VertexStride + 1 + 12;
-        indices[i * IndexStride + 23] = i   * VertexStride + 0 + 12;
-
-        indices[i * IndexStride + 24] = i   * VertexStride + 2 + 16;
-        indices[i * IndexStride + 25] = i   * VertexStride + 3 + 16;
-        indices[i * IndexStride + 26] = i   * VertexStride + 1 + 16;
-        indices[i * IndexStride + 27] = i   * VertexStride + 2 + 16;
-        indices[i * IndexStride + 28] = i   * VertexStride + 1 + 16;
-        indices[i * IndexStride + 29] = i   * VertexStride + 0 + 16;
-    }
-
-    update_dynamic_vertex_buffer(
-        context.Get(),
-        selection_vertex_buffer.Get(),
-        (void*)selection_vertices.data(),
-        sizeof(VertexPosColorTexcoord) * selection_vertices.size()
-    );
-
-    update_dynamic_index_buffer(
-        context.Get(), 
-        selection_index_buffer.Get(), 
-        indices.data(),
-        indices.size()
-    );
-
-    bind_dynamic_vertex_buffers(
-        context.Get(),
-        selection_vertex_buffer.GetAddressOf(),
-        sizeof(VertexPosColorTexcoord),
-        0
-    );
-
-    bind_dynamic_index_buffer(context.Get(), selection_index_buffer.Get());
-
-    context->DrawIndexed(indices.size(), 0, 0);
-}
-
-void Renderer::imgui_draw_screen_rect(float left, float right, float top, float bottom) {
-    auto draw_list = ImGui::GetForegroundDrawList();
-    // imgui does BRG 
-    draw_list->AddRectFilled(ImVec2(left, top), ImVec2(right, bottom), ImU32(0x70FFBE00));
-    draw_list->AddRect(ImVec2(left, top), ImVec2(right, bottom), ImU32(0xFFFFBE00));
-}
 
 // use debug lines array for now
 void Renderer::create_world_grid() {

@@ -9,6 +9,7 @@
 #include <vector>
 #include <DirectXMath.h>
 #include "ray_cast.h"
+
 using namespace DirectX;
 
 // every UIQuad has 
@@ -48,6 +49,11 @@ struct UIQuad
     int texture;
 };
 
+struct Selection {
+    XMFLOAT4 bounds;
+    std::vector<int> quads;
+};
+
 class Scene {
 
 public:
@@ -75,6 +81,7 @@ public:
     int add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation);
 
     int get_quad_under_cursor(float x, float y, Camera const& cam);
+    void calculate_selected_quads(Camera const& cam);
 
     void add_lots_of_quads();
 
@@ -83,9 +90,11 @@ public:
 public:
     size_t quadCount = 0;
     std::array<UIQuad, MaxQuads> quads; 
+    Selection selection;
     
     int width, height;
 private:
+    void draw_selection(XMFLOAT4 bounds);
 };
 
 #endif //T7LUAEDITOR_SCENE_H

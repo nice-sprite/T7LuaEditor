@@ -1,0 +1,112 @@
+let SessionLoad = 1
+let s:so_save = &g:so | let s:siso_save = &g:siso | setg so=0 siso=0 | setl so=-1 siso=-1
+let v:this_session=expand("<sfile>:p")
+silent only
+silent tabonly
+cd W:/Priscilla
+if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
+  let s:wipebuf = bufnr('%')
+endif
+let s:shortmess_save = &shortmess
+set shortmess=aoO
+badd +1 W:/Priscilla
+badd +50 Source/Engine/renderer.h
+badd +280 Source/Engine/scene.cpp
+badd +29 Build.bat
+badd +35 scratch
+badd +97 Source/Engine/win32_input.h
+badd +91 Source/Engine/win32_input.cpp
+badd +34 Source/Application/Application.cpp
+badd +64 Source/Engine/camera.cpp
+badd +39 Source/Engine/camera_controller.cpp
+badd +89 Source/Engine/scene.h
+badd +198 Source/Engine/renderer.cpp
+badd +95 Source/Engine/ray_cast.cpp
+badd +43 Source/Engine/ray_cast.h
+badd +25 Source/Engine/debug_lines.h
+badd +12 Source/Engine/renderer_types.h
+badd +31 ~/source/repos/Priscilla/Source/Engine/renderer.h
+argglobal
+%argdel
+$argadd W:/Priscilla
+edit Source/Engine/renderer.cpp
+let s:save_splitbelow = &splitbelow
+let s:save_splitright = &splitright
+set splitbelow splitright
+wincmd _ | wincmd |
+vsplit
+1wincmd h
+wincmd w
+let &splitbelow = s:save_splitbelow
+let &splitright = s:save_splitright
+wincmd t
+let s:save_winminheight = &winminheight
+let s:save_winminwidth = &winminwidth
+set winminheight=0
+set winheight=1
+set winminwidth=0
+set winwidth=1
+wincmd =
+argglobal
+balt ~/source/repos/Priscilla/Source/Engine/renderer.h
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 179 - ((42 * winheight(0) + 37) / 74)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 179
+normal! 031|
+wincmd w
+argglobal
+if bufexists(fnamemodify("~/source/repos/Priscilla/Source/Engine/renderer.h", ":p")) | buffer ~/source/repos/Priscilla/Source/Engine/renderer.h | else | edit ~/source/repos/Priscilla/Source/Engine/renderer.h | endif
+if &buftype ==# 'terminal'
+  silent file ~/source/repos/Priscilla/Source/Engine/renderer.h
+endif
+balt Source/Engine/renderer.cpp
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 68 - ((58 * winheight(0) + 37) / 74)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 68
+normal! 0
+wincmd w
+wincmd =
+tabnext 1
+if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
+  silent exe 'bwipe ' . s:wipebuf
+endif
+unlet! s:wipebuf
+set winheight=1 winwidth=20
+let &shortmess = s:shortmess_save
+let &winminheight = s:save_winminheight
+let &winminwidth = s:save_winminwidth
+let s:sx = expand("<sfile>:p:r")."x.vim"
+if filereadable(s:sx)
+  exe "source " . fnameescape(s:sx)
+endif
+let &g:so = s:so_save | let &g:siso = s:siso_save
+set hlsearch
+let g:this_session = v:this_session
+let g:this_obsession = v:this_session
+doautoall SessionLoadPost
+unlet SessionLoad
+" vim: set ft=vim :

@@ -31,7 +31,7 @@ namespace app
         // NO again
         rhi = new Renderer(main_window.hwnd, float(rect.right - rect.left), float(rect.bottom - rect.top)); 
         // DEBUG SELECTION RECT
-        rhi->add_selection_rect(-50.f, 50.f, -50.f, 50.f);
+        //rhi->add_selection_rect(-50.f, 50.f, -50.f, 50.f);
         rhi->create_world_grid_horizon();
 
         // this forces WM_SIZE, so that ImGui and the rendercontext have the correct size of the window
@@ -241,7 +241,7 @@ namespace app
 
         Input::GameInput::update();
         Input::GameInput::draw_input_debug();
-        Input::Ui::debug_ui_input();
+//        Input::Ui::debug_ui_input();
 
 #ifdef DEBUG_IMGUI_WINDOW
         static bool show = false;

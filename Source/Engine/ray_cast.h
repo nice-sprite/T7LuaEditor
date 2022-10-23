@@ -39,6 +39,8 @@ namespace ray_cast {
         Ray const& ray,
         XMFLOAT4 const& bounds
     );
+
+    bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad);
 }
 
 
