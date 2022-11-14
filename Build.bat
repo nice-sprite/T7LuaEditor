@@ -24,7 +24,7 @@ setlocal EnableDelayedExpansion
 :: /utf-8	use the UTF8 execution charset 
 :: /MP      Parallelize compilation of source files
 SET "compiler_flags=/std:c++17 /W2 /MP /GR- /Zi /EHsc /utf-8  /D UNICODE /D _UNICODE /nologo /D NOMINMAX /D TRACY_ENABLE"
-SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib" and 
+SET "link_to_libs=user32.lib dwmapi.lib ole32.lib kernel32.lib imgui.lib format.lib d3d11.lib dxgi.lib d3dcompiler.lib d2d1.lib dwrite.lib dxguid.lib TracyClient.lib"
 
 :: available debug cfgs:
 :: /D <flag>

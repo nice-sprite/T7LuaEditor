@@ -1,3 +1,6 @@
 Build/
 imgui.ini
 debug.rdbg
+.cache
+.idea
+x64

@@ -1,12 +1,9 @@
-# set-psdebug -Off
-$build_deps = $args[0]
-$flags  = "/std:c++17 /W2 /GR- /Zi /EHsc /utf-8"
-$deps   = "..\Source\ThirdParty"
-if ($build_deps) {
-    echo "Building dependencies"
-}
 
-new-item -Force -Name "Build" -ItemType "Directory"
-pushd Build
-    cl $flags /c $deps\imgui.cpp 
-popd
+cmake --build W:\Priscilla\Build --target Priscilla -j 6
+write-host $lastExitCode
+# write-host $args[0]
+
+if (( $args[0] -eq "run" ) -and ($lastExitCode -eq 0)) 
+{
+    start-process W:\Priscilla\Build\Priscilla.exe
+}

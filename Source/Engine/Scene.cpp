@@ -2,20 +2,23 @@
 // Created by coxtr on 12/14/2021.
 //
 
-#include "Scene.h"
-#include "Texture.h"
+#include "scene.h"
+#include "debug_lines.h"
+#include "imgui_fmt.h"
+#include "ray_cast.h"
 #include "shader_util.h"
+#include "texture.h"
+#include "win32_input.h"
+#include <d3dcommon.h>
 #include <random>
 #include <windows.h>
-#include "ray_cast.h"
-#include "win32_input.h"
 
 using namespace DirectX;
 using namespace std::string_literals;
 
 // T7 LUIAnimationStateFlags
 //
-//enum LUIAnimationStateFlags
+// enum LUIAnimationStateFlags
 //{
 //    AS_LAYOUT_CACHED = 0x2,
 //    AS_STENCIL = 0x4,
@@ -55,7 +58,7 @@ using namespace std::string_literals;
 //};
 //
 //
-//struct __attribute__((aligned(8))) LUIElement
+// struct __attribute__((aligned(8))) LUIElement
 //{
 //  LUIAnimationState currentAnimationState;
 //  LUIElement *parent;
@@ -90,7 +93,7 @@ using namespace std::string_literals;
 //  UIModelIndex model;
 //};
 //
-//struct __attribute__((aligned(8))) LUIAnimationState
+// struct __attribute__((aligned(8))) LUIAnimationState
 //{
 //  LUA_MATERIAL_DATATYPE material;
 //  TTFDef *font;
@@ -130,169 +133,225 @@ using namespace std::string_literals;
 //  unsigned __int32 useGameTime : 1;
 //};
 
-// scene keeps track of all the screen quads 
-Scene::Scene() {
-    num_quads = 0;
-    add_quad( -720.f, 720.f, -360.f, 360.f, 0);
-    Input::Ui::register_callback([this](Input::Ui::MouseState const& mouse, Input::Ui::KeyboardState const& kbd) ->  bool {
+// scene keeps track of all the screen quads
+Scene::Scene() { num_quads = 0; }
 
-        return true;
-    });
-}
-
-void Scene::add_quad(float left, 
-        float right, 
-        float top, 
-        float bottom, 
-        int texture )
-{
-    quads[quadCount] = UIQuad{left, right, top, bottom, texture};
-    ++quadCount;
+void Scene::init(Renderer &renderer) {
+  fs::path quad_shader = Files::get_shader_root() / "TexturedQuad.hlsl";
+  renderer.create_vertex_buffer(&scene_vertex_buffer,
+                                4 * sizeof(VertexPosColorTexcoord) * MaxQuads);
+  renderer.create_index_buffer(&scene_index_buffer, 6 * MaxQuads);
+  renderer.create_vertex_shader(quad_shader, VertexPosColorTexcoord::layout(),
+                                &scene_vertex_shader, &vertex_layout);
+  renderer.create_pixel_shader(quad_shader, &scene_pixel_shader);
 }
 
 int Scene::add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation) {
-    bounding_boxs[num_quads] = bounds;
-    colors[num_quads] = color;
-    rotations[num_quads] = rotation;
-    num_quads++;
-    return num_quads-1;
+  bounding_boxs[num_quads] = bounds;
+  colors[num_quads] = color;
+  rotations[num_quads] = rotation;
+  num_quads++;
+  return num_quads - 1;
 }
 
-
 void Scene::add_lots_of_quads() {
-    const float width = 50.0;
-    const float height= 50.0;
-    const float padding = 2.f;
+  const float width = 50.0;
+  const float height = 50.0;
+  const float padding = 2.f;
 
-    const int n_wide = 5; // how many quads to draw along the X 
-    const int n_tall = 5; // and Y
+  const int n_wide = 5; // how many quads to draw along the X
+  const int n_tall = 5; // and Y
 
-    int x, y, z;
+  int x, y, z;
 
-    XMFLOAT4 bb, color, rot;
-    float left = 0;
-    float right = width;
+  XMFLOAT4 bb, color, rot;
+  float left = 0;
+  float right = width;
 
-    float top = 0.f;
-    float bottom = height;
+  float top = 0.f;
+  float bottom = height;
 
-    for(int row = 0; row < n_wide; ++row) {
-        top += height;
-        bottom += height;
-        for(int col = 0; col < n_tall; ++col) {
+  for (int row = 0; row < n_wide; ++row) {
+    top += height;
+    bottom += height;
+    for (int col = 0; col < n_tall; ++col) {
 
-            bb.x = left + padding;
-            bb.y = right - padding;
-            bb.z = top + padding;
-            bb.w = bottom - padding;
+      bb.x = left + padding;
+      bb.y = right - padding;
+      bb.z = top + padding;
+      bb.w = bottom - padding;
 
-            color.x = 1.f - ((float)row/(float)n_wide);
-            color.y = (float)col/(float)n_tall;
-            color.z = ((float)row/(float)n_wide);
-            color.w = 1.0f - (float)col/(float)n_tall;
+      color.x = 1.f - ((float)row / (float)n_wide);
+      color.y = (float)col / (float)n_tall;
+      color.z = ((float)row / (float)n_wide);
+      color.w = 1.0f - (float)col / (float)n_tall;
 
-            rot.x = 0.0;
-            rot.y = 0.0;
-            rot.z = 0.0;
-            rot.w = 0.0;
+      rot.x = 0.0;
+      rot.y = 0.0;
+      rot.z = 0.0;
+      rot.w = 0.0;
 
-            add_quad(bb, color, rot);
+      add_quad(bb, color, rot);
 
-            left += width ;
-            right += width ;
-        }
-        left = 0.f;
-        right = width;
+      left += width;
+      right += width;
     }
+    left = 0.f;
+    right = width;
+  }
 }
 
 void Scene::draw_selection(XMFLOAT4 bounds) {
-    auto draw_list = ImGui::GetBackgroundDrawList();
-    // imgui does BRG 
-    draw_list->AddRectFilled(ImVec2(bounds.x, bounds.z), ImVec2(bounds.y, bounds.w), ImU32(0x10FFBE00));
-    draw_list->AddRect(ImVec2(bounds.x, bounds.z), ImVec2(bounds.y, bounds.w), ImU32(0xFFFFBE00));
+  auto draw_list = ImGui::GetBackgroundDrawList();
+  // imgui does BRG
+  draw_list->AddRectFilled(ImVec2(bounds.x, bounds.z),
+                           ImVec2(bounds.y, bounds.w), ImU32(0x10FFBE00));
+  draw_list->AddRect(ImVec2(bounds.x, bounds.z), ImVec2(bounds.y, bounds.w),
+                     ImU32(0xFFFFBE00));
 }
 
-void Scene::update(float timestep, Camera& camera) {
-    static int last_quad = -1;
-    static XMFLOAT4 bb, col;
-    static float time_total = 0.f;
-    static bool last_lmb = false;
-    int selected_quad; 
-    float grow = 1.f;
+void Scene::update(Renderer &renderer, float timestep, Camera &camera) {
+  static int last_quad = -1;
+  static XMFLOAT4 bb, col;
+  static float time_total = 0.f;
+  static bool last_lmb = false;
+  int selected_quad;
+  float grow = 1.f;
 
-    if(!last_lmb && Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {
-        selection.bounds.x = Input::Ui::cursor().x;
-        selection.bounds.z = Input::Ui::cursor().y;
-        last_lmb = true;
-    } else if(last_lmb && Input::GameInput::mouse_button_down(GameInputMouseLeftButton)){
-        selection.bounds.y = Input::Ui::cursor().x;
-        selection.bounds.w = Input::Ui::cursor().y;
-        draw_selection(selection.bounds);
-    } else {
-        last_lmb = false;
+  if (!last_lmb &&
+      Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {
+    selection.bounds.x = Input::Ui::cursor().x;
+    selection.bounds.z = Input::Ui::cursor().y;
+    last_lmb = true;
+  } else if (last_lmb &&
+             Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {
+    selection.bounds.y = Input::Ui::cursor().x;
+    selection.bounds.w = Input::Ui::cursor().y;
+    draw_selection(selection.bounds);
+  } else {
+    last_lmb = false;
+  }
+
+  ImGui::TextFmt("selection bounds: min: {}", selection.bounds);
+  calculate_selected_quads(camera);
+  for (auto &q : selection.quads) {
+    ImGui::Text("%d", q);
+  }
+
+  if (Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {
+    selected_quad = get_quad_under_cursor(Input::Ui::cursor().x,
+                                          Input::Ui::cursor().y, camera);
+
+    if (selected_quad >= 0 && last_quad != selected_quad) {
+      if (last_quad >= 0) {
+        bounding_boxs[last_quad] = bb;
+        colors[last_quad] = col;
+      }
+
+      // save the stuff
+      bb = bounding_boxs[selected_quad];
+      col = colors[selected_quad];
+
+      colors[selected_quad].x = 1.0f;
+      colors[selected_quad].y = 1.0f;
+      colors[selected_quad].z = 1.0f;
+      colors[selected_quad].w = 1.0f;
+
+      bounding_boxs[selected_quad].x -= grow;
+      bounding_boxs[selected_quad].y += grow;
+      bounding_boxs[selected_quad].z -= grow;
+      last_quad = selected_quad;
     }
-
-    calculate_selected_quads(camera);
-    for(auto& q : selection.quads) {
-        ImGui::Text("%d", q);
-    }
-
-    if(Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {
-        selected_quad = get_quad_under_cursor(
-            Input::Ui::cursor().x,
-            Input::Ui::cursor().y,
-            camera
-        );
-
-        if(selected_quad >= 0 && last_quad != selected_quad) {
-            if(last_quad >= 0) {
-                bounding_boxs[last_quad] = bb;
-                colors[last_quad] = col;
-            }
-        
-            // save the stuff
-            bb = bounding_boxs[selected_quad];
-            col = colors[selected_quad];
-
-            colors[selected_quad].x = 1.0f;
-            colors[selected_quad].y = 1.0f;
-            colors[selected_quad].z = 1.0f;
-            colors[selected_quad].w = 1.0f;
-
-            bounding_boxs[selected_quad].x -= grow;
-            bounding_boxs[selected_quad].y += grow;
-            bounding_boxs[selected_quad].z -= grow;
-            last_quad = selected_quad;
-        }
-    }
+  }
+  update_resources(renderer);
 }
 
-void Scene::calculate_selected_quads(Camera const& cam) {
-    ray_cast::Ray min_ray; // upper left of the rect
-    ray_cast::Ray max_ray; // lower right of the rect
-    XMFLOAT4 b = selection.bounds;
-    selection.quads.clear();
+void Scene::calculate_selected_quads(Camera const &cam) {
+  ray_cast::Ray min_ray; // upper left of the rect
+  ray_cast::Ray max_ray; // lower right of the rect
+  XMFLOAT4 b = selection.bounds;
+  selection.quads.clear();
 
-    min_ray = ray_cast::screen_to_world_ray(b.x, b.z, (float)width, (float)height, cam, XMMatrixIdentity());
-    max_ray = ray_cast::screen_to_world_ray(b.y, b.w, (float)width, (float)height, cam, XMMatrixIdentity());
+  min_ray = ray_cast::screen_to_world_ray(b.x, b.z, (float)width, (float)height,
+                                          cam, XMMatrixIdentity());
+  max_ray = ray_cast::screen_to_world_ray(b.y, b.w, (float)width, (float)height,
+                                          cam, XMMatrixIdentity());
 
-    //add_debug_line(min_ray.origin, XMVectorAdd(min_ray.origin, min_ray.direction), DebugLine::Red);
-    
-    for(int i = 0; i < num_quads; ++i) {
-        if(ray_cast::volume_intersection(min_ray, max_ray, bounding_boxs[i])) {
-            selection.quads.push_back(i);
-        }
+
+  ImGui::TextFmt("2d selection: {}", b);
+  ImGui::TextFmt("min: {}\n", min_ray);
+  ImGui::TextFmt("max: {}\n", max_ray);
+
+  if (Input::GameInput::key_down(VK_SPACE)) { 
+    DebugRenderSystem::instance().clear_debug_lines();
+    DebugRenderSystem::instance().debug_ray(min_ray);
+    DebugRenderSystem::instance().debug_ray(max_ray);
+  }
+
+  for (int i = 0; i < num_quads; ++i) {
+    if (ray_cast::volume_intersection(min_ray, max_ray, bounding_boxs[i])) {
+      selection.quads.push_back(i);
     }
+  }
 }
 
-int Scene::get_quad_under_cursor(float x, float y, Camera const& cam) {
-    ray_cast::Ray r;
-    r = ray_cast::screen_to_world_ray(x, y, (float)width, (float)height, cam, XMMatrixIdentity());
-    for(int i = 0; i < num_quads; ++i) {
-        if(ray_cast::against_quad(r, bounding_boxs[i])) {
-            return i;
-        }
+int Scene::get_quad_under_cursor(float x, float y, Camera const &cam) {
+  ray_cast::Ray r;
+  r = ray_cast::screen_to_world_ray(x, y, (float)width, (float)height, cam,
+                                    XMMatrixIdentity());
+  for (int i = 0; i < num_quads; ++i) {
+    if (ray_cast::against_quad(r, bounding_boxs[i])) {
+      return i;
     }
-    return -1;
+  }
+  return -1;
+}
+
+void Scene::draw(Renderer &renderer) {
+  renderer.set_vertex_buffer(scene_vertex_buffer.GetAddressOf(), 1,
+                             sizeof(VertexPosColorTexcoord), 0);
+  renderer.set_index_buffer(scene_index_buffer.Get());
+  renderer.set_pixel_shader(scene_pixel_shader.Get());
+  renderer.set_vertex_shader(scene_vertex_shader.Get());
+  renderer.set_input_layout(vertex_layout.Get());
+  renderer.set_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  renderer.draw_indexed(num_quads * 6);
+}
+
+void Scene::update_resources(Renderer &renderer) {
+  renderer.update_buffer(
+      scene_vertex_buffer.Get(), [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
+        tesselate_quads((VertexPosColorTexcoord *)mapped_mem.pData);
+      });
+
+  renderer.update_buffer(scene_index_buffer.Get(),
+                         [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
+                           upload_indices((u32 *)mapped_mem.pData);
+                         });
+}
+
+void Scene::tesselate_quads(VertexPosColorTexcoord *mapped_vertex_memory) {
+  for (i32 i = 0; i < num_quads; ++i) {
+    XMFLOAT4 pos = bounding_boxs[i];
+    XMFLOAT4 color = colors[i];
+    mapped_vertex_memory[i * 4 + 0] = {DirectX::XMFLOAT3{pos.x, pos.z, 0.f},
+                                       color, DirectX::XMFLOAT2{0.0f, 0.0f}};
+    mapped_vertex_memory[i * 4 + 1] = {DirectX::XMFLOAT3{pos.y, pos.z, 0.f},
+                                       color, DirectX::XMFLOAT2{0.0f, 0.0f}};
+    mapped_vertex_memory[i * 4 + 2] = {DirectX::XMFLOAT3{pos.x, pos.w, 0.f},
+                                       color, DirectX::XMFLOAT2{0.0f, 0.0f}};
+    mapped_vertex_memory[i * 4 + 3] = {DirectX::XMFLOAT3{pos.y, pos.w, 0.f},
+                                       color, DirectX::XMFLOAT2{0.0f, 0.0f}};
+  }
+}
+
+void Scene::upload_indices(u32 *mapped_index_buffer) {
+  for (i32 i = 0; i < num_quads; ++i) {
+    mapped_index_buffer[i * 6 + 0] = i * 4 + 2;
+    mapped_index_buffer[i * 6 + 1] = i * 4 + 3;
+    mapped_index_buffer[i * 6 + 2] = i * 4 + 1;
+    mapped_index_buffer[i * 6 + 3] = i * 4 + 2;
+    mapped_index_buffer[i * 6 + 4] = i * 4 + 1;
+    mapped_index_buffer[i * 6 + 5] = i * 4 + 0;
+  }
 }

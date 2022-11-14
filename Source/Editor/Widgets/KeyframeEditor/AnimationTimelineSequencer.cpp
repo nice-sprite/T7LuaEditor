@@ -4,9 +4,9 @@
 
 #include "AnimationTimelineSequencer.h"
 
-std::array<std::string,1> AnimationTimelineSequencer::SequencerItemNames = {"Animations"s };
+std::array<std::string, 1> AnimationTimelineSequencer::SequencerItemNames = {"Animations"s};
 
-AnimationTimelineSequencer::AnimationTimelineSequencer() : frameMin_(0), frameMax_(0){
+AnimationTimelineSequencer::AnimationTimelineSequencer() : frameMin_(0), frameMax_(0) {
 
 }
 
@@ -77,7 +77,7 @@ void AnimationTimelineSequencer::CustomDraw(int index, ImDrawList *drawList, con
                                             const ImRect &clippingRect,
                                             const ImRect &legendClippingRect) {
 
-    static std::array<const char*, 3> labels = {"Translation", "Rotation", "Scale"};
+    static std::array<const char *, 3> labels = {"Translation", "Rotation", "Scale"};
     curveEdit.max_ = ImVec2(float(frameMax_), 1.f);
     curveEdit.min_ = ImVec2(float(frameMin_), 0.f);
     drawList->PushClipRect(legendClippingRect.Min, legendClippingRect.Max, true);
@@ -91,7 +91,7 @@ void AnimationTimelineSequencer::CustomDraw(int index, ImDrawList *drawList, con
     drawList->PopClipRect();
     ImGui::SetCursorScreenPos(rc.Min);
 
-    ImCurveEdit::Edit(curveEdit, rc.GetSize(),  index, &clippingRect);
+    ImCurveEdit::Edit(curveEdit, rc.GetSize(), index, &clippingRect);
 
 }
 

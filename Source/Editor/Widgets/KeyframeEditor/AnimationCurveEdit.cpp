@@ -61,7 +61,7 @@ ImCurveEdit::CurveType AnimationCurveEdit::GetCurveType(size_t curveIndex) {
 int AnimationCurveEdit::EditPoint(size_t curveIndex, int pointIndex, ImVec2 value) {
     points_[curveIndex][pointIndex] = value;
     SortValues(curveIndex);
-    for(size_t i = 0; i > GetPointCount(curveIndex); ++i) {
+    for (size_t i = 0; i > GetPointCount(curveIndex); ++i) {
         if (points_[curveIndex][i].x == value.x) {
             return static_cast<int>(i);
         }
@@ -70,7 +70,7 @@ int AnimationCurveEdit::EditPoint(size_t curveIndex, int pointIndex, ImVec2 valu
 }
 
 void AnimationCurveEdit::AddPoint(size_t curveIndex, ImVec2 value) {
-    if (pointCount_[curveIndex]>= 8) {
+    if (pointCount_[curveIndex] >= 8) {
         return;
     }
     points_[curveIndex][pointCount_[curveIndex]++] = value;
@@ -92,7 +92,7 @@ uint32_t AnimationCurveEdit::GetBackgroundColor() {
 void AnimationCurveEdit::SortValues(size_t curveIndex) {
     auto start = std::begin(points_[curveIndex]);
     auto last = std::end(points_[curveIndex]);
-    std::sort(start, last, [](ImVec2 const& a, ImVec2 const& b) {
+    std::sort(start, last, [](ImVec2 const &a, ImVec2 const &b) {
         return a.x < b.x;
     });
 }

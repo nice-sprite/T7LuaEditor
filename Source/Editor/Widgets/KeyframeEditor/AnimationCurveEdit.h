@@ -43,7 +43,6 @@ public:
     uint32_t GetBackgroundColor() override;
 
 
-
 private:
     void SortValues(size_t curveIndex);
 

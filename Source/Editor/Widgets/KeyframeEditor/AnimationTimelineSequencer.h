@@ -15,6 +15,7 @@
 #include <fmt/core.h>
 
 using namespace std::string_literals;
+
 class AnimationTimelineSequencer : public ImSequencer::SequenceInterface {
 private:
     static std::array<std::string, 1> SequencerItemNames;
@@ -24,13 +25,18 @@ public:
         int type;
         int frameStart, frameEnd;
         bool expanded;
+
         SequenceItem() = default;
+
         SequenceItem(int _type, int _frameStart, int _frameEnd, bool _expanded) :
                 type(_type), frameStart(_frameStart), frameEnd(_frameEnd), expanded(_expanded) {}
     };
+
     int frameMin_, frameMax_;
     std::vector<SequenceItem> items_;
+
     AnimationTimelineSequencer();
+
     int GetFrameMin() const override;
 
     int GetFrameMax() const override;

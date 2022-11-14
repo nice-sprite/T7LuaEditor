@@ -8,34 +8,51 @@ if expand('%') == '' && !&modified && line('$') <= 1 && getline(1) == ''
   let s:wipebuf = bufnr('%')
 endif
 let s:shortmess_save = &shortmess
-set shortmess=aoO
+if &shortmess =~ 'A'
+  set shortmess=aoOA
+else
+  set shortmess=aoO
+endif
 badd +1 W:/Priscilla
-badd +50 Source/Engine/renderer.h
-badd +280 Source/Engine/scene.cpp
-badd +29 Build.bat
+badd +35 Source/Engine/Renderer.h
+badd +138 Source/Engine/Scene.cpp
+badd +42 Build.bat
 badd +35 scratch
-badd +97 Source/Engine/win32_input.h
-badd +91 Source/Engine/win32_input.cpp
-badd +34 Source/Application/Application.cpp
-badd +64 Source/Engine/camera.cpp
-badd +39 Source/Engine/camera_controller.cpp
-badd +89 Source/Engine/scene.h
-badd +198 Source/Engine/renderer.cpp
+badd +152 Source/Engine/win32_input.h
+badd +290 Source/Engine/win32_input.cpp
+badd +9 Source/Application/Application.cpp
+badd +11 Source/Engine/Camera.cpp
+badd +21 Source/Engine/camera_controller.cpp
+badd +73 Source/Engine/Scene.h
+badd +697 Source/Engine/Renderer.cpp
 badd +95 Source/Engine/ray_cast.cpp
 badd +43 Source/Engine/ray_cast.h
 badd +25 Source/Engine/debug_lines.h
-badd +12 Source/Engine/renderer_types.h
-badd +31 ~/source/repos/Priscilla/Source/Engine/renderer.h
+badd +1 Source/Engine/renderer_types.h
+badd +20 ~/source/repos/Priscilla/CMakeLists.txt
+badd +6 ~/source/repos/Priscilla/build.ps1
+badd +17 ~/source/repos/Priscilla/Source/defines.h
+badd +11 ~/source/repos/Priscilla/.clang-format
+badd +8 ~/source/repos/Priscilla/Source/Engine/logging.h
+badd +12 Source/Engine/logging.cpp
+badd +9 SetupEnv.bat
+badd +3 ~/source/repos/Priscilla/setupenv.ps1
+badd +0 ~/source/repos/Priscilla/Source/Application/Application.h
+badd +22 Source/Application/Application.h
+badd +12 Source/main.cpp
 argglobal
 %argdel
 $argadd W:/Priscilla
-edit Source/Engine/renderer.cpp
+edit Source/Engine/Renderer.cpp
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
-1wincmd h
+wincmd _ | wincmd |
+vsplit
+2wincmd h
+wincmd w
 wincmd w
 let &splitbelow = s:save_splitbelow
 let &splitright = s:save_splitright
@@ -46,9 +63,11 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
-wincmd =
+exe 'vert 1resize ' . ((&columns * 94 + 142) / 284)
+exe 'vert 2resize ' . ((&columns * 94 + 142) / 284)
+exe 'vert 3resize ' . ((&columns * 94 + 142) / 284)
 argglobal
-balt ~/source/repos/Priscilla/Source/Engine/renderer.h
+balt Source/Engine/Renderer.h
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -59,19 +78,19 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 179 - ((42 * winheight(0) + 37) / 74)
+let s:l = 695 - ((70 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 179
-normal! 031|
+keepjumps 695
+normal! 015|
 wincmd w
 argglobal
-if bufexists(fnamemodify("~/source/repos/Priscilla/Source/Engine/renderer.h", ":p")) | buffer ~/source/repos/Priscilla/Source/Engine/renderer.h | else | edit ~/source/repos/Priscilla/Source/Engine/renderer.h | endif
+if bufexists(fnamemodify("Source/Engine/Renderer.cpp", ":p")) | buffer Source/Engine/Renderer.cpp | else | edit Source/Engine/Renderer.cpp | endif
 if &buftype ==# 'terminal'
-  silent file ~/source/repos/Priscilla/Source/Engine/renderer.h
+  silent file Source/Engine/Renderer.cpp
 endif
-balt Source/Engine/renderer.cpp
+balt Source/Engine/Renderer.h
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -82,14 +101,39 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 68 - ((58 * winheight(0) + 37) / 74)
+let s:l = 229 - ((73 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 68
-normal! 0
+keepjumps 229
+normal! 016|
 wincmd w
-wincmd =
+argglobal
+if bufexists(fnamemodify("Source/Engine/Scene.cpp", ":p")) | buffer Source/Engine/Scene.cpp | else | edit Source/Engine/Scene.cpp | endif
+if &buftype ==# 'terminal'
+  silent file Source/Engine/Scene.cpp
+endif
+balt Source/Application/Application.h
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 138 - ((41 * winheight(0) + 37) / 74)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 138
+normal! 04|
+wincmd w
+exe 'vert 1resize ' . ((&columns * 94 + 142) / 284)
+exe 'vert 2resize ' . ((&columns * 94 + 142) / 284)
+exe 'vert 3resize ' . ((&columns * 94 + 142) / 284)
 tabnext 1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'
   silent exe 'bwipe ' . s:wipebuf
