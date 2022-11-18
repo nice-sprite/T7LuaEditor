@@ -71,7 +71,7 @@ public:
 
   unsigned __int32 num_quads;
   unsigned __int32 num_dirty;
-  XMFLOAT4 bounding_boxs[MaxQuads]{};
+  XMFLOAT4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
   XMFLOAT4 rotations[MaxQuads]{};
   XMFLOAT4 colors[MaxQuads]{};
   __int32 priority[MaxQuads]{};
@@ -86,8 +86,6 @@ public:
   /// vertex and fragment shader, which we store for now
   void init(Renderer &renderer); // create the resources needed to draw
 
-  void add_quad(float left, float right, float top, float bottom,
-                int texture = 0);
 
   int add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation);
 

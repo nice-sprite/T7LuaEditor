@@ -50,7 +50,8 @@ void DebugRenderSystem::update_line_float3(u32 i, XMFLOAT3 a, XMFLOAT3 b,
 }
 
 void DebugRenderSystem::debug_ray(ray_cast::Ray ray) {
-  debug_line_vec4(ray.origin, (ray.origin + ray.direction) * 1000.f,
+  auto end = XMVectorAdd(ray.origin, XMVectorScale(ray.direction, 100.f));
+  debug_line_vec4(ray.origin, end,
                   colors[Red]);
 }
 

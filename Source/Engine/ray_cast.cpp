@@ -1,5 +1,9 @@
 #include "ray_cast.h"
 #include "camera.h"
+#include "imgui_fmt.h"
+#include <DirectXMath.h>
+#include <algorithm>
+#include <imgui.h>
 
 namespace ray_cast {
 
@@ -83,19 +87,38 @@ bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad) {
   // check for nan
   bool not_nan = !XMVectorGetIntX(XMVectorIsNaN(mins_intersection)) &&
                  !XMVectorGetIntX(XMVectorIsNaN(maxs_intersection));
+  if (not_nan) {
+    XMVECTOR right_bottom = XMVectorMax(mins_intersection, maxs_intersection);
+    XMVECTOR top_left = XMVectorMin(mins_intersection, maxs_intersection);
+    float l = XMVectorGetX(top_left);
+    float r = XMVectorGetX(right_bottom);
+    float t = XMVectorGetY(top_left);
+    float b = XMVectorGetY(right_bottom);
 
-  float ix = XMVectorGetX(mins_intersection);
-  float iy = XMVectorGetY(mins_intersection);
+    return ((l <= left && r >= left) || (l >= left && l <= right) ||
+            (l <= left && r >= right)) &&
+           ((t <= top && b >= top) || (t >= top && t <= bottom) ||
+            (t <= top && b >= bottom));
+  }
+  return false;
 
-  bool min_could_contain = ix <= left || iy <= top;
+/*  ImGui::Separator();
+  ImGui::Text("INTERSECTION DEBUG");
+  ImGui::TextFmt("min_itx: {}\nmaxs_itx{}\n\n", mins_intersection,
+                 maxs_intersection);
+*/
+}
 
-  ix = XMVectorGetX(maxs_intersection);
-  iy = XMVectorGetY(maxs_intersection);
-  bool max_could_contain = ix >= right || iy >= top;
+XMFLOAT2 world_to_screen(XMFLOAT3 world, f32 width, f32 height,
+                         const Camera &camera) {
+  XMFLOAT2 ret;
 
-  return not_nan &&
-         (point_inside_rect(mins_intersection, quad) || min_could_contain) &&
-         (max_could_contain || point_inside_rect(maxs_intersection, quad));
+  XMVECTOR projected_coord = XMVector3Project(
+      XMLoadFloat3(&world), 0.0, 0.0, width, height, 0.0, 1.0,
+      camera.get_projection(), camera.get_view(), XMMatrixIdentity());
+
+  XMStoreFloat2(&ret, projected_coord);
+  return ret;
 }
 
 } // namespace ray_cast

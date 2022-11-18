@@ -12,13 +12,16 @@ Camera::Camera(float fov_radians, float aspect_ratio, float near_plane,
   zNear = near_plane;
   zFar = far_plane;
   fov = fov_radians;
+  pitch = 0.0;
+  yaw = 0.0;
+  roll = 0.0;
   rotation = XMMatrixIdentity();
   up = XMVectorSet(0.f, 1.f, 0.f, 0.f);
   origin = XMVectorSet(0.0, 0.0f, -800.f, 0.f);
   view_matrix =
-      XMMatrixLookAtLH(XMVECTOR{0.0, 0.0f, -800.f, 0.f}, // camera origin
+      XMMatrixLookAtLH(origin, // camera origin
                        XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},  // focus point
-                       XMVECTOR{0.f, 1.f, 0.f, 0.f}      // up direction
+                       XMVectorSet(0.f, 1.f, 0.f, 0.f)      // up direction
       );
 
   projection_matrix =

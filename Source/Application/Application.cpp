@@ -22,7 +22,8 @@ void start(HINSTANCE hinst, const char *appname) {
   );
   auto rect = main_window.client_rect;
 
-  scene.add_lots_of_quads();
+  scene.add_quad(XMFLOAT4{0, 1280, 0, 720}, colors[Red], XMFLOAT4{});
+  //scene.add_lots_of_quads();
 
   // this forces WM_SIZE to be sent
   // size of the window
@@ -71,6 +72,15 @@ void update(float timestep) {
 
   scene.update(renderer, timestep, camera_system.get_active());
   scene.draw(renderer);
+
+  auto imdraw = ImGui::GetForegroundDrawList();
+  XMFLOAT2 origin = ray_cast::world_to_screen(XMFLOAT3(0, 0, 0), renderer.width, renderer.height, camera_system.get_active());
+  imdraw->AddText(ImVec2(origin.x, origin.y), ImU32(0xFFFFFFFF), "Origin");
+  if(Input::GameInput::key_oneshot(VK_F2)) { 
+
+    ray_cast::Ray pick_ray = ray_cast::screen_to_world_ray(Input::Ui::cursor().x, Input::Ui::cursor().y, renderer.width, renderer.height, camera_system.get_active(), XMMatrixIdentity());
+    DebugRenderSystem::instance().debug_ray(pick_ray);
+  } 
 
   DebugRenderSystem::instance().update(renderer);
   DebugRenderSystem::instance().draw(renderer);
@@ -163,7 +173,7 @@ void message_loop() {
 void init_systems() {
   camera_system.init(renderer);
   DebugRenderSystem::instance().init(renderer);
-  XMVECTOR a = XMVECTORF32{0, 0, 0, 0};
+  XMVECTOR a = XMVectorSet(0, 0, 0, 0);
   XMVECTOR b = camera_system.get_active().origin;
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
   Input::GameInput::start();

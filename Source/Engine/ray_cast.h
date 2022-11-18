@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../defines.h"
 #include <DirectXMath.h>
 #include <fmt/format.h>
 
@@ -14,6 +15,7 @@ namespace ray_cast {
     };
 
 
+    XMFLOAT2 world_to_screen(XMFLOAT3 world, f32 width, f32 height, const Camera& camera);
 
 
     // converts screen coordinates to ray origin and direction
