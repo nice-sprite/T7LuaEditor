@@ -22,8 +22,8 @@ void start(HINSTANCE hinst, const char *appname) {
   );
   auto rect = main_window.client_rect;
 
-  scene.add_quad(XMFLOAT4{0, 1280, 0, 720}, colors[Red], XMFLOAT4{});
-  //scene.add_lots_of_quads();
+  //scene.add_quad(XMFLOAT4{0, 1280, 0, 720}, colors[Red], XMFLOAT4{});
+  scene.add_lots_of_quads();
 
   // this forces WM_SIZE to be sent
   // size of the window

@@ -161,8 +161,8 @@ void Scene::add_lots_of_quads() {
   const float height = 50.0;
   const float padding = 2.f;
 
-  const int n_wide = 5; // how many quads to draw along the X
-  const int n_tall = 5; // and Y
+  const int n_wide = 100; // how many quads to draw along the X
+  const int n_tall = 100; // and Y
 
   int x, y, z;
 
@@ -240,14 +240,15 @@ void Scene::update(Renderer &renderer, float timestep, Camera &camera) {
     selection.bounds.y = Input::Ui::cursor().x;
     selection.bounds.w = Input::Ui::cursor().y;
     draw_selection(selection.bounds);
+    calculate_selected_quads(camera);
+
+    for (i32 q : selection.quads) {
+      colors[q] = XMFLOAT4{0.0, 0.0, 1.0, 1.0};
+      ImGui::Text("%d", q);
+    }
+
   } else {
     last_lmb = false;
-  }
-
-  ImGui::TextFmt("selection bounds: min: {}", selection.bounds);
-  calculate_selected_quads(camera);
-  for (auto &q : selection.quads) {
-    ImGui::Text("%d", q);
   }
 
   // if (Input::GameInput::mouse_button_down(GameInputMouseLeftButton)) {

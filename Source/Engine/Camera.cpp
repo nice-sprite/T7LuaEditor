@@ -28,7 +28,7 @@ Camera::Camera(float fov_radians, float aspect_ratio, float near_plane,
       XMMatrixPerspectiveFovLH(fov_radians, aspect_ratio, zNear, zFar);
 }
 
-Camera::Camera() : Camera(1.39626, 16.0f / 9.0f, 1.0f, 1000.0f) {}
+Camera::Camera() : Camera(1.39626, 16.0f / 9.0f, 1.0f, 9999.0f) {}
 
 // control functions
 void Camera::zoom(int delta) {
