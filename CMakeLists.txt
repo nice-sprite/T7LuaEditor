@@ -31,6 +31,4 @@ file(GLOB ENGINE_SRC "Source/Engine/*.cpp")
 file(GLOB APP_SRC "Source/Application/*.cpp")
 set(IMGUI_SRC "Source/ThirdParty/imgui/imgui_impl_dx11.cpp" "Source/ThirdParty/imgui/imgui_impl_win32.cpp")
 add_executable(Priscilla WIN32 "Source/main.cpp" ${ENGINE_SRC} ${APP_SRC} ${IMGUI_SRC})
-target_link_libraries(Priscilla tracy fmt imgui d3d11.lib dxgi.lib d3dcompiler.lib dxguid.lib dwmapi.lib ole32.lib kernel32.lib
-        "C:/Program Files (x86)/Microsoft GDK/220602/GRDK/GameKit/Lib/amd64/GameInput.lib"
-        "C:/Program Files (x86)/Microsoft GDK/220602/GRDK/GameKit/Lib/amd64/xgameruntime.lib")
+target_link_libraries(Priscilla tracy fmt imgui d3d11.lib dxgi.lib d3dcompiler.lib dxguid.lib dwmapi.lib ole32.lib kernel32.lib xinput.lib)

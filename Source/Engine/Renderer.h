@@ -53,25 +53,37 @@ public:
   void create_index_buffer(ID3D11Buffer **out_buffer, u32 num_indices);
   void create_pixel_shader(fs::path src_path, ID3D11PixelShader **out_shader);
 
-  template<u32 NumElems>
-  void create_input_layout(VertexLayout<NumElems> il, ID3D11InputLayout** out_layout, ID3DBlob *vertex_shader_blob) { 
-    device->CreateInputLayout(il.input_layout.data(), NumElems, vertex_shader_blob->GetBufferPointer(), vertex_shader_blob->GetBufferSize(), out_layout); 
+  template <u32 NumElems>
+  void create_input_layout(VertexLayout<NumElems> il,
+                           ID3D11InputLayout **out_layout,
+                           ID3DBlob *vertex_shader_blob) {
+    device->CreateInputLayout(il.input_layout.data(),
+                              NumElems,
+                              vertex_shader_blob->GetBufferPointer(),
+                              vertex_shader_blob->GetBufferSize(),
+                              out_layout);
   }
 
   template <u32 NumElems>
-  void create_vertex_shader(fs::path src_path, VertexLayout<NumElems> il,
-                            ID3D11VertexShader **out_shader, ID3D11InputLayout** out_layout) {
+  void create_vertex_shader(fs::path src_path,
+                            VertexLayout<NumElems> il,
+                            ID3D11VertexShader **out_shader,
+                            ID3D11InputLayout **out_layout) {
     bool shader_exists = Files::file_exists(src_path);
     if (shader_exists) {
       LOG_INFO("loading shader {}", src_path.string());
       ComPtr<ID3DBlob> bytecode;
-      bool compiled = shader_compile_disk(src_path.string().c_str(), "vs_main",
-                                          "vs_5_0", &bytecode);
+      bool compiled = shader_compile_disk(src_path.string().c_str(),
+                                          "vs_main",
+                                          "vs_5_0",
+                                          &bytecode);
       Q_ASSERTMSG(compiled, "shader failed to compile!");
       if (compiled) {
-        HRESULT hresult = device->CreateVertexShader(
-            bytecode->GetBufferPointer(), bytecode->GetBufferSize(), nullptr,
-            out_shader);
+        HRESULT hresult =
+            device->CreateVertexShader(bytecode->GetBufferPointer(),
+                                       bytecode->GetBufferSize(),
+                                       nullptr,
+                                       out_shader);
         LOG_COM(hresult);
         create_input_layout(il, out_layout, bytecode.Get());
       }
@@ -79,7 +91,9 @@ public:
       LOG_WARNING("shader {} does not exist!", src_path.string());
     }
   }
-  void set_vertex_buffer(ID3D11Buffer **buffers, u32 buff_count, u32 stride,
+  void set_vertex_buffer(ID3D11Buffer **buffers,
+                         u32 buff_count,
+                         u32 stride,
                          u32 offset);
 
   void set_index_buffer(ID3D11Buffer *buffer);
@@ -88,7 +102,7 @@ public:
 
   void set_vertex_shader(ID3D11VertexShader *shader);
 
-  void set_input_layout(ID3D11InputLayout* il);
+  void set_input_layout(ID3D11InputLayout *il);
 
   void set_topology(D3D11_PRIMITIVE_TOPOLOGY topo);
 
@@ -99,12 +113,12 @@ public:
     context->Unmap(buffer, 0);
   }
 
-  template<typename UpdateFn>
-  void update_shader_constants(UpdateFn fn) {
+  template <typename UpdateFn> void update_shader_constants(UpdateFn fn) {
     fn(scene_consts);
-    update_buffer(scene_constant_buffer.Get(), [=](D3D11_MAPPED_SUBRESOURCE& msr) {
-      memcpy(msr.pData, &scene_consts, sizeof(scene_consts));
-    });
+    update_buffer(scene_constant_buffer.Get(),
+                  [=](D3D11_MAPPED_SUBRESOURCE &msr) {
+                    memcpy(msr.pData, &scene_consts, sizeof(scene_consts));
+                  });
   }
 
   void draw_indexed(u32 num_indices);
@@ -141,9 +155,9 @@ public:
 
   // used for drawing tools and selections
   // consider reserving a spot in an different vbuf?
-//  XMFLOAT4 selection_border_color{0.0, 0.0, 1.0, 1.0};
-//  XMFLOAT4 selection_inner_color{0.48f, 0.75f, 0.95f, 1.f};
-//  float selection_border_thickness = 3.f;
+  //  XMFLOAT4 selection_border_color{0.0, 0.0, 1.0, 1.0};
+  //  XMFLOAT4 selection_inner_color{0.48f, 0.75f, 0.95f, 1.f};
+  //  float selection_border_thickness = 3.f;
   // static constexpr size_t MaxSelections = 32;
   // static constexpr size_t SelectionsVertexSize =
   // sizeof(VertexPosColorTexcoord) * MaxSelections * 5 * 4; static constexpr

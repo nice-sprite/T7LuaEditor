@@ -14,6 +14,7 @@ inline float clamp_float(float a, float low, float high) {
 }
 
 void flycam_fps(float dt, Camera &camera) {
+#if 0
   using namespace DirectX;
   static XMVECTOR default_forward = XMVectorSet(0.f, 0.f, 1.f, 0.f);
   static XMVECTOR default_right = XMVectorSet(1.f, 0.f, 0.f, 0.f);
@@ -92,9 +93,11 @@ void flycam_fps(float dt, Camera &camera) {
   }
   ImGui::End();
 #endif
+#endif
 }
 
 void dollycam(float dt, Camera &camera) {
+#if 0
   using namespace DirectX;
   static XMVECTOR default_forward = XMVectorSet(0.f, 0.f, 1.f, 0.f);
   static XMVECTOR default_right = XMVectorSet(1.f, 0.f, 0.f, 0.f);
@@ -140,6 +143,7 @@ void dollycam(float dt, Camera &camera) {
                 XMVectorGetY(camera_target), XMVectorGetZ(camera_target));
   }
   ImGui::End();
+#endif
 #endif
 }
 

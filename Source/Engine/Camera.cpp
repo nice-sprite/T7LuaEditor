@@ -7,7 +7,9 @@
 #include <DirectXMath.h>
 #include <imgui.h>
 
-Camera::Camera(float fov_radians, float aspect_ratio, float near_plane,
+Camera::Camera(float fov_radians,
+               float aspect_ratio,
+               float near_plane,
                float far_plane) {
   zNear = near_plane;
   zFar = far_plane;
@@ -18,17 +20,17 @@ Camera::Camera(float fov_radians, float aspect_ratio, float near_plane,
   rotation = XMMatrixIdentity();
   up = XMVectorSet(0.f, 1.f, 0.f, 0.f);
   origin = XMVectorSet(0.0, 0.0f, -800.f, 0.f);
-  view_matrix =
-      XMMatrixLookAtLH(origin, // camera origin
-                       XMVECTOR{0.0f, 0.0f, 0.0f, 0.f},  // focus point
-                       XMVectorSet(0.f, 1.f, 0.f, 0.f)      // up direction
-      );
+  view_matrix = XMMatrixLookAtLH(origin, // camera origin
+                                 XMVECTOR{0.0f, 0.0f, 0.0f, 0.f}, // focus point
+                                 XMVectorSet(0.f, 1.f, 0.f, 0.f) // up direction
+  );
 
   projection_matrix =
       XMMatrixPerspectiveFovLH(fov_radians, aspect_ratio, zNear, zFar);
 }
 
-Camera::Camera() : Camera(1.39626, 16.0f / 9.0f, 1.0f, 9999.0f) {}
+Camera::Camera()
+    : Camera(1.39626, 16.0f / 9.0f, 1.0f, 9999.0f) {}
 
 // control functions
 void Camera::zoom(int delta) {

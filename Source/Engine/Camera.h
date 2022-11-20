@@ -12,9 +12,12 @@ struct CameraSystem;
 
 class Camera {
   friend CameraSystem;
+
 public:
   Camera();
-  Camera(float fov_radians, float aspect_ratio, float near_plane,
+  Camera(float fov_radians,
+         float aspect_ratio,
+         float near_plane,
          float far_plane);
 
   void update_view(XMMATRIX view);

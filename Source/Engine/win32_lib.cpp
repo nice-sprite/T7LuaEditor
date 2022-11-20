@@ -8,8 +8,12 @@
 
 using namespace Microsoft::WRL;
 namespace win32 {
-Window create_window(HINSTANCE hinst, const char *windowTitle,
-                     const char *classname, int width, int height, WNDPROC proc,
+Window create_window(HINSTANCE hinst,
+                     const char *windowTitle,
+                     const char *classname,
+                     int width,
+                     int height,
+                     WNDPROC proc,
                      const char *window_icon_path) {
   Window window;
   BOOL attribute_state = TRUE;
@@ -20,16 +24,31 @@ Window create_window(HINSTANCE hinst, const char *windowTitle,
   wc.hInstance = hinst;
   wc.lpszClassName = classname;
   wc.style = CS_DBLCLKS;
-  wc.hIcon = (HICON)LoadImage(hinst, window_icon_path, IMAGE_ICON, 0, 0,
+  wc.hIcon = (HICON)LoadImage(hinst,
+                              window_icon_path,
+                              IMAGE_ICON,
+                              0,
+                              0,
                               LR_DEFAULTSIZE | LR_LOADFROMFILE);
   RegisterClass(&wc);
 
-  window.hwnd = CreateWindowEx(0, classname, windowTitle, style, CW_USEDEFAULT,
-                               CW_USEDEFAULT, width, height, nullptr, nullptr,
-                               hinst, nullptr);
+  window.hwnd = CreateWindowEx(0,
+                               classname,
+                               windowTitle,
+                               style,
+                               CW_USEDEFAULT,
+                               CW_USEDEFAULT,
+                               width,
+                               height,
+                               nullptr,
+                               nullptr,
+                               hinst,
+                               nullptr);
 
-  DwmSetWindowAttribute(window.hwnd, DWMWA_TRANSITIONS_FORCEDISABLED,
-                        &attribute_state, sizeof(attribute_state));
+  DwmSetWindowAttribute(window.hwnd,
+                        DWMWA_TRANSITIONS_FORCEDISABLED,
+                        &attribute_state,
+                        sizeof(attribute_state));
   ShowWindow(window.hwnd, SW_SHOWDEFAULT);
   UpdateWindow(window.hwnd);
   GetWindowRect(window.hwnd, &window.client_rect);
@@ -38,7 +57,11 @@ Window create_window(HINSTANCE hinst, const char *windowTitle,
 
 void set_window_icon(HWND hwnd, const char *iconPath) {
   HINSTANCE hinst = (HINSTANCE)GetWindowLongPtr(hwnd, GWLP_HINSTANCE);
-  auto icon = (LONG_PTR)LoadImage(hinst, iconPath, IMAGE_ICON, 0, 0,
+  auto icon = (LONG_PTR)LoadImage(hinst,
+                                  iconPath,
+                                  IMAGE_ICON,
+                                  0,
+                                  0,
                                   LR_DEFAULTSIZE | LR_LOADFROMFILE);
   SetClassLongPtr(hwnd, GCLP_HICON, icon);
 
@@ -52,7 +75,8 @@ DxgiAdapterList get_gpu_specs() {
   CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void **)dxgi.GetAddressOf());
   IDXGIAdapter1 *currentAdapter;
   for (UINT i = 0;
-       dxgi->EnumAdapters1(i, &currentAdapter) != DXGI_ERROR_NOT_FOUND; ++i) {
+       dxgi->EnumAdapters1(i, &currentAdapter) != DXGI_ERROR_NOT_FOUND;
+       ++i) {
     ComPtr<IDXGIAdapter1> a = currentAdapter;
     availableAdapters.push_back(a);
     DXGI_ADAPTER_DESC1 desc{};
@@ -154,10 +178,14 @@ std::string get_cpu_specs() {
                                 "logical processors: {}\n"
                                 "L1/L2/L3 caches: {}{}{}\n"
                                 "Cache line size: {}",
-                                numaNodeCount, processorPackageCount,
-                                processorCoreCount, logicalProcessorCount,
-                                processorL1CacheCount, processorL2CacheCount,
-                                processorL3CacheCount, buffer->Cache.LineSize);
+                                numaNodeCount,
+                                processorPackageCount,
+                                processorCoreCount,
+                                logicalProcessorCount,
+                                processorL1CacheCount,
+                                processorL2CacheCount,
+                                processorL3CacheCount,
+                                buffer->Cache.LineSize);
 
   free(buffer);
 
@@ -201,12 +229,17 @@ dxgi_adapter_list_to_strings(DxgiAdapterList const &adapters) {
     size_t numConverted;
     char cstrDescription[128]{};
     wcstombs_s(&numConverted, cstrDescription, 128, def.Description, _TRUNCATE);
-    auto strRep = fmt::format(formatStr, cstrDescription, def.VendorId,
-                              def.DeviceId, def.SubSysId, def.Revision,
+    auto strRep = fmt::format(formatStr,
+                              cstrDescription,
+                              def.VendorId,
+                              def.DeviceId,
+                              def.SubSysId,
+                              def.Revision,
                               bytes_to_gigabytes(def.DedicatedVideoMemory),
                               bytes_to_gigabytes(def.DedicatedSystemMemory),
                               bytes_to_gigabytes(def.SharedSystemMemory),
-                              def.AdapterLuid.LowPart, def.Flags);
+                              def.AdapterLuid.LowPart,
+                              def.Flags);
 
     defStrings.push_back(strRep);
   }

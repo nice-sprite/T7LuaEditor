@@ -14,14 +14,26 @@
 VertexLayout<3> VertexPosColorTexcoord::layout() {
 
   static VertexLayout<3> il;
-  il.input_layout[0] = {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-                        0,          0, D3D11_INPUT_PER_VERTEX_DATA,
+  il.input_layout[0] = {"POSITION",
+                        0,
+                        DXGI_FORMAT_R32G32B32_FLOAT,
+                        0,
+                        0,
+                        D3D11_INPUT_PER_VERTEX_DATA,
                         0};
-  il.input_layout[1] = {"COLOR", 0,  DXGI_FORMAT_R32G32B32A32_FLOAT,
-                        0,       12, D3D11_INPUT_PER_VERTEX_DATA,
+  il.input_layout[1] = {"COLOR",
+                        0,
+                        DXGI_FORMAT_R32G32B32A32_FLOAT,
+                        0,
+                        12,
+                        D3D11_INPUT_PER_VERTEX_DATA,
                         0};
-  il.input_layout[2] = {"TEXCOORD", 0,  DXGI_FORMAT_R32G32_FLOAT,
-                        0,          28, D3D11_INPUT_PER_VERTEX_DATA,
+  il.input_layout[2] = {"TEXCOORD",
+                        0,
+                        DXGI_FORMAT_R32G32_FLOAT,
+                        0,
+                        28,
+                        D3D11_INPUT_PER_VERTEX_DATA,
                         0};
   return il;
 }
@@ -29,11 +41,19 @@ VertexLayout<3> VertexPosColorTexcoord::layout() {
 VertexLayout<2> VertexPosColor::layout() {
 
   static VertexLayout<2> il;
-  il.input_layout[0] = {"POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT,
-                        0,          0, D3D11_INPUT_PER_VERTEX_DATA,
+  il.input_layout[0] = {"POSITION",
+                        0,
+                        DXGI_FORMAT_R32G32B32_FLOAT,
+                        0,
+                        0,
+                        D3D11_INPUT_PER_VERTEX_DATA,
                         0};
-  il.input_layout[1] = {"COLOR", 0,  DXGI_FORMAT_R32G32B32A32_FLOAT,
-                        0,       12, D3D11_INPUT_PER_VERTEX_DATA,
+  il.input_layout[1] = {"COLOR",
+                        0,
+                        DXGI_FORMAT_R32G32B32A32_FLOAT,
+                        0,
+                        12,
+                        D3D11_INPUT_PER_VERTEX_DATA,
                         0};
   return il;
 }
@@ -45,7 +65,10 @@ void print_vec(char *label, XMVECTOR v) {
   char buff[1024]{};
   strcat(buff, label);
   strcat(buff, "%f %f %f %f");
-  ImGui::Text(buff, XMVectorGetX(v), XMVectorGetY(v), XMVectorGetZ(v),
+  ImGui::Text(buff,
+              XMVectorGetX(v),
+              XMVectorGetY(v),
+              XMVectorGetZ(v),
               XMVectorGetW(v));
 }
 
@@ -58,14 +81,18 @@ void Renderer::init(HWND window, u32 width, u32 height) {
 
   init_gfx();
   init_imgui();
-  create_constant_buffer(device.Get(), sizeof(PerSceneConsts),
+  create_constant_buffer(device.Get(),
+                         sizeof(PerSceneConsts),
                          scene_constant_buffer.GetAddressOf());
 
   scene_consts.modelViewProjection =
       DirectX::XMMatrixIdentity() * camera.get_transform();
 
-  update_constant_buffer(context.Get(), 0, (void *)&scene_consts,
-                         sizeof(scene_consts), scene_constant_buffer.Get());
+  update_constant_buffer(context.Get(),
+                         0,
+                         (void *)&scene_consts,
+                         sizeof(scene_consts),
+                         scene_constant_buffer.Get());
 
   bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
 }
@@ -103,7 +130,8 @@ void Renderer::create_backbuffer_view() {
   d.MiscFlags = 0;
 
   device->CreateTexture2D(&d, NULL, depth_stencil_texture.GetAddressOf());
-  device->CreateDepthStencilView(depth_stencil_texture.Get(), NULL,
+  device->CreateDepthStencilView(depth_stencil_texture.Get(),
+                                 NULL,
                                  depth_stencil_view.GetAddressOf());
   LOG_INFO("created backbuffers");
 }
@@ -113,14 +141,21 @@ void Renderer::reset_backbuffer_views() {
   rtv.Reset();
 }
 
-void Renderer::resize_swapchain_backbuffer(i32 new_width, i32 new_height,
+void Renderer::resize_swapchain_backbuffer(i32 new_width,
+                                           i32 new_height,
                                            b8 minimized) {
-  LOG_INFO("resizing swapchain old: [{}, {}] -> [{}, {}]", width, height,
-           new_width, new_height);
+  LOG_INFO("resizing swapchain old: [{}, {}] -> [{}, {}]",
+           width,
+           height,
+           new_width,
+           new_height);
   if (device && !minimized) {
     reset_backbuffer_views();
-    swapChain->ResizeBuffers(0, new_width, new_height,
-                             DXGI_FORMAT_B8G8R8A8_UNORM, 0);
+    swapChain->ResizeBuffers(0,
+                             new_width,
+                             new_height,
+                             DXGI_FORMAT_B8G8R8A8_UNORM,
+                             0);
     width = (float)new_width;
     height = (float)new_height;
     viewport.Width = width;
@@ -134,15 +169,22 @@ bool Renderer::init_gfx() {
   UINT createDeviceFlags =
       D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
   D3D_FEATURE_LEVEL featureLevel;
-  const D3D_FEATURE_LEVEL featureLevels[] = {
-      D3D_FEATURE_LEVEL_12_0, D3D_FEATURE_LEVEL_11_1, D3D_FEATURE_LEVEL_11_0};
+  const D3D_FEATURE_LEVEL featureLevels[] = {D3D_FEATURE_LEVEL_12_0,
+                                             D3D_FEATURE_LEVEL_11_1,
+                                             D3D_FEATURE_LEVEL_11_0};
   ComPtr<ID3D11Device> baseDevice;
   ComPtr<ID3D11DeviceContext> baseCtx;
 
-  HRESULT res = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr,
-                                  createDeviceFlags, featureLevels,
-                                  _countof(featureLevels), D3D11_SDK_VERSION,
-                                  &baseDevice, &featureLevel, &baseCtx);
+  HRESULT res = D3D11CreateDevice(nullptr,
+                                  D3D_DRIVER_TYPE_HARDWARE,
+                                  nullptr,
+                                  createDeviceFlags,
+                                  featureLevels,
+                                  _countof(featureLevels),
+                                  D3D11_SDK_VERSION,
+                                  &baseDevice,
+                                  &featureLevel,
+                                  &baseCtx);
   Q_ASSERT(SUCCEEDED(res));
 
   if (SUCCEEDED(baseDevice.As(&device))) {
@@ -178,8 +220,12 @@ bool Renderer::init_gfx() {
   sd.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
   ComPtr<IDXGISwapChain1> baseSwapChain;
-  dxgiFactory->CreateSwapChainForHwnd((IUnknown *)device.Get(), hwnd, &sd,
-                                      nullptr, nullptr, &baseSwapChain);
+  dxgiFactory->CreateSwapChainForHwnd((IUnknown *)device.Get(),
+                                      hwnd,
+                                      &sd,
+                                      nullptr,
+                                      nullptr,
+                                      &baseSwapChain);
   baseSwapChain.As(&swapChain); // upgrade the swapchain to revision 4
 
   LOG_INFO("creating blend states");
@@ -253,7 +299,8 @@ void Renderer::set_and_clear_backbuffer() {
   context->RSSetViewports(1, &viewport);
   context->OMSetRenderTargets(1, rtv.GetAddressOf(), depth_stencil_view.Get());
   context->ClearDepthStencilView(depth_stencil_view.Get(),
-                                 D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL, 1.0f,
+                                 D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
+                                 1.0f,
                                  0);
   context->ClearRenderTargetView(rtv.Get(), (float *)&clear_color);
 }
@@ -268,7 +315,8 @@ bool Renderer::init_imgui() {
   ImGui::CreateContext();
   ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
-  LOG_INFO("imgui version: {} docking?: {}", ImGui::GetVersion(),
+  LOG_INFO("imgui version: {} docking?: {}",
+           ImGui::GetVersion(),
            (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0);
   // auto font_consolas =
   // ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
@@ -615,13 +663,17 @@ void Renderer::create_pixel_shader(fs::path src_path,
 
   bool r = shader_compile_disk(src_path, "ps_main", "ps_5_0", &psb);
   Q_ASSERT(r);
-  HRESULT hr = device->CreatePixelShader(
-      psb->GetBufferPointer(), psb->GetBufferSize(), nullptr, out_shader);
+  HRESULT hr = device->CreatePixelShader(psb->GetBufferPointer(),
+                                         psb->GetBufferSize(),
+                                         nullptr,
+                                         out_shader);
   Q_ASSERT(SUCCEEDED(hr));
 }
 
-void Renderer::set_vertex_buffer(ID3D11Buffer **buffers, u32 buff_count,
-                                 u32 stride, u32 offset) {
+void Renderer::set_vertex_buffer(ID3D11Buffer **buffers,
+                                 u32 buff_count,
+                                 u32 stride,
+                                 u32 offset) {
   context->IASetVertexBuffers(0, 1, buffers, &stride, &offset);
 }
 
@@ -641,16 +693,13 @@ void Renderer::draw_indexed(u32 num_indices) {
   context->DrawIndexed(num_indices, 0, 0);
 }
 
-void Renderer::draw(u32 vert_count) {
-  context->Draw(vert_count, 0);
-}
+void Renderer::draw(u32 vert_count) { context->Draw(vert_count, 0); }
 void Renderer::set_input_layout(ID3D11InputLayout *il) {
   context->IASetInputLayout(il);
 }
 
-void Renderer::set_topology(D3D11_PRIMITIVE_TOPOLOGY topo) { 
+void Renderer::set_topology(D3D11_PRIMITIVE_TOPOLOGY topo) {
   context->IASetPrimitiveTopology(topo);
-
 }
 
 f32 Renderer::get_aspect_ratio() { return width / height; }

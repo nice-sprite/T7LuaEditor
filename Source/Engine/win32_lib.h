@@ -22,8 +22,12 @@ struct Window {
   RECT client_rect;
 };
 
-Window create_window(HINSTANCE hinst, const char *windowTitle,
-                     const char *classname, int width, int height, WNDPROC proc,
+Window create_window(HINSTANCE hinst,
+                     const char *windowTitle,
+                     const char *classname,
+                     int width,
+                     int height,
+                     WNDPROC proc,
                      const char *window_icon_path);
 
 void set_window_icon(HWND hwnd, const char *iconPath);

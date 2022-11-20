@@ -1,6 +1,7 @@
-#include "../Engine/renderer.h"
-#include "../Engine/debug_lines.h"
 #include "../Engine/camera_system.h"
+#include "../Engine/debug_lines.h"
+#include "../Engine/input_system.h"
+#include "../Engine/renderer.h"
 #include "../Engine/scene.h"
 #include "../Engine/win32_lib.h"
 
@@ -12,7 +13,9 @@ static constexpr auto AppTitle = "equinox - by nice_sprite";
 
 void start(HINSTANCE hinst, const char *appname);
 void clean_and_exit();
-LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam,
+LRESULT CALLBACK win32_message_callback(HWND hwnd,
+                                        UINT msg,
+                                        WPARAM wparam,
                                         LPARAM lparam);
 void message_loop();
 void update(float timestep);

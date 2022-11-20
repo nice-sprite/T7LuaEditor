@@ -24,7 +24,6 @@ struct VertexPosColor {
   static VertexLayout<2> layout();
 };
 
-
 struct DebugLine {
   XMFLOAT3 begin;
   XMFLOAT3 end;

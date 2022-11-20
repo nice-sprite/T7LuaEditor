@@ -5,8 +5,8 @@
 #ifndef T7LUAEDITOR_SCENE_H
 #define T7LUAEDITOR_SCENE_H
 
-#include "renderer.h"
 #include "ray_cast.h"
+#include "renderer.h"
 #include "win32_input.h"
 #include <DirectXMath.h>
 #include <d3d11.h>
@@ -14,7 +14,7 @@
 #include <vector>
 
 using namespace DirectX;
-//class Renderer; // forward declare the renderer
+// class Renderer; // forward declare the renderer
 
 // every UIQuad has
 // anchors for top left right bottom
@@ -85,7 +85,6 @@ public:
   /// index buffer
   /// vertex and fragment shader, which we store for now
   void init(Renderer &renderer); // create the resources needed to draw
-
 
   int add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation);
 

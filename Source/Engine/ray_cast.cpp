@@ -7,8 +7,12 @@
 
 namespace ray_cast {
 
-Ray screen_to_world_ray(float x, float y, float width, float height,
-                        const Camera &camera, XMMATRIX world) {
+Ray screen_to_world_ray(float x,
+                        float y,
+                        float width,
+                        float height,
+                        const Camera &camera,
+                        XMMATRIX world) {
   XMFLOAT4X4 projection;
   XMFLOAT4X4 inverse_view;
   XMVECTOR ray_origin, ray_dir;
@@ -19,9 +23,10 @@ Ray screen_to_world_ray(float x, float y, float width, float height,
   XMStoreFloat4x4(&inverse_view, XMMatrixInverse(nullptr, camera.get_view()));
 
   ray_origin = XMVectorSet(0.0, 0.0, 0.0, 0.0);
-  ray_dir =
-      XMVectorSet((((2.0f * x) / width) - 1.0f) / projection(0, 0),
-                  -(((2.0f * y) / height) - 1.0f) / projection(1, 1), 1.0, 0.0);
+  ray_dir = XMVectorSet((((2.0f * x) / width) - 1.0f) / projection(0, 0),
+                        -(((2.0f * y) / height) - 1.0f) / projection(1, 1),
+                        1.0,
+                        0.0);
 
   XMMATRIX vi = XMMatrixInverse(nullptr, camera.get_view());
   ray_origin = XMVector3TransformCoord(ray_origin, vi);
@@ -29,8 +34,8 @@ Ray screen_to_world_ray(float x, float y, float width, float height,
   return Ray{ray_origin, ray_dir};
 }
 
-inline XMVECTOR plane_from_quad(float left, float right, float top,
-                                float bottom) {
+inline XMVECTOR
+plane_from_quad(float left, float right, float top, float bottom) {
   XMVECTOR left_top, left_bottom, right_bottom;
   left_top = XMVectorSet(left, top, 0.0, 0.0);
   left_bottom = XMVectorSet(left, bottom, 0.0, 0.0);
@@ -48,14 +53,17 @@ bool point_inside_rect(XMVECTOR point, XMFLOAT4 rect) {
 
 // casts the given ray against a quad, returns true if the ray intersects the
 // plane embedding the quad at a point inside the quad
-bool against_quad(Ray const &ray, float left, float right, float top,
+bool against_quad(Ray const &ray,
+                  float left,
+                  float right,
+                  float top,
                   float bottom) {
 
   XMVECTOR intersects;
 
-  intersects =
-      XMPlaneIntersectLine(plane_from_quad(left, right, top, bottom),
-                           ray.origin, XMVectorAdd(ray.origin, ray.direction));
+  intersects = XMPlaneIntersectLine(plane_from_quad(left, right, top, bottom),
+                                    ray.origin,
+                                    XMVectorAdd(ray.origin, ray.direction));
 
   return !XMVectorGetIntX(XMVectorIsNaN(intersects)) &&
          point_inside_rect(intersects, XMFLOAT4{left, right, top, bottom});
@@ -78,11 +86,15 @@ bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad) {
 
   quad_plane = plane_from_quad(quad.x, quad.y, quad.z, quad.w);
 
-  mins_intersection = XMPlaneIntersectLine(
-      quad_plane, mins.origin, XMVectorAdd(mins.origin, mins.direction));
+  mins_intersection =
+      XMPlaneIntersectLine(quad_plane,
+                           mins.origin,
+                           XMVectorAdd(mins.origin, mins.direction));
 
-  maxs_intersection = XMPlaneIntersectLine(
-      quad_plane, maxs.origin, XMVectorAdd(maxs.origin, maxs.direction));
+  maxs_intersection =
+      XMPlaneIntersectLine(quad_plane,
+                           maxs.origin,
+                           XMVectorAdd(maxs.origin, maxs.direction));
 
   // check for nan
   bool not_nan = !XMVectorGetIntX(XMVectorIsNaN(mins_intersection)) &&
@@ -102,20 +114,27 @@ bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad) {
   }
   return false;
 
-/*  ImGui::Separator();
-  ImGui::Text("INTERSECTION DEBUG");
-  ImGui::TextFmt("min_itx: {}\nmaxs_itx{}\n\n", mins_intersection,
-                 maxs_intersection);
-*/
+  /*  ImGui::Separator();
+    ImGui::Text("INTERSECTION DEBUG");
+    ImGui::TextFmt("min_itx: {}\nmaxs_itx{}\n\n", mins_intersection,
+                   maxs_intersection);
+  */
 }
 
-XMFLOAT2 world_to_screen(XMFLOAT3 world, f32 width, f32 height,
-                         const Camera &camera) {
+XMFLOAT2
+world_to_screen(XMFLOAT3 world, f32 width, f32 height, const Camera &camera) {
   XMFLOAT2 ret;
 
-  XMVECTOR projected_coord = XMVector3Project(
-      XMLoadFloat3(&world), 0.0, 0.0, width, height, 0.0, 1.0,
-      camera.get_projection(), camera.get_view(), XMMatrixIdentity());
+  XMVECTOR projected_coord = XMVector3Project(XMLoadFloat3(&world),
+                                              0.0,
+                                              0.0,
+                                              width,
+                                              height,
+                                              0.0,
+                                              1.0,
+                                              camera.get_projection(),
+                                              camera.get_view(),
+                                              XMMatrixIdentity());
 
   XMStoreFloat2(&ret, projected_coord);
   return ret;

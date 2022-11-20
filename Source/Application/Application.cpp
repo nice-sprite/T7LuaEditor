@@ -6,32 +6,41 @@
 #include <Tracy.hpp>
 #include <Windows.h>
 #include <imgui.h>
+#include <winuser.h>
 
 namespace App {
-  CameraSystem camera_system;
-  DebugRenderSystem debug_render_system;
+CameraSystem camera_system;
+DebugRenderSystem debug_render_system;
 void start(HINSTANCE hinst, const char *appname) {
   logging_start();
   LOG_INFO("starting app");
 
   main_window = win32::create_window(
-      hinst, appname, "luieditor", DefaultAppWidth, DefaultAppHeight,
+      hinst,
+      appname,
+      "luieditor",
+      DefaultAppWidth,
+      DefaultAppHeight,
       win32_message_callback,
       (Files::get_resource_root() / "icon_2.ico").string().c_str()
       // AppIcon
   );
   auto rect = main_window.client_rect;
 
-  //scene.add_quad(XMFLOAT4{0, 1280, 0, 720}, colors[Red], XMFLOAT4{});
+  // scene.add_quad(XMFLOAT4{0, 1280, 0, 720}, colors[Red], XMFLOAT4{});
   scene.add_lots_of_quads();
 
   // this forces WM_SIZE to be sent
-  // size of the window
-  SetWindowPos(main_window.hwnd, nullptr, 0, 0,
-               (rect.right - rect.left +
-                1), // the + 1 is because the WM_SIZE message doesn't go through
-                    // if the size is the same
-               (rect.bottom - rect.top), SWP_NOMOVE);
+  // size of the win
+  // the + 1 is because the WM_SIZE message doesn't go through
+  // if the size is the samedow
+  SetWindowPos(main_window.hwnd,
+               nullptr,
+               0,
+               0,
+               (rect.right - rect.left + 1),
+               (rect.bottom - rect.top),
+               SWP_NOMOVE);
 }
 
 void update(float timestep) {
@@ -43,13 +52,18 @@ void update(float timestep) {
   ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
 
+  u32 msg_count = InputSystem::instance().proc_buffered_input();
+  if (msg_count > 0) {
+    LOG_INFO("read {} rawinput packets this frame", msg_count);
+  }
   // if(!(ImGui::GetIO().WantCaptureMouse ||
   // ImGui::GetIO().WantCaptureKeyboard)) {
   //     Input::Ui::process_input_for_frame();
   // }
+  ImGui::Text("mouse delta: %d, %d",
+              InputSystem::instance().mouse_delta.dx,
+              InputSystem::instance().mouse_delta.dy);
 
-  Input::GameInput::update();
-  Input::GameInput::draw_input_debug();
   Input::Ui::debug_ui_input();
 
 #ifdef DEBUG_IMGUI_WINDOW
@@ -59,9 +73,11 @@ void update(float timestep) {
 
   static bool camera_mode = false;
 
+#if 0
   if (Input::GameInput::key_oneshot(VK_F1)) {
     camera_mode = !camera_mode;
   }
+#endif
 
   camera_system.update(renderer, timestep);
   if (camera_mode) {
@@ -74,13 +90,19 @@ void update(float timestep) {
   scene.draw(renderer);
 
   auto imdraw = ImGui::GetForegroundDrawList();
-  XMFLOAT2 origin = ray_cast::world_to_screen(XMFLOAT3(0, 0, 0), renderer.width, renderer.height, camera_system.get_active());
+  XMFLOAT2 origin = ray_cast::world_to_screen(XMFLOAT3(0, 0, 0),
+                                              renderer.width,
+                                              renderer.height,
+                                              camera_system.get_active());
   imdraw->AddText(ImVec2(origin.x, origin.y), ImU32(0xFFFFFFFF), "Origin");
+
+#if 0
   if(Input::GameInput::key_oneshot(VK_F2)) { 
 
     ray_cast::Ray pick_ray = ray_cast::screen_to_world_ray(Input::Ui::cursor().x, Input::Ui::cursor().y, renderer.width, renderer.height, camera_system.get_active(), XMMatrixIdentity());
     DebugRenderSystem::instance().debug_ray(pick_ray);
-  } 
+  }
+#endif
 
   DebugRenderSystem::instance().update(renderer);
   DebugRenderSystem::instance().draw(renderer);
@@ -91,8 +113,19 @@ void update(float timestep) {
   FrameMarkEnd(sl_FrameTick);
 }
 
-LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam,
+LRESULT CALLBACK win32_message_callback(HWND hwnd,
+                                        UINT msg,
+                                        WPARAM wparam,
                                         LPARAM lparam) {
+
+  if (msg == WM_INPUT) {
+    return InputSystem::instance().raw_input(
+        hwnd,
+        msg,
+        GET_RAWINPUT_CODE_WPARAM(wparam),
+        (HRAWINPUT)lparam);
+  }
+
   if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
     return true;
   switch (msg) {
@@ -101,7 +134,8 @@ LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam,
     return 0;
   }
   case WM_CREATE:
-    renderer.init(hwnd, ((CREATESTRUCT *)lparam)->cx,
+    renderer.init(hwnd,
+                  ((CREATESTRUCT *)lparam)->cx,
                   ((CREATESTRUCT *)lparam)->cy);
     scene.init(renderer);
     init_systems();
@@ -167,15 +201,14 @@ void message_loop() {
   }
   // this is where the program exits:
   // TODO: call shutdown and free memory
-  Input::GameInput::shutdown();
 }
 
 void init_systems() {
+  InputSystem::instance().init(main_window.hwnd);
   camera_system.init(renderer);
   DebugRenderSystem::instance().init(renderer);
   XMVECTOR a = XMVectorSet(0, 0, 0, 0);
   XMVECTOR b = camera_system.get_active().origin;
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
-  Input::GameInput::start();
 }
 }; // namespace App

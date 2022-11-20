@@ -39,7 +39,8 @@
  *
  */
 #include "../defines.h"
-#include <GameInput.h>
+//#include <GameInput.h>
+//#include <Xinput.h>
 #include <Windows.h>
 #include <array>
 #include <functional>
@@ -115,70 +116,70 @@ void debug_ui_input();
 Cursor cursor();
 }; // namespace Ui
 
-namespace GameInput {
-// MOUSE
-struct GIMouseDelta {
-  i64 dx;
-  i64 dy;
-  i64 wheel_x;
-  i64 wheel_y;
-};
-
-struct GIMouseGlob {
-  IGameInputDevice *device = nullptr;
-  GameInputDeviceInfo *device_info = nullptr;
-  GameInputMouseState curr_mouse_state{};
-  GameInputMouseState prev_mouse_state{};
-};
-
-// KEYBOARD
-struct GIKeyboardGlob {
-  IGameInputDevice *device = nullptr;
-  GameInputDeviceInfo *device_info = nullptr;
-  GameInputKeyState *curr_keystate = nullptr;
-  GameInputKeyState *prev_keystate = nullptr;
-  u32 curr_active;
-  u32 prev_active;
-  u32 max_simultaneous_keys;
-};
-
-struct GIGamepadGlob {
-  IGameInputDevice *device = nullptr;
-  GameInputDeviceInfo *device_info = nullptr;
-  GameInputGamepadState state;
-};
-
-// GameInput
-extern IGameInput *game_input;
-extern GIGamepadGlob gamepad;
-extern GIMouseGlob mouse;
-extern GIKeyboardGlob keyboard;
-
-HRESULT start();
-
-HRESULT shutdown();
-
-void poll_gamepad();
-
-void poll_mouse();
-
-void poll_keyboard();
-
-void update();
-
-bool key_down(u8 vk);
-
-bool key_combo(u8 a, u8 b);
-
-bool key_oneshot(u8 vk);
-
-GIMouseDelta mouse_delta();
-
-b8 mouse_button_down(GameInputMouseButtons button);
-
-b8 mouse_button_oneshot(GameInputMouseButtons button);
-
-void draw_input_debug();
-}; // namespace GameInput
+// namespace GameInput {
+//// MOUSE
+// struct GIMouseDelta {
+//   i64 dx;
+//   i64 dy;
+//   i64 wheel_x;
+//   i64 wheel_y;
+// };
+//
+// struct GIMouseGlob {
+//   IGameInputDevice *device = nullptr;
+//   GameInputDeviceInfo *device_info = nullptr;
+//   GameInputMouseState curr_mouse_state{};
+//   GameInputMouseState prev_mouse_state{};
+// };
+//
+//// KEYBOARD
+// struct GIKeyboardGlob {
+//   IGameInputDevice *device = nullptr;
+//   GameInputDeviceInfo *device_info = nullptr;
+//   GameInputKeyState *curr_keystate = nullptr;
+//   GameInputKeyState *prev_keystate = nullptr;
+//   u32 curr_active;
+//   u32 prev_active;
+//   u32 max_simultaneous_keys;
+// };
+//
+// struct GIGamepadGlob {
+//   IGameInputDevice *device = nullptr;
+//   GameInputDeviceInfo *device_info = nullptr;
+//   GameInputGamepadState state;
+// };
+//
+//// GameInput
+// extern IGameInput *game_input;
+// extern GIGamepadGlob gamepad;
+// extern GIMouseGlob mouse;
+// extern GIKeyboardGlob keyboard;
+//
+// HRESULT start();
+//
+// HRESULT shutdown();
+//
+// void poll_gamepad();
+//
+// void poll_mouse();
+//
+// void poll_keyboard();
+//
+// void update();
+//
+// bool key_down(u8 vk);
+//
+// bool key_combo(u8 a, u8 b);
+//
+// bool key_oneshot(u8 vk);
+//
+// GIMouseDelta mouse_delta();
+//
+// b8 mouse_button_down(GameInputMouseButtons button);
+//
+// b8 mouse_button_oneshot(GameInputMouseButtons button);
+//
+// void draw_input_debug();
+// }; // namespace GameInput
 
 } // namespace Input

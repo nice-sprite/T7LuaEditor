@@ -90,7 +90,9 @@ void debug_win32_input() {
       cursor_down_pos_y = mouse.y;
       held = true;
     } else if (mouse.left_down && held) {
-      rhi->imgui_draw_screen_rect(cursor_down_pos_x, mouse.x, cursor_down_pos_y,
+      rhi->imgui_draw_screen_rect(cursor_down_pos_x,
+                                  mouse.x,
+                                  cursor_down_pos_y,
                                   mouse.y);
     } else {
       held = false;
@@ -102,9 +104,6 @@ void debug_win32_input() {
 #endif
 }
 
-// we get everything except double clicks from GameInput, and mouse doesnt
-// really need anything besides the client coordinates of the mouse, literally
-// why not just call GetCursorPos!
 void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   ZoneScoped("");
 
@@ -113,6 +112,8 @@ void parse_mouse(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
   mouse_state.x1_double_click = 0;
   mouse_state.x2_double_click = 0;
   mouse_state.middle_double_click = 0;
+
+  
   switch (msg) {
 
   case WM_MOUSEMOVE:
@@ -221,8 +222,9 @@ void parse_keyboard(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
       kbd_state.caps_down = true;
       break;
     default: {
-      u32 ccode = MapVirtualKey(
-          wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
+      u32 ccode =
+          MapVirtualKey(wparam,
+                        MAPVK_VK_TO_CHAR); // translate the keycode to a char
       u16 repeat_count = (unsigned short)(lparam); // take lower 16 bits
       b8 is_extended_key =
           (lparam & (1 << 24)); // key is either right control or alt key
@@ -263,8 +265,9 @@ void parse_keyboard(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
       kbd_state.caps_down = false;
       break;
     default: {
-      u32 ccode = MapVirtualKey(
-          wparam, MAPVK_VK_TO_CHAR); // translate the keycode to a char
+      u32 ccode =
+          MapVirtualKey(wparam,
+                        MAPVK_VK_TO_CHAR); // translate the keycode to a char
       u16 repeat_count = (unsigned short)(lparam); // take lower 16 bits
       b8 is_extended_key =
           (lparam & (1 << 24)); // key is either right control or alt key
@@ -299,207 +302,3 @@ Cursor cursor() { return Cursor{mouse_state.x, mouse_state.y}; }
 }; // namespace Ui
 
 } // namespace Input
-
-namespace Input {
-namespace GameInput {
-IGameInput *game_input = nullptr;
-GIMouseGlob mouse{};
-GIKeyboardGlob keyboard{};
-GIGamepadGlob gamepad{};
-
-HRESULT start() {
-  HRESULT result = GameInputCreate(&game_input);
-  game_input->SetFocusPolicy(GameInputDisableBackgroundInput);
-  return result;
-}
-
-HRESULT shutdown() { return HRESULT{}; }
-
-void poll_gamepad() {
-  IGameInputReading *reading;
-  if (SUCCEEDED(game_input->GetCurrentReading(GameInputKindGamepad,
-                                              gamepad.device, &reading))) {
-    if (gamepad.device == nullptr) {
-      reading->GetDevice(&gamepad.device);
-    }
-    reading->GetGamepadState(&gamepad.state);
-    reading->Release();
-  } else if (gamepad.device != nullptr) {
-    gamepad.device->Release();
-    gamepad.device = nullptr;
-  }
-}
-
-void poll_mouse() {
-  IGameInputReading *reading;
-  GameInputMouseState state;
-  if (SUCCEEDED(game_input->GetCurrentReading(GameInputKindMouse, mouse.device,
-                                              &reading))) {
-    if (mouse.device == nullptr) {
-      reading->GetMouseState(&state);
-      if (state.buttons != 0 || state.positionX != 0 || state.positionY != 0 ||
-          state.wheelX != 0 || state.wheelY != 0) {
-        // use this device only if there is a non-zero field, prevents ghost
-        // device from 'stealing' input
-        reading->GetDevice(&mouse.device);
-        mouse.device_info =
-            (GameInputDeviceInfo *)mouse.device->GetDeviceInfo();
-      }
-    }
-    mouse.prev_mouse_state = mouse.curr_mouse_state;
-    reading->GetMouseState(&state);
-    reading->Release();
-    mouse.curr_mouse_state = state;
-  } else if (mouse.device != nullptr) {
-    mouse.device->Release();
-    mouse.device = nullptr;
-  }
-}
-
-void poll_keyboard() {
-  IGameInputReading *reading;
-  if (SUCCEEDED(game_input->GetCurrentReading(GameInputKindKeyboard, nullptr,
-                                              &reading))) {
-    if (keyboard.device == nullptr) {
-      reading->GetDevice(&keyboard.device);
-      keyboard.device_info =
-          (GameInputDeviceInfo *)keyboard.device->GetDeviceInfo();
-      if (keyboard.device_info->keyboardInfo->maxSimultaneousKeys > 0) {
-        keyboard.max_simultaneous_keys =
-            keyboard.device_info->keyboardInfo->maxSimultaneousKeys;
-        keyboard.curr_keystate = new GameInputKeyState
-            [keyboard.max_simultaneous_keys]{}; // this is currently leaking lol
-        keyboard.prev_keystate = new GameInputKeyState
-            [keyboard.max_simultaneous_keys]{}; // this is currently leaking lol
-      } else {
-        keyboard.device = nullptr;
-      }
-    }
-
-    if (keyboard.device != nullptr) {
-      memcpy(keyboard.prev_keystate, keyboard.curr_keystate,
-             keyboard.max_simultaneous_keys * sizeof(GameInputKeyState));
-      keyboard.prev_active = keyboard.curr_active;
-      keyboard.curr_active = reading->GetKeyCount();
-      reading->GetKeyState(keyboard.curr_active, keyboard.curr_keystate);
-    }
-    reading->Release();
-  } else if (keyboard.device != nullptr) {
-    keyboard.device->Release();
-    keyboard.device = nullptr;
-  }
-}
-
-void update() {
-  poll_keyboard();
-  poll_mouse();
-  poll_gamepad();
-}
-
-b8 key_down(u8 vk) {
-  for (u32 i = 0; i < keyboard.curr_active; ++i)
-    if (keyboard.curr_keystate[i].virtualKey == vk)
-      return true;
-  return false;
-}
-
-b8 key_combo(u8 a, u8 b) { return key_down(a) && key_down(b); }
-
-b8 key_oneshot(u8 vk) {
-  b8 in_last = false;
-  for (u32 i = 0; i < keyboard.prev_active; ++i) {
-    if (keyboard.prev_keystate[i].virtualKey == vk) {
-      in_last = true;
-      break;
-    }
-  }
-  return key_down(vk) && !in_last;
-}
-
-GIMouseDelta mouse_delta() {
-  GIMouseDelta d;
-  d.dx = mouse.curr_mouse_state.positionX - mouse.prev_mouse_state.positionX;
-  d.dy = mouse.curr_mouse_state.positionY - mouse.prev_mouse_state.positionY;
-  d.wheel_x = mouse.curr_mouse_state.wheelX - mouse.prev_mouse_state.wheelX;
-  d.wheel_y = mouse.curr_mouse_state.wheelY - mouse.prev_mouse_state.wheelY;
-  return d;
-}
-
-b8 mouse_button_down(GameInputMouseButtons button) {
-  return (mouse.curr_mouse_state.buttons & button) > 0;
-}
-
-b8 mouse_button_oneshot(GameInputMouseButtons button) { return false; }
-
-void draw_input_debug() {
-#ifdef DEBUG_GAME_INPUT
-  if (ImGui::Begin("GameInput Debug View")) {
-
-    f32 left_stick[2] = {gamepad.state.leftThumbstickX,
-                         gamepad.state.leftThumbstickY};
-    f32 right_stick[2] = {gamepad.state.rightThumbstickX,
-                          gamepad.state.rightThumbstickY};
-    ImGui::Text("MOUSE");
-    ImGui::Text("deltas: %d %d", mouse.curr_mouse_state.positionX,
-                mouse.curr_mouse_state.positionY);
-    ImGui::Text("wheel: %d %d", mouse.curr_mouse_state.wheelX,
-                mouse.curr_mouse_state.wheelY);
-    ImGui::Text("buttons: %d %d %d %d %d %d %d",
-                mouse.curr_mouse_state.buttons & GameInputMouseLeftButton,
-                mouse.curr_mouse_state.buttons & GameInputMouseRightButton,
-                mouse.curr_mouse_state.buttons & GameInputMouseMiddleButton,
-                mouse.curr_mouse_state.buttons & GameInputMouseButton4,
-                mouse.curr_mouse_state.buttons & GameInputMouseButton5,
-                mouse.curr_mouse_state.buttons & GameInputMouseWheelTiltLeft,
-                mouse.curr_mouse_state.buttons & GameInputMouseWheelTiltRight);
-    ImGui::Separator();
-
-    ImGui::Text("Gamepad");
-    ImGui::SliderFloat("LT", &gamepad.state.leftTrigger, 0.0f, 1.0f, "%.2f",
-                       1.0f);
-    ImGui::SliderFloat("RT", &gamepad.state.rightTrigger, 0.0f, 1.0f, "%.2f",
-                       1.0f);
-    ImGui::DragFloat2("Left Stick", left_stick);
-    ImGui::DragFloat2("Right Stick", right_stick);
-
-    ImGui::Text("None %d\n,  Menu %d\n,  View %d\n,  A %d\n,  B %d\n,  X %d\n, "
-                " Y %d\n,  DPadUp %d\n,  DPadDown %d\n,  DPadLeft %d\n,  "
-                "DPadRight %d\n,  LeftShoulder %d\n,  RightShoulder %d\n,  "
-                "LeftThumbstick %d\n,  RightThumbstick %d",
-                gamepad.state.buttons & GameInputGamepadNone,
-                gamepad.state.buttons & GameInputGamepadMenu,
-                gamepad.state.buttons & GameInputGamepadView,
-                gamepad.state.buttons & GameInputGamepadA,
-                gamepad.state.buttons & GameInputGamepadB,
-                gamepad.state.buttons & GameInputGamepadX,
-                gamepad.state.buttons & GameInputGamepadY,
-                gamepad.state.buttons & GameInputGamepadDPadUp,
-                gamepad.state.buttons & GameInputGamepadDPadDown,
-                gamepad.state.buttons & GameInputGamepadDPadLeft,
-                gamepad.state.buttons & GameInputGamepadDPadRight,
-                gamepad.state.buttons & GameInputGamepadLeftShoulder,
-                gamepad.state.buttons & GameInputGamepadRightShoulder,
-                gamepad.state.buttons & GameInputGamepadLeftThumbstick,
-                gamepad.state.buttons & GameInputGamepadRightThumbstick);
-
-    ImGui::Separator();
-    ImGui::Text("KEYBOARD");
-    ImGui::Text("max_keys: %llu", keyboard.max_simultaneous_keys);
-    ImGui::Text("active_keys: %llu", keyboard.curr_active);
-    if (key_down('W'))
-      ImGui::Text("Forward");
-    if (key_down('A'))
-      ImGui::Text("Left");
-    if (key_down('S'))
-      ImGui::Text("Back");
-    if (key_down('D'))
-      ImGui::Text("Right");
-    if (key_down(VK_LCONTROL))
-      ImGui::Text("CTRL");
-  }
-  ImGui::End();
-#endif
-}
-
-}; // namespace GameInput
-}; // namespace Input

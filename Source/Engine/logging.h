@@ -24,12 +24,14 @@ template <> struct fmt::formatter<LogLevel> {
   }
 };
 
-static inline void impl_log_msg(LogLevel level, fmt::string_view fmt,
-                                fmt::format_args args) {
+static inline void
+impl_log_msg(LogLevel level, fmt::string_view fmt, fmt::format_args args) {
   const char *level_str[] = {"INFO   ", "WARNING", "COM    ", "FATAL  "};
-  const fmt::text_style level_style[] = {
-      fmt::fg(fmt::color::sky_blue), fmt::fg(fmt::color::yellow), fmt::fg(fmt::color::red),
-      fmt::emphasis::bold | fmt::fg(fmt::color::red)};
+  const fmt::text_style level_style[] = {fmt::fg(fmt::color::sky_blue),
+                                         fmt::fg(fmt::color::yellow),
+                                         fmt::fg(fmt::color::red),
+                                         fmt::emphasis::bold |
+                                             fmt::fg(fmt::color::red)};
 
   fmt::print("[{}] {}\r\n",
              fmt::format(level_style[(u32)level], level_str[(u32)level]),
@@ -41,15 +43,19 @@ void log_msg(LogLevel level, const S &format, Args &&...args) {
   impl_log_msg(level, format, fmt::make_format_args(args...));
 }
 
-static inline void log_assert(const char *expression, const char *msg,
-                              const char *file, i32 line) {
-  fmt::print("{}:{}: {}\r\n", fmt::format(fmt::fg(fmt::color::orange_red), file),
+static inline void log_assert(const char *expression,
+                              const char *msg,
+                              const char *file,
+                              i32 line) {
+  fmt::print("{}:{}: {}\r\n",
+             fmt::format(fmt::fg(fmt::color::orange_red), file),
              fmt::format(fmt::fg(fmt::color::light_sky_blue), "{}", line),
              fmt::format(fmt::fg(fmt::color::orange), expression));
 }
 
 static inline void log_hresult(LogLevel level, HRESULT e) {
   _com_error ce(e);
+  
   std::string error = ce.ErrorMessage();
   fmt::print("[{}] {}\r\n", level, error);
 }

@@ -11,8 +11,10 @@ constexpr unsigned int MaxDebugLines = 1024;
 enum DebugColors { Red, Green, Blue, Pink, Max };
 
 constexpr std::array<XMFLOAT4, DebugColors::Max> colors = {
-    XMFLOAT4(1.0, 0, 0, 1.0), XMFLOAT4(0, 1.0, 0, 1.0),
-    XMFLOAT4(0, 0, 1.0, 1.0), XMFLOAT4(0.95, 0.003, 1.0, 1.0)};
+    XMFLOAT4(1.0, 0, 0, 1.0),
+    XMFLOAT4(0, 1.0, 0, 1.0),
+    XMFLOAT4(0, 0, 1.0, 1.0),
+    XMFLOAT4(0.95, 0.003, 1.0, 1.0)};
 
 // allow to draw shapes for debugging help
 struct DebugRenderSystem {

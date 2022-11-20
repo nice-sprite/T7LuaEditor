@@ -27,10 +27,9 @@ HRESULT create_constant_buffer(ID3D11Device *device,
                                ID3D11Buffer **ppBuffer);
 
 /* VERTEX BUFFER FUNCTIONS */
-HRESULT create_dynamic_vertex_buffer(
-        ID3D11Device *device,
-        ID3D11Buffer **ppBuffer,
-        int reserveSize);
+HRESULT create_dynamic_vertex_buffer(ID3D11Device *device,
+                                     ID3D11Buffer **ppBuffer,
+                                     int reserveSize);
 
 HRESULT create_dynamic_vertex_buffer(ID3D11Device *device,
                                      ID3D11Buffer **ppBuffer,
@@ -63,8 +62,7 @@ HRESULT create_dynamic_index_buffer(ID3D11Device *device,
                                     int *initialData,
                                     int numIndices);
 
-void bind_dynamic_index_buffer(ID3D11DeviceContext *context,
-                               ID3D11Buffer *buf);
+void bind_dynamic_index_buffer(ID3D11DeviceContext *context, ID3D11Buffer *buf);
 
 void update_dynamic_index_buffer(ID3D11DeviceContext *context,
                                  ID3D11Buffer *buf,
@@ -76,7 +74,6 @@ void append_dynamic_index_buffer(ID3D11DeviceContext *context,
                                  int *indexData,
                                  size_t numIndices,
                                  size_t offset);
-
 
 /* TEXTURE FUNCTIONS */
 void alloc_texture_atlas(int slot, ID3D11ShaderResourceView **outTextureHandle);
