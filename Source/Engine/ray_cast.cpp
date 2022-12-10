@@ -1,9 +1,83 @@
 #include "ray_cast.h"
 #include "camera.h"
+#include "camera_system.h"
 #include "imgui_fmt.h"
 #include <DirectXMath.h>
 #include <algorithm>
 #include <imgui.h>
+
+bool point_inside_rect(XMVECTOR point, XMFLOAT4 rect) {
+  return XMVectorGetX(point) > rect.x && XMVectorGetX(point) < rect.y &&
+         XMVectorGetY(point) > rect.z && XMVectorGetY(point) < rect.w;
+}
+
+RayCaster &RayCaster::instance() {
+  static RayCaster rc;
+  return rc;
+}
+
+void RayCaster::init(CameraSystem *cam_sys) { this->cam_sys = cam_sys; }
+
+// transforms a world-space vector into screenspace
+Vec4 RayCaster::project(Vec4 world) {
+
+  Vec4 ret = DirectX::XMVector3Project(world,
+                                       0.0,
+                                       0.0,
+                                       cam_sys->viewport_width,
+                                       cam_sys->viewport_height,
+                                       0.0,
+                                       1.0,
+                                       cam_sys->get_active().get_projection(),
+                                       cam_sys->get_active().get_view(),
+                                       XMMatrixIdentity());
+  return ret;
+}
+
+// transforms a screen-space vector (2d xy) into a normalized Ray
+Ray RayCaster::picking_ray(Vec4 screen) {
+  Ray ray;
+  Vec4 screen_near = XMVectorSetZ(screen, 0.0);
+  Vec4 screen_far = XMVectorSetZ(screen, 1.0);
+  ray.origin = unproject(screen_near);
+  Vec4 dest = unproject(screen_far);
+  ray.direction = XMVector3Normalize(XMVectorSubtract(dest, ray.origin));
+  return ray;
+}
+
+Vec4 RayCaster::unproject(Vec4 xyz) {
+  return XMVector3Unproject(xyz,
+                            0.0,
+                            0.0,
+                            cam_sys->viewport_width,
+                            cam_sys->viewport_height,
+                            0.0,
+                            1.0,
+                            cam_sys->get_active().get_projection(),
+                            cam_sys->get_active().get_view(),
+                            XMMatrixIdentity());
+}
+
+bool RayCaster::ray_quad(Ray ray, Float4 quad_bounds) {
+  Vec4 quad = XMLoadFloat4(&quad_bounds);
+  Vec4 intersects =
+      XMPlaneIntersectLine(quad_plane(quad),
+                           ray.origin,
+                           XMVectorAdd(ray.origin, ray.direction));
+
+  return !XMVectorGetIntX(XMVectorIsNaN(intersects)) &&
+         point_inside_rect(intersects, quad_bounds);
+}
+
+inline Vec4 RayCaster::quad_plane(Vec4 quad) {
+  Float4 q;
+  XMStoreFloat4(&q, quad);
+  XMVECTOR left_top, left_bottom, right_bottom;
+  left_top = XMVectorSet(q.x, q.z, 0.0, 0.0);
+  left_bottom = XMVectorSet(q.x, q.w, 0.0, 0.0);
+  right_bottom = XMVectorSet(q.y, q.w, 0.0, 0.0);
+  return XMPlaneFromPoints(left_top, left_bottom, right_bottom);
+}
 
 namespace ray_cast {
 
@@ -46,10 +120,6 @@ plane_from_quad(float left, float right, float top, float bottom) {
 
 // rect.x, rect.y == left, right
 // rect.z, rect.w == top, bottom
-bool point_inside_rect(XMVECTOR point, XMFLOAT4 rect) {
-  return XMVectorGetX(point) > rect.x && XMVectorGetX(point) < rect.y &&
-         XMVectorGetY(point) > rect.z && XMVectorGetY(point) < rect.w;
-}
 
 // casts the given ray against a quad, returns true if the ray intersects the
 // plane embedding the quad at a point inside the quad
@@ -69,9 +139,9 @@ bool against_quad(Ray const &ray,
          point_inside_rect(intersects, XMFLOAT4{left, right, top, bottom});
 }
 
-bool against_quad(Ray const &ray, XMFLOAT4 const &bounds) {
-  return against_quad(ray, bounds.x, bounds.y, bounds.z, bounds.w);
-}
+// bool against_quad(Ray const &ray, XMFLOAT4 const &bounds) {
+//   return against_quad(ray, bounds.x, bounds.y, bounds.z, bounds.w);
+// }
 
 bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad) {
   XMVECTOR mins_intersection; // where the mins ray intersects the quads plane

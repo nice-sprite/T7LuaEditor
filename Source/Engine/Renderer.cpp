@@ -4,7 +4,6 @@
 #include "logging.h"
 #include "ray_cast.h"
 #include "shader_util.h"
-#include "win32_input.h"
 #include <Tracy.hpp>
 #include <dxgiformat.h>
 #include <imgui.h>
@@ -61,19 +60,7 @@ VertexLayout<2> VertexPosColor::layout() {
  * Helper functions for debugging
  */
 
-void print_vec(char *label, XMVECTOR v) {
-  char buff[1024]{};
-  strcat(buff, label);
-  strcat(buff, "%f %f %f %f");
-  ImGui::Text(buff,
-              XMVectorGetX(v),
-              XMVectorGetY(v),
-              XMVectorGetZ(v),
-              XMVectorGetW(v));
-}
-
 void Renderer::init(HWND window, u32 width, u32 height) {
-
   this->hwnd = window;
   this->width = width;
   this->height = height;
@@ -97,8 +84,7 @@ void Renderer::init(HWND window, u32 width, u32 height) {
   bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
 }
 
-Renderer::Renderer()
-    : camera(DirectX::XM_PIDIV2, 16.0f / 9.0f, 10.0f, 2000.0f) {
+Renderer::Renderer() {
   /* DO DEBUG NAMES */
   // static const char selection_vbuf_name[] = "Selection Vertices";
   // static const char selection_index_name[] = "Selection Indices";

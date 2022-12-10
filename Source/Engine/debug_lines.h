@@ -30,7 +30,7 @@ struct DebugRenderSystem {
 
   void update_line_float3(u32 i, XMFLOAT3 a, XMFLOAT3 b, XMFLOAT4 color);
 
-  void debug_ray(ray_cast::Ray ray);
+  void debug_ray(Ray ray);
 
   void clear_debug_lines();
 

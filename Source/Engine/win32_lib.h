@@ -1,7 +1,6 @@
 #ifndef WINDOW_UTIL_H
 #define WINDOW_UTIL_H
 
-#include "./win32_input.h"
 #include <Windows.h>
 #include <d3d11_4.h>
 #include <dxgi1_6.h>
@@ -31,27 +30,6 @@ Window create_window(HINSTANCE hinst,
                      const char *window_icon_path);
 
 void set_window_icon(HWND hwnd, const char *iconPath);
-
-struct Timer {
-  __int64 frequency;
-  __int64 a;
-  __int64 b;
-  __int64 paused;
-  double seconds_per_count;
-  double elapsed;
-
-  Timer();
-
-  double elapsed_ms();
-
-  void tick();
-
-  void start();
-
-  void stop();
-
-  void reset();
-};
 
 using DxgiAdapterList = std::vector<DXGI_ADAPTER_DESC1>;
 

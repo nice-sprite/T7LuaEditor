@@ -3,6 +3,7 @@
 #include "../Engine/input_system.h"
 #include "../Engine/renderer.h"
 #include "../Engine/scene.h"
+#include "../Engine/timer.h"
 #include "../Engine/win32_lib.h"
 
 namespace App {
@@ -20,8 +21,9 @@ LRESULT CALLBACK win32_message_callback(HWND hwnd,
 void message_loop();
 void update(float timestep);
 void init_systems();
+void shutdown_systems();
 
-static win32::Timer timer;
+static Timer timer;
 static win32::Window main_window;
 static Renderer renderer;
 static Scene scene;

@@ -3,10 +3,16 @@
 #include "camera.h"
 struct Renderer;
 struct CameraSystem {
+  CameraSystem() = default;
+  CameraSystem(CameraSystem &) = delete;
+  CameraSystem &operator=(CameraSystem &) = delete;
+
   static constexpr u32 MaxCams = 16u;
   Camera cameras[MaxCams];
   u32 num_cams = 0;
   u32 active_cam = 0;
+  f32 viewport_width;
+  f32 viewport_height;
 
   void init(Renderer &renderer);
   void update(Renderer &renderer, f32 timestep);

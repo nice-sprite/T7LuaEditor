@@ -1,68 +1,74 @@
 #pragma once
-
 #include "../defines.h"
-#include <DirectXMath.h>
+
+#include "math.h"
 #include <fmt/format.h>
 
 struct Camera;
-namespace ray_cast {
+struct CameraSystem;
 
-    using namespace DirectX;
+struct Ray {
+  Vec4 origin;
+  Vec4 direction;
+};
 
-    struct Ray {
-        XMVECTOR origin;
-        XMVECTOR direction;
-    };
+struct RayCaster {
+  CameraSystem *cam_sys;
 
+  void init(CameraSystem *cam_sys);
+  RayCaster() = default;
+  RayCaster(RayCaster &) = delete;
+  static RayCaster &instance();
 
-    XMFLOAT2 world_to_screen(XMFLOAT3 world, f32 width, f32 height, const Camera& camera);
+  Vec4 unproject(Vec4 screen);
+  Ray picking_ray(Vec4 screen);
 
+  Vec4 project(Vec4 world);
 
-    // converts screen coordinates to ray origin and direction
-    Ray screen_to_world_ray(float x,
-                            float y,
-                            float width,
-                            float height,
-                            const Camera &camera,
-                            XMMATRIX world
-    );
+  // helpers
 
-    bool against_quad(
-            Ray const &ray,
-            float left,
-            float right,
-            float top,
-            float bottom
-    );
+  // get the plane the quad is embedded in
+  inline Vec4 quad_plane(Vec4 quad);
 
-    inline XMVECTOR plane_from_quad(
-            float left,
-            float right,
-            float top,
-            float bottom);
+  // intersection tests
+  bool ray_quad(Ray ray, Float4 quad_bounds);
+  bool ray_volume(Ray min, Ray max, Float4 quad_bounds);
+};
 
+Float2
+world_to_screen(Float3 world, f32 width, f32 height, const Camera &camera);
 
-    bool against_quad(
-            Ray const &ray,
-            XMFLOAT4 const &bounds
-    );
+// converts screen coordinates to ray origin and direction
+Ray screen_to_world_ray(float x,
+                        float y,
+                        float width,
+                        float height,
+                        const Camera &camera,
+                        Matrix world);
 
-    bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad);
+bool against_quad(Ray const &ray,
+                  float left,
+                  float right,
+                  float top,
+                  float bottom);
 
+inline Vec4 plane_from_quad(float left, float right, float top, float bottom);
 
-}
+bool against_quad(Ray const &ray, Float4 const &bounds);
 
-template <> struct fmt::formatter<ray_cast::Ray> {
+bool volume_intersection(Ray mins, Ray maxs, Float4 quad);
+
+template <> struct fmt::formatter<Ray> {
   constexpr auto parse(fmt::format_parse_context &ctx)
       -> decltype(ctx.begin()) {
     return ctx.end();
   }
 
   template <typename FormatContext>
-  auto format(const ray_cast::Ray& ray, FormatContext &ctx) const
-      -> decltype(ctx.out()) { 
-    return fmt::format_to(ctx.out(), "origin: {}\ndirection: {}", ray.origin, ray.direction);
-
+  auto format(const Ray &ray, FormatContext &ctx) const -> decltype(ctx.out()) {
+    return fmt::format_to(ctx.out(),
+                          "origin: {}\ndirection: {}",
+                          ray.origin,
+                          ray.direction);
   }
 };
-

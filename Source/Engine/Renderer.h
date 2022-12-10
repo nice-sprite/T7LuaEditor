@@ -167,7 +167,7 @@ public:
   ComPtr<ID3D11Buffer> selection_vertex_buffer;
   ComPtr<ID3D11Buffer> selection_index_buffer;
 
-  Camera camera;
+  //Camera camera;
   PerSceneConsts scene_consts;
   ComPtr<ID3D11Buffer> scene_constant_buffer;
 

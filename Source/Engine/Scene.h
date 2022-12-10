@@ -7,10 +7,10 @@
 
 #include "ray_cast.h"
 #include "renderer.h"
-#include "win32_input.h"
 #include <DirectXMath.h>
 #include <d3d11.h>
 #include <imgui.h>
+#include <unordered_map>
 #include <vector>
 
 using namespace DirectX;
@@ -52,7 +52,8 @@ struct UIQuad {
 };
 
 struct Selection {
-  XMFLOAT4 bounds;
+  Float2 min;
+  Float2 max;
   std::vector<int> quads;
 };
 
@@ -69,14 +70,18 @@ public:
   static constexpr auto MaxIndices =
       6 * MaxQuads; // there are 6 indices per quad
 
-  unsigned __int32 num_quads;
-  unsigned __int32 num_dirty;
-  XMFLOAT4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
-  XMFLOAT4 rotations[MaxQuads]{};
-  XMFLOAT4 colors[MaxQuads]{};
-  __int32 priority[MaxQuads]{};
+  u32 num_quads;
+  u32 num_dirty;
+  u32 priority[MaxQuads]{};
+  i32 selected_quad = -1;
+
+  struct UIElementData {
+    XMFLOAT4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
+    XMFLOAT4 rotations[MaxQuads]{};
+    XMFLOAT4 colors[MaxQuads]{};
+  } root_data;
+
   bool dirty = false;
-  /// __int32  dirty_list[MaxQuads]{};
 
   Scene();
 
@@ -88,13 +93,13 @@ public:
 
   int add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation);
 
-  int get_quad_under_cursor(float x, float y, Camera const &cam);
+  int get_quad_under_cursor(ScreenPos);
 
-  void calculate_selected_quads(Camera const &cam);
+  void calculate_selected_quads();
 
   void add_lots_of_quads();
 
-  void update(Renderer &renderer, float timestep, Camera &camera);
+  void update(Renderer &renderer, float timestep);
 
   void update_resources(Renderer &renderer);
 
@@ -109,7 +114,7 @@ public:
   int width, height;
 
 private:
-  void draw_selection(XMFLOAT4 bounds);
+  void ui_draw_selection();
 };
 
 #endif // T7LUAEDITOR_SCENE_H

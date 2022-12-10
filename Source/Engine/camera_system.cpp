@@ -8,6 +8,8 @@ void CameraSystem::init(Renderer &renderer) {
 }
 
 void CameraSystem::update(Renderer &renderer, f32 timestep) {
+  viewport_width = renderer.width;
+  viewport_height = renderer.height;
   get_active().set_aspect_ratio(renderer.get_aspect_ratio());
   // map the constant buffer and update it
   renderer.update_shader_constants([=](PerSceneConsts &shader_constants) {
