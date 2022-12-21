@@ -1,6 +1,7 @@
 #include "Application.h"
 #include "../Engine/camera_controller.h"
 #include "../Engine/files.h"
+#include "../Engine/imgui_fmt.h"
 #include "../Engine/logging.h"
 #include <DirectXMath.h>
 #include <Tracy.hpp>
@@ -8,10 +9,12 @@
 #include <imgui.h>
 #include <winuser.h>
 
-namespace App {
+#define DEBUG_IMGUI_WINDOW 1
 
+namespace App {
 CameraSystem camera_system;
 DebugRenderSystem debug_render_system;
+FontLoader fonts;
 
 void start(HINSTANCE hinst, const char *appname) {
   logging_start();
@@ -43,30 +46,93 @@ void start(HINSTANCE hinst, const char *appname) {
                (rect.right - rect.left + 1),
                (rect.bottom - rect.top),
                SWP_NOMOVE);
+
+  fonts.init();
+  fonts.load_font("C:/Windows/Fonts/CascadiaCode.ttf");
+  fonts.load_font("C:/Windows/Fonts/consola.ttf");
+  fonts.list_loaded();
+
+  // fonts.draw("Cascadia Code", "hello I am a font!");
 }
 
 void update(float timestep) {
   static const char *sl_FrameTick = "update";
+  static ImVec2 old_size{};
+  static ImVec2 new_size{};
+  static ViewportRegion scene_viewport{};
+
   FrameMarkStart(sl_FrameTick);
 
-  renderer.set_and_clear_backbuffer();
   renderer.imgui_frame_begin();
   ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
                                ImGuiDockNodeFlags_PassthruCentralNode);
 
   u32 msg_count = InputSystem::instance().proc_buffered_input();
-  // if (msg_count > 0) {
-  //   LOG_INFO("read {} rawinput packets this frame", msg_count);
-  // }
+  InputSystem &is = InputSystem::instance();
+  // is.imgui_active =
+  //     ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+  is.imgui_active = false;
+  is.update();
+
+  if (old_size.x != new_size.x || old_size.y != new_size.y) {
+    LOG_INFO("Resizing the render texture");
+    renderer.resize_render_texture(new_size.x, new_size.y);
+    old_size = new_size;
+  }
+
+  renderer.set_and_clear_render_texture();
+
+  renderer.set_viewport(scene_viewport);
+  RayCaster::instance().set_viewport(scene_viewport);
+
+  camera_system.update(renderer, timestep);
+  camera_system.get_active().set_aspect_ratio(scene_viewport.w /
+                                              scene_viewport.h);
+  // TODO camera system should handle this, as it can better keep track
+  // of which cameras are in what mode, what viewport they are looking at,
+  // etc
+  camera_controller::flycam_fps(timestep, camera_system.get_active());
+
+  scene.update(renderer, timestep);
+  scene.draw(renderer);
+
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
+
+  if (ImGui::Begin("Scene", nullptr)) {
+    new_size = ImGui::GetContentRegionAvail();
+    ImVec2 pos = ImGui::GetWindowContentRegionMin();
+    {
+      ImVec2 vMin = ImGui::GetWindowContentRegionMin();
+      ImVec2 vMax = ImGui::GetWindowContentRegionMax();
+
+      vMin.x += ImGui::GetWindowPos().x;
+      vMin.y += ImGui::GetWindowPos().y;
+      vMax.x += ImGui::GetWindowPos().x;
+      vMax.y += ImGui::GetWindowPos().y;
+
+      scene_viewport.x = vMin.x;
+      scene_viewport.y = vMin.y;
+
+      // ImGui::GetForegroundDrawList()->AddRect(vMin,
+      //                                         vMax,
+      //                                         IM_COL32(255, 255, 0, 255));
+    }
+    scene_viewport.w = new_size.x;
+    scene_viewport.h = new_size.y;
+    //    LOG_INFO("viewport debug: {} {} {} {}",
+    //             scene_viewport.x,
+    //             scene_viewport.y,
+    //             scene_viewport.w,
+    //             scene_viewport.h);
+    ImGui::Image((void *)renderer.render_texture.srv.Get(), old_size);
+  }
+  ImGui::End();
+  ImGui::PopStyleVar();
 
   // if(!(ImGui::GetIO().WantCaptureMouse ||
   // ImGui::GetIO().WantCaptureKeyboard)) {
   //     Input::Ui::process_input_for_frame();
   // }
-
-  InputSystem &is = InputSystem::instance();
-  is.imgui_active = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
-  is.update();
 
 #ifdef DEBUG_IMGUI_WINDOW
   static bool show = false;
@@ -81,16 +147,16 @@ void update(float timestep) {
   }
 #endif
 
-  camera_system.update(renderer, timestep);
-  camera_controller::flycam_fps(timestep, camera_system.get_active());
-  // if (camera_mode) {
-  //   camera_controller::flycam_fps(timestep, camera_system.get_active());
-  // } else {
-  //   camera_controller::dollycam(timestep, camera_system.get_active());
-  // }
+  // camera_system.update(renderer, timestep);
+  // camera_controller::flycam_fps(timestep, camera_system.get_active());
+  //// if (camera_mode) {
+  ////   camera_controller::flycam_fps(timestep, camera_system.get_active());
+  //// } else {
+  ////   camera_controller::dollycam(timestep, camera_system.get_active());
+  //// }
 
-  scene.update(renderer, timestep);
-  scene.draw(renderer);
+  // scene.update(renderer, timestep);
+  // scene.draw(renderer);
 
   ImDrawList *imdraw = ImGui::GetForegroundDrawList();
 
@@ -109,6 +175,7 @@ void update(float timestep) {
 
   DebugRenderSystem::instance().update(renderer);
   DebugRenderSystem::instance().draw(renderer);
+  renderer.set_and_clear_backbuffer();
 
   renderer.imgui_frame_end();
   renderer.present();
@@ -186,7 +253,7 @@ void message_loop() {
 
 void init_systems() {
   InputSystem::instance().init(main_window.hwnd);
-  camera_system.init(renderer);
+  camera_system.init();
   RayCaster::instance().init(&camera_system);
   DebugRenderSystem::instance().init(renderer);
   XMVECTOR a = XMVectorSet(0, 0, 0, 0);

@@ -36,3 +36,7 @@ __declspec(align(16)) struct PerSceneConsts {
   XMFLOAT2 viewportSize;        // 8 bytes
   XMFLOAT2 windowSize;          // 8 bytes
 };
+
+struct ViewportRegion {
+  f32 x, y, w, h;
+};

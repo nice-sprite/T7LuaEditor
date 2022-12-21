@@ -2,6 +2,7 @@
 #include "../defines.h"
 
 #include "math.h"
+#include "renderer_types.h"
 #include <fmt/format.h>
 
 struct Camera;
@@ -14,12 +15,14 @@ struct Ray {
 
 struct RayCaster {
   CameraSystem *cam_sys;
+  ViewportRegion active_viewport;
 
   void init(CameraSystem *cam_sys);
   RayCaster() = default;
   RayCaster(RayCaster &) = delete;
   static RayCaster &instance();
 
+  void set_viewport(ViewportRegion vp);
   Vec4 unproject(Vec4 screen);
   Ray picking_ray(Vec4 screen);
 

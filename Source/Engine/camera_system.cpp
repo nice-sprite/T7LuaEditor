@@ -2,20 +2,22 @@
 #include "renderer.h"
 #include <imgui.h>
 
-void CameraSystem::init(Renderer &renderer) {
+void CameraSystem::init() {
   register_cam();
   set_active(0);
 }
 
+// TODO this should probably not need to know about Renderer,
+// only serve as a place to handle input to cameras, modes, etc
+// So i think there is a better way to do this
 void CameraSystem::update(Renderer &renderer, f32 timestep) {
-  viewport_width = renderer.width;
-  viewport_height = renderer.height;
-  get_active().set_aspect_ratio(renderer.get_aspect_ratio());
+
   // map the constant buffer and update it
   renderer.update_shader_constants([=](PerSceneConsts &shader_constants) {
     shader_constants.modelViewProjection =
         XMMatrixIdentity() * get_active().get_transform();
   });
+
   if (ImGui::Begin("CameraSystem")) {
     ImGui::Text("active cam: %d ", active_cam);
     if (ImGui::Button("prev")) {

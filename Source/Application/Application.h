@@ -1,5 +1,6 @@
 #include "../Engine/camera_system.h"
 #include "../Engine/debug_lines.h"
+#include "../Engine/font_rendering.h"
 #include "../Engine/input_system.h"
 #include "../Engine/renderer.h"
 #include "../Engine/scene.h"
@@ -18,10 +19,13 @@ LRESULT CALLBACK win32_message_callback(HWND hwnd,
                                         UINT msg,
                                         WPARAM wparam,
                                         LPARAM lparam);
+
 void message_loop();
 void update(float timestep);
 void init_systems();
 void shutdown_systems();
+
+extern FontLoader fonts;
 
 static Timer timer;
 static win32::Window main_window;

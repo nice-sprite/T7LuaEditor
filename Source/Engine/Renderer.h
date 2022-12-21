@@ -2,17 +2,12 @@
 #define GFX_HELPERS_H
 
 #include "../defines.h"
+#include "camera.h"
+#include "files.h"
+#include "font_loader.h"
 #include "gpu_resources.h"
 #include "logging.h"
 #include "renderer_types.h"
-/*
-#include <d2d1_3.h>
-#include <d3d11.h>
-#include <d3d11_4.h>
-#include <dwrite_3.h>
-*/
-#include "camera.h"
-#include "files.h"
 #include "shader_util.h"
 #include <DirectXMath.h>
 #include <dxgi1_6.h>
@@ -130,11 +125,15 @@ public:
   // TODO change to take Z into account, so rotated elements have perfectly
   // wrapped selection rects
   // void draw_selection_rect();
-  // void add_selection_rect(float left, float right, float top, float bottom);
-  // void set_selection_rect(int index, float left, float right, float top,
-  // float bottom);
+  // void add_selection_rect(f32 left, f32 right, f32 top, f32 bottom);
+  // void set_selection_rect(int index, f32 left, f32 right, f32 top,
+  // f32 bottom);
 
-  f32 get_aspect_ratio();
+  f32 backbuffer_aspect_ratio();
+
+  // creates a d3d11 texture
+  // returns true if success, false otherwise
+  bool create_texture(u32 requested_width, u32 requested_height);
 
 private:
   bool init_gfx();
@@ -145,10 +144,16 @@ private:
 
   void reset_backbuffer_views();
 
-  void scene_pick(float x, float y);
+  void scene_pick(f32 x, f32 y);
 
 public:
-  float width, height;
+  f32 width, height;
+
+  struct RenderToTexture {
+    ComPtr<ID3D11Texture2D> render_target;
+    ComPtr<ID3D11RenderTargetView> render_target_view;
+    ComPtr<ID3D11ShaderResourceView> srv;
+  } render_texture;
 
   ComPtr<ID3D11Device5> device;
   ComPtr<ID3D11DeviceContext4> context;
@@ -157,7 +162,7 @@ public:
   // consider reserving a spot in an different vbuf?
   //  XMFLOAT4 selection_border_color{0.0, 0.0, 1.0, 1.0};
   //  XMFLOAT4 selection_inner_color{0.48f, 0.75f, 0.95f, 1.f};
-  //  float selection_border_thickness = 3.f;
+  //  f32 selection_border_thickness = 3.f;
   // static constexpr size_t MaxSelections = 32;
   // static constexpr size_t SelectionsVertexSize =
   // sizeof(VertexPosColorTexcoord) * MaxSelections * 5 * 4; static constexpr
@@ -167,7 +172,7 @@ public:
   ComPtr<ID3D11Buffer> selection_vertex_buffer;
   ComPtr<ID3D11Buffer> selection_index_buffer;
 
-  //Camera camera;
+  // Camera camera;
   PerSceneConsts scene_consts;
   ComPtr<ID3D11Buffer> scene_constant_buffer;
 
@@ -178,8 +183,26 @@ public:
   // ComPtr<ID3D11Buffer> debug_line_vbuf;
   // ComPtr<ID3D11InputLayout> debug_line_il;
 
+  void create_render_texture();
+
+  void resize_render_texture(f32 w, f32 h);
+
+  void set_and_clear_render_texture();
+
+  void set_viewport(ViewportRegion viewport);
+
+  struct EditorViewport {
+    ViewportRegion view_region;
+    i32 camera; // the index of the camera bound to this viewport
+    std::string viewport_title;
+  };
+
+  // uses freetype to load fonts
+  FontLoader font_loader;
+
 private:
   ComPtr<IDXGISwapChain4> swapChain;
+
   // D3D
   D3D11_VIEWPORT viewport{};
   ComPtr<ID3D11BlendState> alphaBlendState;

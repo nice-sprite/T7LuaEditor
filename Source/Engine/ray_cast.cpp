@@ -3,7 +3,8 @@
 #include "camera_system.h"
 #include "imgui_fmt.h"
 #include <DirectXMath.h>
-#include <algorithm>
+// #include <algorithm>
+#include "logging.h"
 #include <imgui.h>
 
 bool point_inside_rect(XMVECTOR point, XMFLOAT4 rect) {
@@ -11,6 +12,11 @@ bool point_inside_rect(XMVECTOR point, XMFLOAT4 rect) {
          XMVectorGetY(point) > rect.z && XMVectorGetY(point) < rect.w;
 }
 
+// can we make the raycaster a per-viewport thing
+// since the data is all related
+// camera needs to have the correct aspectratio and viewport size,
+// ray caster needs the camera for the viewport to shoot rays at it,
+// and each viewport should only have 1 scene being rendered to it
 RayCaster &RayCaster::instance() {
   static RayCaster rc;
   return rc;
@@ -22,10 +28,10 @@ void RayCaster::init(CameraSystem *cam_sys) { this->cam_sys = cam_sys; }
 Vec4 RayCaster::project(Vec4 world) {
 
   Vec4 ret = DirectX::XMVector3Project(world,
-                                       0.0,
-                                       0.0,
-                                       cam_sys->viewport_width,
-                                       cam_sys->viewport_height,
+                                       active_viewport.x,
+                                       active_viewport.y,
+                                       active_viewport.w,
+                                       active_viewport.h,
                                        0.0,
                                        1.0,
                                        cam_sys->get_active().get_projection(),
@@ -37,6 +43,10 @@ Vec4 RayCaster::project(Vec4 world) {
 // transforms a screen-space vector (2d xy) into a normalized Ray
 Ray RayCaster::picking_ray(Vec4 screen) {
   Ray ray;
+  screen =
+      XMVectorSubtract(screen,
+                       XMVECTORF32{active_viewport.x, active_viewport.y, 0, 0});
+  LOG_INFO("mouse pos: {}", screen);
   Vec4 screen_near = XMVectorSetZ(screen, 0.0);
   Vec4 screen_far = XMVectorSetZ(screen, 1.0);
   ray.origin = unproject(screen_near);
@@ -47,10 +57,10 @@ Ray RayCaster::picking_ray(Vec4 screen) {
 
 Vec4 RayCaster::unproject(Vec4 xyz) {
   return XMVector3Unproject(xyz,
-                            0.0,
-                            0.0,
-                            cam_sys->viewport_width,
-                            cam_sys->viewport_height,
+                            active_viewport.x,
+                            active_viewport.y,
+                            active_viewport.w,
+                            active_viewport.h,
                             0.0,
                             1.0,
                             cam_sys->get_active().get_projection(),
@@ -79,6 +89,7 @@ inline Vec4 RayCaster::quad_plane(Vec4 quad) {
   return XMPlaneFromPoints(left_top, left_bottom, right_bottom);
 }
 
+void RayCaster::set_viewport(ViewportRegion vp) { active_viewport = vp; }
 namespace ray_cast {
 
 Ray screen_to_world_ray(float x,
@@ -191,23 +202,24 @@ bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad) {
   */
 }
 
-XMFLOAT2
-world_to_screen(XMFLOAT3 world, f32 width, f32 height, const Camera &camera) {
-  XMFLOAT2 ret;
-
-  XMVECTOR projected_coord = XMVector3Project(XMLoadFloat3(&world),
-                                              0.0,
-                                              0.0,
-                                              width,
-                                              height,
-                                              0.0,
-                                              1.0,
-                                              camera.get_projection(),
-                                              camera.get_view(),
-                                              XMMatrixIdentity());
-
-  XMStoreFloat2(&ret, projected_coord);
-  return ret;
-}
+// XMFLOAT2
+// world_to_screen(XMFLOAT3 world, f32 width, f32 height, const Camera &camera)
+// {
+//   XMFLOAT2 ret;
+//
+//   XMVECTOR projected_coord = XMVector3Project(XMLoadFloat3(&world),
+//                                               0.0f,
+//                                               0.0f,
+//                                               width,
+//                                               height,
+//                                               0.0f,
+//                                               1.0f,
+//                                               camera.get_projection(),
+//                                               camera.get_view(),
+//                                               XMMatrixIdentity());
+//
+//   XMStoreFloat2(&ret, projected_coord);
+//   return ret;
+// }
 
 } // namespace ray_cast

@@ -11,10 +11,8 @@ struct CameraSystem {
   Camera cameras[MaxCams];
   u32 num_cams = 0;
   u32 active_cam = 0;
-  f32 viewport_width;
-  f32 viewport_height;
 
-  void init(Renderer &renderer);
+  void init();
   void update(Renderer &renderer, f32 timestep);
 
   // returns the index of the new camera

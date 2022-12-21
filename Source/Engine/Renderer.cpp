@@ -72,8 +72,8 @@ void Renderer::init(HWND window, u32 width, u32 height) {
                          sizeof(PerSceneConsts),
                          scene_constant_buffer.GetAddressOf());
 
-  scene_consts.modelViewProjection =
-      DirectX::XMMatrixIdentity() * camera.get_transform();
+  // scene_consts.modelViewProjection =
+  //     DirectX::XMMatrixIdentity() * camera.get_transform();
 
   update_constant_buffer(context.Get(),
                          0,
@@ -84,7 +84,8 @@ void Renderer::init(HWND window, u32 width, u32 height) {
   bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
 }
 
-Renderer::Renderer() {
+Renderer::Renderer()
+    : font_loader() {
   /* DO DEBUG NAMES */
   // static const char selection_vbuf_name[] = "Selection Vertices";
   // static const char selection_index_name[] = "Selection Indices";
@@ -147,7 +148,6 @@ void Renderer::resize_swapchain_backbuffer(i32 new_width,
     viewport.Width = width;
     viewport.Height = height;
     create_backbuffer_view();
-    camera.set_aspect_ratio((float)viewport.Width / (float)viewport.Height);
   }
 }
 
@@ -276,6 +276,8 @@ bool Renderer::init_gfx() {
   device->CreateSamplerState(&gridSampler, &gridSS);
 
   create_backbuffer_view();
+  LOG_INFO("Creating scene render texture");
+  create_render_texture();
 
   return true;
 }
@@ -688,4 +690,124 @@ void Renderer::set_topology(D3D11_PRIMITIVE_TOPOLOGY topo) {
   context->IASetPrimitiveTopology(topo);
 }
 
-f32 Renderer::get_aspect_ratio() { return width / height; }
+f32 Renderer::backbuffer_aspect_ratio() { return width / height; }
+
+void Renderer::set_and_clear_render_texture() {
+  context->OMSetRenderTargets(1,
+                              render_texture.render_target_view.GetAddressOf(),
+                              nullptr);
+  // dont know if we use the depth here...?
+
+  context->ClearRenderTargetView(render_texture.render_target_view.Get(),
+                                 (float *)&clear_color);
+}
+
+void Renderer::resize_render_texture(float w, float h) {
+  D3D11_TEXTURE2D_DESC texture_desc{};
+  D3D11_RENDER_TARGET_VIEW_DESC view_desc{};
+  D3D11_SHADER_RESOURCE_VIEW_DESC shader_view_desc{};
+
+  texture_desc.Width = w;
+  texture_desc.Height = h;
+  texture_desc.MipLevels = 1;
+  texture_desc.ArraySize = 1;
+  texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+  texture_desc.SampleDesc.Count = 1;
+  texture_desc.Usage = D3D11_USAGE_DEFAULT;
+  texture_desc.BindFlags =
+      D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+  texture_desc.CPUAccessFlags = 0;
+  texture_desc.MiscFlags = 0;
+
+  HRESULT r = device->CreateTexture2D(&texture_desc,
+                                      nullptr,
+                                      &render_texture.render_target);
+  LOG_COM(r);
+  view_desc.Format = texture_desc.Format;
+  view_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+  view_desc.Texture2D.MipSlice = 0;
+  r = device->CreateRenderTargetView(render_texture.render_target.Get(),
+                                     &view_desc,
+                                     &render_texture.render_target_view);
+  LOG_COM(r);
+  shader_view_desc.Format = texture_desc.Format;
+  shader_view_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  shader_view_desc.Texture2D.MostDetailedMip = 0;
+  shader_view_desc.Texture2D.MipLevels = 1;
+  r = device->CreateShaderResourceView(render_texture.render_target.Get(),
+                                       &shader_view_desc,
+                                       &render_texture.srv);
+  LOG_COM(r);
+}
+
+void Renderer::set_viewport(ViewportRegion viewport) {
+  D3D11_VIEWPORT vp{};
+  vp.TopLeftX = viewport.x;
+  vp.TopLeftY = viewport.y;
+  vp.MinDepth = 0.0;
+  vp.MaxDepth = 1.0;
+  vp.Width = viewport.w;
+  vp.Height = viewport.h;
+  context->RSSetViewports(1, &vp);
+}
+
+void Renderer::create_render_texture() {
+  D3D11_TEXTURE2D_DESC texture_desc{};
+  D3D11_RENDER_TARGET_VIEW_DESC view_desc{};
+  D3D11_SHADER_RESOURCE_VIEW_DESC shader_view_desc{};
+
+  texture_desc.Width = width / 2;
+  texture_desc.Height = height / 2;
+  texture_desc.MipLevels = 1;
+  texture_desc.ArraySize = 1;
+  texture_desc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+  texture_desc.SampleDesc.Count = 1;
+  texture_desc.Usage = D3D11_USAGE_DEFAULT;
+  texture_desc.BindFlags =
+      D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+  texture_desc.CPUAccessFlags = 0;
+  texture_desc.MiscFlags = 0;
+
+  HRESULT r = device->CreateTexture2D(&texture_desc,
+                                      nullptr,
+                                      &render_texture.render_target);
+  LOG_COM(r);
+  view_desc.Format = texture_desc.Format;
+  view_desc.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+  view_desc.Texture2D.MipSlice = 0;
+  r = device->CreateRenderTargetView(render_texture.render_target.Get(),
+                                     &view_desc,
+                                     &render_texture.render_target_view);
+  LOG_COM(r);
+  shader_view_desc.Format = texture_desc.Format;
+  shader_view_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  shader_view_desc.Texture2D.MostDetailedMip = 0;
+  shader_view_desc.Texture2D.MipLevels = 1;
+  r = device->CreateShaderResourceView(render_texture.render_target.Get(),
+                                       &shader_view_desc,
+                                       &render_texture.srv);
+  LOG_COM(r);
+}
+
+bool Renderer::create_texture(u32 requested_width, u32 requested_height) {
+  D3D11_TEXTURE2D_DESC tex_desc{};
+  D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+  D3D11_SUBRESOURCE_DATA sr{};
+  ID3D11Texture2D *texture{};
+
+  // make sure requested width and height are acceptable
+  if (requested_width < D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION &&
+      requested_height < D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION) {
+
+    tex_desc.Width = requested_width;
+    tex_desc.Height = requested_height;
+    tex_desc.MipLevels = 1;
+    tex_desc.ArraySize = 1;
+    tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    tex_desc.SampleDesc.Count = 1;
+    tex_desc.Usage = D3D11_USAGE_DEFAULT;
+    tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+    tex_desc.CPUAccessFlags = 0;
+    // TODO
+  }
+}
