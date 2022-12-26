@@ -4,6 +4,8 @@ cmake_minimum_required(VERSION 3.22)
 project(Priscilla)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+set(CMAKE_BUILD_TYPE Debug)
+
 
 if(MSVC)
     set(CMAKE_CXX_FLAGS "/DWIN32 /D_WINDOWS")

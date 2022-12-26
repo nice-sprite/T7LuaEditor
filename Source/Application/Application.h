@@ -1,6 +1,6 @@
 #include "../Engine/camera_system.h"
 #include "../Engine/debug_lines.h"
-#include "../Engine/font_rendering.h"
+#include "../Engine/font_loader.h"
 #include "../Engine/input_system.h"
 #include "../Engine/renderer.h"
 #include "../Engine/scene.h"
@@ -32,4 +32,6 @@ static win32::Window main_window;
 static Renderer renderer;
 static Scene scene;
 extern CameraSystem camera_system;
+
+extern Renderer::Texture2D test_texture;
 }; // namespace App

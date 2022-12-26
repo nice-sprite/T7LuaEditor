@@ -10,6 +10,7 @@
 #include "renderer_types.h"
 #include "shader_util.h"
 #include <DirectXMath.h>
+#include <d3d11.h>
 #include <dxgi1_6.h>
 #include <wrl/client.h>
 
@@ -131,9 +132,22 @@ public:
 
   f32 backbuffer_aspect_ratio();
 
+  struct TextureParams {
+    u32 desired_width;
+    u32 desired_height;
+    DXGI_FORMAT format;
+    D3D11_USAGE usage;
+    u8 *initial_data;
+  };
+
+  struct Texture2D {
+    ComPtr<ID3D11Texture2D> texture;
+    ComPtr<ID3D11ShaderResourceView> srv;
+  };
+
   // creates a d3d11 texture
   // returns true if success, false otherwise
-  bool create_texture(u32 requested_width, u32 requested_height);
+  bool create_texture(TextureParams const &params, Texture2D &out_texture);
 
 private:
   bool init_gfx();

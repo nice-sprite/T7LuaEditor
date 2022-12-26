@@ -16,6 +16,8 @@ CameraSystem camera_system;
 DebugRenderSystem debug_render_system;
 FontLoader fonts;
 
+Renderer::Texture2D test_texture{};
+
 void start(HINSTANCE hinst, const char *appname) {
   logging_start();
   LOG_INFO("starting app");
@@ -46,13 +48,6 @@ void start(HINSTANCE hinst, const char *appname) {
                (rect.right - rect.left + 1),
                (rect.bottom - rect.top),
                SWP_NOMOVE);
-
-  fonts.init();
-  fonts.load_font("C:/Windows/Fonts/CascadiaCode.ttf");
-  fonts.load_font("C:/Windows/Fonts/consola.ttf");
-  fonts.list_loaded();
-
-  // fonts.draw("Cascadia Code", "hello I am a font!");
 }
 
 void update(float timestep) {
@@ -79,6 +74,11 @@ void update(float timestep) {
     renderer.resize_render_texture(new_size.x, new_size.y);
     old_size = new_size;
   }
+
+  if (ImGui::Begin("Font atlases")) {
+    ImGui::Image(test_texture.srv.Get(), ImVec2(512, 512));
+  }
+  ImGui::End();
 
   renderer.set_and_clear_render_texture();
 
@@ -259,6 +259,28 @@ void init_systems() {
   XMVECTOR a = XMVectorSet(0, 0, 0, 0);
   XMVECTOR b = camera_system.get_active().origin;
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
+
+  fonts.init();
+  fonts.load_font("C:/Windows/Fonts/CascadiaCode.ttf", 24, 96, 128);
+  fonts.load_font("C:/Windows/Fonts/consola.ttf", 24, 96, 128);
+  fonts.list_loaded();
+  // fonts.dump_atlases();
+
+  Renderer::TextureParams create_params{};
+
+  FontAtlas *atlas;
+  if ((atlas = fonts.get("Cascadia Code"))) {
+    create_params.initial_data = fonts.get_atlas_texture("Cascadia Code");
+    create_params.usage = D3D11_USAGE_DEFAULT;
+    create_params.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    create_params.desired_width = atlas->width;
+    create_params.desired_height = atlas->height;
+    if (renderer.create_texture(create_params, test_texture)) {
+      LOG_INFO("created texture for cascadia code atlas!");
+    } else {
+      LOG_WARNING("FAILED to create texture for cascadia code atlas!");
+    }
+  }
 }
 
 void shutdown_systems() { InputSystem::instance().shutdown(); }

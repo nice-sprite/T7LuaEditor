@@ -5,6 +5,7 @@
 #include "ray_cast.h"
 #include "shader_util.h"
 #include <Tracy.hpp>
+#include <d3dcommon.h>
 #include <dxgiformat.h>
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
@@ -789,25 +790,56 @@ void Renderer::create_render_texture() {
   LOG_COM(r);
 }
 
-bool Renderer::create_texture(u32 requested_width, u32 requested_height) {
+bool Renderer::create_texture(TextureParams const &params,
+                              Texture2D &out_texture) {
+  HRESULT check;
   D3D11_TEXTURE2D_DESC tex_desc{};
-  D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+  D3D11_SHADER_RESOURCE_VIEW_DESC srv_desc{};
   D3D11_SUBRESOURCE_DATA sr{};
   ID3D11Texture2D *texture{};
 
   // make sure requested width and height are acceptable
-  if (requested_width < D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION &&
-      requested_height < D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION) {
-
-    tex_desc.Width = requested_width;
-    tex_desc.Height = requested_height;
-    tex_desc.MipLevels = 1;
-    tex_desc.ArraySize = 1;
-    tex_desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    tex_desc.SampleDesc.Count = 1;
-    tex_desc.Usage = D3D11_USAGE_DEFAULT;
-    tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    tex_desc.CPUAccessFlags = 0;
-    // TODO
+  if (!(params.desired_width < D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION &&
+        params.desired_height < D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION)) {
+    LOG_WARNING("requested texture size is too big: w= {} h= {}",
+                params.desired_width,
+                params.desired_height);
+    return false;
   }
+
+  // create the texture
+  tex_desc.Width = params.desired_width;
+  tex_desc.Height = params.desired_height;
+  tex_desc.MipLevels = 1;
+  tex_desc.ArraySize = 1;
+  tex_desc.Format = params.format;
+  tex_desc.SampleDesc.Count = 1;
+  tex_desc.Usage = params.usage;
+  tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+  tex_desc.CPUAccessFlags = 0;
+
+  sr.pSysMem = params.initial_data;
+  sr.SysMemPitch = tex_desc.Width * 4;
+  sr.SysMemSlicePitch = 0;
+
+  check = device->CreateTexture2D(&tex_desc, &sr, &out_texture.texture);
+  if (!SUCCEEDED(check)) {
+    LOG_COM(check);
+    return false;
+  }
+
+  srv_desc.Format = params.format;
+  srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+  srv_desc.Texture2D.MipLevels = tex_desc.MipLevels;
+  srv_desc.Texture2D.MostDetailedMip = 0;
+  check = device->CreateShaderResourceView(out_texture.texture.Get(),
+                                           &srv_desc,
+                                           &out_texture.srv);
+
+  if (!SUCCEEDED(check)) {
+    LOG_COM(check);
+    return false;
+  }
+
+  return true;
 }
