@@ -812,23 +812,28 @@ bool Renderer::create_texture(TextureParams const &params,
   tex_desc.Height = params.desired_height;
   tex_desc.MipLevels = 1;
   tex_desc.ArraySize = 1;
-  tex_desc.Format = params.format;
+  tex_desc.Format = (DXGI_FORMAT)params.format;
   tex_desc.SampleDesc.Count = 1;
   tex_desc.Usage = params.usage;
   tex_desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-  tex_desc.CPUAccessFlags = 0;
+  tex_desc.CPUAccessFlags = params.cpu_flags;
 
   sr.pSysMem = params.initial_data;
   sr.SysMemPitch = tex_desc.Width * 4;
   sr.SysMemSlicePitch = 0;
 
-  check = device->CreateTexture2D(&tex_desc, &sr, &out_texture.texture);
+  if (params.initial_data == nullptr) {
+    check = device->CreateTexture2D(&tex_desc, nullptr, &out_texture.texture);
+  } else {
+    check = device->CreateTexture2D(&tex_desc, &sr, &out_texture.texture);
+  }
+
   if (!SUCCEEDED(check)) {
     LOG_COM(check);
     return false;
   }
 
-  srv_desc.Format = params.format;
+  srv_desc.Format = (DXGI_FORMAT)params.format;
   srv_desc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
   srv_desc.Texture2D.MipLevels = tex_desc.MipLevels;
   srv_desc.Texture2D.MostDetailedMip = 0;

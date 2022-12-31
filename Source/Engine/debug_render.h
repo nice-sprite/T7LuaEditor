@@ -1,4 +1,5 @@
 #pragma once
+#include "font_loader.h"
 #include "ray_cast.h"
 #include "renderer.h"
 #include "renderer_types.h"
@@ -16,6 +17,14 @@ constexpr std::array<XMFLOAT4, DebugColors::Max> colors = {
     XMFLOAT4(0, 0, 1.0, 1.0),
     XMFLOAT4(0.95, 0.003, 1.0, 1.0)};
 
+// keeps track of where a font is located in the font atlas
+struct FontLocation {
+  f32 start_x, start_y, end_x, end_y;
+};
+
+struct RendererFontCache {
+  Texture2D font_atlas; // atlas to put all the fonts in
+};
 // allow to draw shapes for debugging help
 struct DebugRenderSystem {
 
@@ -33,6 +42,11 @@ struct DebugRenderSystem {
   void debug_ray(Ray ray);
 
   void clear_debug_lines();
+
+  void debug_text(std::string text,
+                  std::string font_family,
+                  f32 height,
+                  DebugColors color);
 
   // update GPU buffers
   void update(Renderer &renderer);

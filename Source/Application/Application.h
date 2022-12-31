@@ -1,6 +1,6 @@
 #include "../Engine/camera_system.h"
-#include "../Engine/debug_lines.h"
-#include "../Engine/font_loader.h"
+#include "../Engine/debug_render.h"
+#include "../Engine/font_renderer.h"
 #include "../Engine/input_system.h"
 #include "../Engine/renderer.h"
 #include "../Engine/scene.h"
@@ -25,7 +25,7 @@ void update(float timestep);
 void init_systems();
 void shutdown_systems();
 
-extern FontLoader fonts;
+extern FontRenderer *fonts;
 
 static Timer timer;
 static win32::Window main_window;
@@ -33,5 +33,4 @@ static Renderer renderer;
 static Scene scene;
 extern CameraSystem camera_system;
 
-extern Renderer::Texture2D test_texture;
 }; // namespace App

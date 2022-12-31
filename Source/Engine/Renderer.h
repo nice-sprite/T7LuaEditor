@@ -117,6 +117,14 @@ public:
                   });
   }
 
+  template <typename UpdateFn>
+  void update_texture(Texture2D &texture, UpdateFn fn) {
+    D3D11_MAPPED_SUBRESOURCE msr{};
+    context->Map(texture.texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    fn((u8 *)msr.pData, msr.RowPitch);
+    context->Unmap(texture.texture.Get(), 0);
+  }
+
   void draw_indexed(u32 num_indices);
   void draw(u32 vert_count);
   /* Selection Rect API
@@ -131,19 +139,6 @@ public:
   // f32 bottom);
 
   f32 backbuffer_aspect_ratio();
-
-  struct TextureParams {
-    u32 desired_width;
-    u32 desired_height;
-    DXGI_FORMAT format;
-    D3D11_USAGE usage;
-    u8 *initial_data;
-  };
-
-  struct Texture2D {
-    ComPtr<ID3D11Texture2D> texture;
-    ComPtr<ID3D11ShaderResourceView> srv;
-  };
 
   // creates a d3d11 texture
   // returns true if success, false otherwise

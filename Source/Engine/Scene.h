@@ -30,9 +30,7 @@ using namespace DirectX;
 // I think text elems are going to be existence based
 // if text_elems[current_elem_index] then its a text element
 // otherwise its an image element
-//
-//
-//  /// ^^^^CHECK if this approach is even reasonable first.
+// ^^^^CHECK if this approach is even reasonable first.
 //
 // what about layout elements?
 // for instance, a horizontal UI list should be usable.
@@ -42,9 +40,6 @@ using namespace DirectX;
 //      int index;
 //      int children[]; // list of indices for children of this box
 // }
-//
-//
-//
 
 struct UIQuad {
   float left, right, top, bottom;
@@ -67,8 +62,9 @@ private:
 
 public:
   static constexpr auto MaxQuads = 10000;
-  static constexpr auto MaxIndices =
-      6 * MaxQuads; // there are 6 indices per quad
+  static constexpr auto MaxWidgetNameSize = 128;
+  // there are 6 indices per quad
+  static constexpr auto MaxIndices = 6 * MaxQuads;
 
   u32 num_quads;
   u32 num_dirty;
@@ -79,16 +75,15 @@ public:
     XMFLOAT4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
     XMFLOAT4 rotations[MaxQuads]{};
     XMFLOAT4 colors[MaxQuads]{};
+    std::string name[MaxQuads]{};
   } root_data;
-
-  bool dirty = false;
 
   Scene();
 
-  /// need to make a
-  /// vertex buffer
-  /// index buffer
-  /// vertex and fragment shader, which we store for now
+  // need to make a
+  // vertex buffer
+  // index buffer
+  // vertex and fragment shader, which we store for now
   void init(Renderer &renderer); // create the resources needed to draw
 
   int add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation);
@@ -106,15 +101,16 @@ public:
   void draw(Renderer &renderer);
 
   void tesselate_quads(VertexPosColorTexcoord *mapped_vertex_memory);
+
   void upload_indices(u32 *mapped_index_buffer);
 
 public:
   Selection selection;
-
   int width, height;
 
 private:
   void ui_draw_selection();
+  void ui_draw_element_list();
 };
 
 #endif // T7LUAEDITOR_SCENE_H

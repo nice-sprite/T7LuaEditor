@@ -11,7 +11,6 @@ void CameraSystem::init() {
 // only serve as a place to handle input to cameras, modes, etc
 // So i think there is a better way to do this
 void CameraSystem::update(Renderer &renderer, f32 timestep) {
-
   // map the constant buffer and update it
   renderer.update_shader_constants([=](PerSceneConsts &shader_constants) {
     shader_constants.modelViewProjection =

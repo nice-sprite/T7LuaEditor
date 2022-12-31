@@ -14,9 +14,9 @@
 namespace App {
 CameraSystem camera_system;
 DebugRenderSystem debug_render_system;
-FontLoader fonts;
+FontRenderer *fonts;
 
-Renderer::Texture2D test_texture{};
+Texture2D test_texture{};
 
 void start(HINSTANCE hinst, const char *appname) {
   logging_start();
@@ -76,7 +76,7 @@ void update(float timestep) {
   }
 
   if (ImGui::Begin("Font atlases")) {
-    ImGui::Image(test_texture.srv.Get(), ImVec2(512, 512));
+    ImGui::Image(fonts->atlas.srv.Get(), ImVec2(4096, 4096));
   }
   ImGui::End();
 
@@ -128,11 +128,6 @@ void update(float timestep) {
   }
   ImGui::End();
   ImGui::PopStyleVar();
-
-  // if(!(ImGui::GetIO().WantCaptureMouse ||
-  // ImGui::GetIO().WantCaptureKeyboard)) {
-  //     Input::Ui::process_input_for_frame();
-  // }
 
 #ifdef DEBUG_IMGUI_WINDOW
   static bool show = false;
@@ -260,27 +255,23 @@ void init_systems() {
   XMVECTOR b = camera_system.get_active().origin;
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
 
-  fonts.init();
-  fonts.load_font("C:/Windows/Fonts/CascadiaCode.ttf", 24, 96, 128);
-  fonts.load_font("C:/Windows/Fonts/consola.ttf", 24, 96, 128);
-  fonts.list_loaded();
-  // fonts.dump_atlases();
+  fonts = new FontRenderer(renderer);
+  fonts->load_font(renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 24);
+  // fonts->load_font(renderer, "C:/Windows/Fonts/consola.ttf", 24);
 
-  Renderer::TextureParams create_params{};
-
-  FontAtlas *atlas;
-  if ((atlas = fonts.get("Cascadia Code"))) {
-    create_params.initial_data = fonts.get_atlas_texture("Cascadia Code");
-    create_params.usage = D3D11_USAGE_DEFAULT;
-    create_params.format = DXGI_FORMAT_R8G8B8A8_UNORM;
-    create_params.desired_width = atlas->width;
-    create_params.desired_height = atlas->height;
-    if (renderer.create_texture(create_params, test_texture)) {
-      LOG_INFO("created texture for cascadia code atlas!");
-    } else {
-      LOG_WARNING("FAILED to create texture for cascadia code atlas!");
-    }
-  }
+  // FontAtlas *atlas;
+  // if ((atlas = fonts.get_ptr("Cascadia Code"))) {
+  //   create_params.initial_data = fonts.get_atlas_texture("Cascadia Code");
+  //   create_params.usage = D3D11_USAGE_DEFAULT;
+  //   create_params.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+  //   create_params.desired_width = atlas->width;
+  //   create_params.desired_height = atlas->height;
+  //   if (renderer.create_texture(create_params, test_texture)) {
+  //     LOG_INFO("created texture for cascadia code atlas!");
+  //   } else {
+  //     LOG_WARNING("FAILED to create texture for cascadia code atlas!");
+  //   }
+  // }
 }
 
 void shutdown_systems() { InputSystem::instance().shutdown(); }

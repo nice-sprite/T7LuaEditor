@@ -3,6 +3,7 @@
 #include <DirectXMath.h>
 #include <array>
 #include <d3d11_4.h>
+#include <wrl/client.h>
 
 using namespace DirectX;
 
@@ -39,4 +40,32 @@ __declspec(align(16)) struct PerSceneConsts {
 
 struct ViewportRegion {
   f32 x, y, w, h;
+};
+
+struct Texture2D {
+  Microsoft::WRL::ComPtr<ID3D11Texture2D> texture;
+  Microsoft::WRL::ComPtr<ID3D11ShaderResourceView> srv;
+  u32 width, height;
+};
+
+enum ResourceLimits {
+  MaxTextureWidth = D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION,
+  MaxTextureHeight = D3D11_REQ_TEXTURE2D_U_OR_V_DIMENSION,
+  MaxConstantBufferElems = D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT,
+
+};
+
+typedef i32 TextureFormat;
+
+enum TextureFormats : TextureFormat {
+  RGBA_8 = DXGI_FORMAT_R8G8B8A8_UNORM,
+};
+
+struct TextureParams {
+  u32 desired_width;
+  u32 desired_height;
+  TextureFormat format;
+  D3D11_USAGE usage;
+  D3D11_CPU_ACCESS_FLAG cpu_flags;
+  u8 *initial_data;
 };

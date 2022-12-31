@@ -3,7 +3,7 @@
 //
 
 #include "scene.h"
-#include "debug_lines.h"
+#include "debug_render.h"
 #include "imgui_fmt.h"
 #include "input_system.h"
 #include "ray_cast.h"
@@ -158,16 +158,15 @@ void Scene::init(Renderer &renderer) {
     // Dragging test uwu
     switch (e.type) {
     case DragStart:
-      LOG_INFO("DragStart @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
+      // LOG_INFO("DragStart @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
       me->selection.min = e.mouse_pos;
       me->selection.max = e.mouse_pos;
       break;
     case Dragging:
-      LOG_INFO("Dragging @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
       me->selection.max = e.mouse_pos;
       break;
     case DragEnd:
-      LOG_INFO("DragEnd @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
+      // LOG_INFO("DragEnd @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
       me->selection.min.x = 0;
       me->selection.min.y = 0;
 
@@ -175,7 +174,7 @@ void Scene::init(Renderer &renderer) {
       me->selection.max.y = 0;
       break;
     case MouseLeftDblClick:
-      LOG_INFO("MouseLeftDblClick", e.mouse_pos.x, e.mouse_pos.y);
+      // LOG_INFO("MouseLeftDblClick", e.mouse_pos.x, e.mouse_pos.y);
       me->selected_quad = me->get_quad_under_cursor(e.mouse_pos);
 
     default:
@@ -248,7 +247,6 @@ void Scene::ui_draw_selection() {
     return;
   auto draw_list = ImGui::GetBackgroundDrawList();
   // imgui does BRG
-
   draw_list->AddRectFilled(ImVec2(selection.min.x, selection.min.y),
                            ImVec2(selection.max.x, selection.max.y),
                            ImU32(0x10FFBE00));
@@ -256,15 +254,6 @@ void Scene::ui_draw_selection() {
   draw_list->AddRect(ImVec2(selection.min.x, selection.min.y),
                      ImVec2(selection.max.x, selection.max.y),
                      ImU32(0xFFFFBE00));
-
-  // draw the shid
-  // draw_list->AddText(ImVec2(bounds.x - 12.0f, bounds.z - 12.0f),
-  //                    ImU32(0xFFFFBE00),
-  //                    fmt::format("{}, {}", bounds.x, bounds.z).c_str());
-
-  // draw_list->AddText(ImVec2(bounds.y + 12.0f, bounds.w + 12.0f),
-  //                    ImU32(0xFFFFBE00),
-  //                    fmt::format("{}, {}", bounds.y, bounds.w).c_str());
 }
 
 void Scene::update(Renderer &renderer, float timestep) {
@@ -275,6 +264,7 @@ void Scene::update(Renderer &renderer, float timestep) {
   f32 grow = 1.f;
 
   ui_draw_selection();
+  ui_draw_element_list();
   // calculate_selected_quads();
 
   // selected_quad = get_quad_under_cursor(InputSystem::instance().mouse_pos);
@@ -310,13 +300,6 @@ void Scene::calculate_selected_quads() {
   // ImGui::TextFmt("2d selection: {}", b);
   ImGui::TextFmt("min: {}\n", min_ray);
   ImGui::TextFmt("max: {}\n", max_ray);
-#if 0
-  if (Input::GameInput::key_down(VK_SPACE)) {
-    // DebugRenderSystem::instance().clear_debug_lines();
-    DebugRenderSystem::instance().debug_ray(min_ray);
-    DebugRenderSystem::instance().debug_ray(max_ray);
-  }
-#endif
 
   //  for (int i = 0; i < num_quads; ++i) {
   //    if (ray_cast::volume_intersection(min_ray,
@@ -394,4 +377,28 @@ void Scene::upload_indices(u32 *mapped_index_buffer) {
     mapped_index_buffer[i * 6 + 4] = i * 4 + 1;
     mapped_index_buffer[i * 6 + 5] = i * 4 + 0;
   }
+}
+
+void Scene::ui_draw_element_list() {
+  if (ImGui::Begin("Scene Objects")) {
+
+    for (int i = 0; i < num_quads; ++i) {
+      ImGui::InputText("Name",
+                       (char *)root_data.name[i].c_str(),
+                       MaxWidgetNameSize);
+
+      ImGui::SliderFloat2("setLeftRight",
+                          &root_data.bounding_boxs[i].x,
+                          -2500 / 2,
+                          2500 / 2);
+
+      ImGui::SliderFloat2("setTopBottom",
+                          &root_data.bounding_boxs[i].z,
+                          -2500 / 2,
+                          2500 / 2);
+      // ImGui::ColorPicker4("RGBA", &root_data.colors[i].x);
+      ImGui::ColorEdit4("RGBA", &root_data.colors[i].x);
+    }
+  }
+  ImGui::End();
 }
