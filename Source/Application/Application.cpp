@@ -75,8 +75,26 @@ void update(float timestep) {
     old_size = new_size;
   }
 
+  static char path_buffer[MAX_PATH]{};
+
+  //static std::string lorem_ipsom = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum";
+  static std::string alphabet = "";
+  static bool fuckon = false;
+  for(int i = 0; i < 128 && !fuckon; ++i) {
+    alphabet += (char)i;
+  }
+  fuckon = true;
+
+  static FontID font_id = 0;
   if (ImGui::Begin("Font atlases")) {
-    ImGui::Image(fonts->atlas.srv.Get(), ImVec2(4096, 4096));
+    ImGui::InputText("font path:", path_buffer, MAX_PATH);
+    ImGui::SameLine();
+    if(ImGui::Button("+load")) {
+      font_id = fonts->load_font(&renderer, std::string(path_buffer), 24);
+      memset(path_buffer, 0, MAX_PATH);
+    }
+    Texture2D* atlas = fonts->get_atlas();
+    ImGui::Image(atlas->srv.Get(), ImVec2(atlas->width, atlas->height));
   }
   ImGui::End();
 
@@ -85,6 +103,8 @@ void update(float timestep) {
   renderer.set_viewport(scene_viewport);
   RayCaster::instance().set_viewport(scene_viewport);
 
+  fonts->draw_string((char*)alphabet.c_str(), alphabet.length(), Float4{0, 0, 0, 1}, 1);
+  fonts->submit(&renderer);
   camera_system.update(renderer, timestep);
   camera_system.get_active().set_aspect_ratio(scene_viewport.w /
                                               scene_viewport.h);
@@ -255,9 +275,9 @@ void init_systems() {
   XMVECTOR b = camera_system.get_active().origin;
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
 
-  fonts = new FontRenderer(renderer);
-  fonts->load_font(renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 24);
-  // fonts->load_font(renderer, "C:/Windows/Fonts/consola.ttf", 24);
+  fonts = new FontRenderer(&renderer);
+  fonts->load_font(&renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 24);
+  fonts->load_font(&renderer, "C:/Windows/Fonts/consola.ttf", 24);
 
   // FontAtlas *atlas;
   // if ((atlas = fonts.get_ptr("Cascadia Code"))) {

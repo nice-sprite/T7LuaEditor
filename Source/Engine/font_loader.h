@@ -46,8 +46,7 @@ public:
   // initialize freetype
 
   // loads a ttf font
-  Font *
-  load_font(fs::path path, u32 font_height, u32 resolution, u32 num_glyphs);
+  Font* load_font(fs::path path, u32 font_height, u32 resolution, u32 num_glyphs);
 
   // u8 *get_atlas_texture(std::string family_name);
 

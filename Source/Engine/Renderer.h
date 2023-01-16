@@ -102,6 +102,8 @@ public:
 
   void set_topology(D3D11_PRIMITIVE_TOPOLOGY topo);
 
+  void set_texture(Texture2D * texture);
+
   template <typename Fn> void update_buffer(ID3D11Buffer *buffer, Fn fn) {
     D3D11_MAPPED_SUBRESOURCE msr{};
     context->Map(buffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
@@ -117,13 +119,21 @@ public:
                   });
   }
 
+  // use this to update the *whole* Texture2D,
+  // the original contents will be deleted
   template <typename UpdateFn>
   void update_texture(Texture2D &texture, UpdateFn fn) {
     D3D11_MAPPED_SUBRESOURCE msr{};
-    context->Map(texture.texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    HRESULT map_result = context->Map(texture.texture.Get(), 0, D3D11_MAP_WRITE_DISCARD, 0, &msr);
+    LOG_COM(map_result);
+
+    if(!SUCCEEDED(map_result)) return;
+
     fn((u8 *)msr.pData, msr.RowPitch);
     context->Unmap(texture.texture.Get(), 0);
   }
+
+  void update_texture_subregion(Texture2D& texture, u32 subresource, D3D11_BOX* region, void* src_data, u32 src_pitch, u32 src_depth_pitch = 0);
 
   void draw_indexed(u32 num_indices);
   void draw(u32 vert_count);

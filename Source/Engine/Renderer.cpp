@@ -5,6 +5,7 @@
 #include "ray_cast.h"
 #include "shader_util.h"
 #include <Tracy.hpp>
+#include <d3d11.h>
 #include <d3dcommon.h>
 #include <dxgiformat.h>
 #include <imgui.h>
@@ -238,8 +239,7 @@ bool Renderer::init_gfx() {
   rasterDesc.CullMode = D3D11_CULL_BACK;
   rasterDesc.DepthBias = 0;
   rasterDesc.DepthBiasClamp = 0.0f;
-  rasterDesc.DepthClipEnable =
-      true; // TODO setup state for debug lines that has this as false?
+  rasterDesc.DepthClipEnable = true; // TODO setup state for debug lines that has this as false?
   rasterDesc.FillMode = D3D11_FILL_SOLID;
   rasterDesc.FrontCounterClockwise = false;
   rasterDesc.MultisampleEnable = true;
@@ -268,13 +268,14 @@ bool Renderer::init_gfx() {
   gridSampler.MipLODBias = 0;
   gridSampler.MaxAnisotropy = 1;
   gridSampler.ComparisonFunc = D3D11_COMPARISON_NEVER;
-  gridSampler.BorderColor[0] = 1.f;
-  gridSampler.BorderColor[1] = 1.f;
-  gridSampler.BorderColor[2] = 1.f;
-  gridSampler.BorderColor[3] = 1.f;
+  gridSampler.BorderColor[0] = 0.f;
+  gridSampler.BorderColor[1] = 0.f;
+  gridSampler.BorderColor[2] = 0.f;
+  gridSampler.BorderColor[3] = 0.f;
   gridSampler.MinLOD = -FLT_MAX;
   gridSampler.MaxLOD = FLT_MAX;
   device->CreateSamplerState(&gridSampler, &gridSS);
+  context->PSSetSamplers(0, 1, gridSS.GetAddressOf());
 
   create_backbuffer_view();
   LOG_INFO("Creating scene render texture");
@@ -807,6 +808,9 @@ bool Renderer::create_texture(TextureParams const &params,
     return false;
   }
 
+  out_texture.width = params.desired_width;
+  out_texture.height = params.desired_height;
+
   // create the texture
   tex_desc.Width = params.desired_width;
   tex_desc.Height = params.desired_height;
@@ -848,3 +852,19 @@ bool Renderer::create_texture(TextureParams const &params,
 
   return true;
 }
+
+void Renderer::update_texture_subregion(
+    Texture2D& texture, 
+    u32 subresource, 
+    D3D11_BOX* region, 
+    void* src_data, 
+    u32 src_pitch, 
+    u32 src_depth_pitch) {
+
+  context->UpdateSubresource(texture.texture.Get(), subresource, region, src_data, src_pitch, src_depth_pitch );
+}
+
+void Renderer::set_texture(Texture2D * texture) {
+  context->PSSetShaderResources(0, 1, texture->srv.GetAddressOf());
+}
+
