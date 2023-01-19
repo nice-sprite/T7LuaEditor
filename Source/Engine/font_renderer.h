@@ -5,7 +5,7 @@
 #include "renderer_types.h"
 #include <string>
 
-#define DEBUG_FONT_LOADER 0
+#define DEBUG_FONT_LOADER 1
 
 typedef i32 FontID; 
 

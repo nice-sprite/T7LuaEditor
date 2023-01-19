@@ -3,13 +3,14 @@
 #include "files.h"
 #include <freetype/freetype.h>
 #include <ft2build.h>
+#include "math.h"
 #include FT_FREETYPE_H
 #include <unordered_map>
 
 struct GlyphInfo {
   i32 x0, y0, x1, y1;
   i32 x_offset, y_offset;
-  i32 advance;
+  Float2 advance;
 };
 
 struct Font {

@@ -1,6 +1,8 @@
 cbuffer ConstantBuffer : register(b0)
 {
     float4x4 modelViewProjection;
+    float4   timeTickDeltaFrame;
+    float2   viewportSize;
 }
 
 struct PSInput

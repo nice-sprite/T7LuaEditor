@@ -38,7 +38,7 @@ bool shader_compile(const char *szShader, const char *szEntrypoint,
 
   auto hr =
       D3DCompile(szShader, strlen(szShader), 0, nullptr, nullptr, szEntrypoint,
-                 szTarget, D3DCOMPILE_ENABLE_STRICTNESS, 0, pBlob, &pErrorBlob);
+                 szTarget, D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_DEBUG, 0, pBlob, &pErrorBlob);
   if (FAILED(hr)) {
     if (pErrorBlob) {
       std::string error_str;

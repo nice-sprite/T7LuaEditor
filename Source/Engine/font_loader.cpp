@@ -106,7 +106,8 @@ Font *FontLoader::load_font(fs::path path,
     font_data->glyph_info[i].y1 = pen_y + bitmap->rows;
     font_data->glyph_info[i].x_offset = font_face->glyph->bitmap_left;
     font_data->glyph_info[i].y_offset = font_face->glyph->bitmap_top;
-    font_data->glyph_info[i].advance = font_face->glyph->advance.x >> 6;
+    font_data->glyph_info[i].advance.x = font_face->glyph->advance.x >> 6;
+    font_data->glyph_info[i].advance.y = font_face->glyph->advance.y >> 6;
 
     pen_x += bitmap->width + 1;
   }

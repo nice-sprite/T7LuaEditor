@@ -16,6 +16,8 @@
 #include <unordered_map>
 #include <windows.h>
 
+#include "imgui_internal.h"
+
 using namespace DirectX;
 using namespace std::string_literals;
 
@@ -246,7 +248,7 @@ void Scene::add_lots_of_quads() {
 void Scene::ui_draw_selection() {
   if (InputSystem::instance().imgui_active)
     return;
-  auto draw_list = ImGui::GetBackgroundDrawList();
+  auto draw_list = ImGui::GetForegroundDrawList();
   // imgui does BRG
   draw_list->AddRectFilled(ImVec2(selection.min.x, selection.min.y),
                            ImVec2(selection.max.x, selection.max.y),
@@ -273,7 +275,7 @@ void Scene::update(Renderer &renderer, float timestep) {
     root_data.colors[selected_quad] = colors[DebugColors::Blue];
   }
 
-  update_resources(renderer);
+  update_resources(renderer); 
 }
 
 void Scene::calculate_selected_quads() {
@@ -329,6 +331,7 @@ void Scene::draw(Renderer &renderer) {
                              1,
                              sizeof(VertexPosColorTexcoord),
                              0);
+  renderer.set_texture(nullptr);
   renderer.set_index_buffer(scene_index_buffer.Get());
   renderer.set_pixel_shader(scene_pixel_shader.Get());
   renderer.set_vertex_shader(scene_vertex_shader.Get());
@@ -380,24 +383,38 @@ void Scene::upload_indices(u32 *mapped_index_buffer) {
   }
 }
 
+
+bool ImGui_ScrollableInputFloat(const char* label, float* value, float step, float step_fast) { 
+  bool rv = ImGui::InputFloat(label, value, step, step_fast);
+  ImGui::SetItemUsingMouseWheel(); 
+  if(ImGui::IsItemHovered()) {
+    float wheel = ImGui::GetIO().MouseWheel;
+    if(wheel) {
+      if(ImGui::IsItemActive()) {
+        ImGui::ClearActiveID();
+      } else {
+        *value += wheel * step;
+        return true;
+      } 
+    } 
+  } 
+  return rv;
+}
+
 void Scene::ui_draw_element_list() {
   if (ImGui::Begin("Scene Objects")) {
 
     for (int i = 0; i < num_quads; ++i) {
-      ImGui::InputText("Name",
-                       (char *)root_data.name[i].c_str(),
-                       MaxWidgetNameSize);
+      ImGui::InputText("Name", (char *)root_data.name[i].c_str(), MaxWidgetNameSize);
 
-      ImGui::SliderFloat2("setLeftRight",
-                          &root_data.bounding_boxs[i].x,
-                          -2500 / 2,
-                          2500 / 2);
+      ImGui_ScrollableInputFloat("left", &root_data.bounding_boxs[i].x, 5.0, 20.0); 
 
-      ImGui::SliderFloat2("setTopBottom",
-                          &root_data.bounding_boxs[i].z,
-                          -2500 / 2,
-                          2500 / 2);
-      // ImGui::ColorPicker4("RGBA", &root_data.colors[i].x);
+      ImGui::InputFloat("left", &root_data.bounding_boxs[i].x);
+      ImGui::InputFloat("right", &root_data.bounding_boxs[i].y);
+
+
+      ImGui::InputFloat("top", &root_data.bounding_boxs[i].z);
+      ImGui::InputFloat("bottom", &root_data.bounding_boxs[i].w);
       ImGui::ColorEdit4("RGBA", &root_data.colors[i].x);
     }
   }

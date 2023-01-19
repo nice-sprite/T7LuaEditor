@@ -7,8 +7,7 @@ struct PSInput {
   float4 position : SV_POSITION;
   float4 color : COLOR;
   float2 uv : TEXCOORD;
-};
-
+}; 
 
 // D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT = 128
 // this will probably end up being a utility atlas for icons, but for now 
@@ -28,5 +27,6 @@ PSInput vs_main(float4 position : POSITION, float4 color : COLOR, float2 texcoor
 }
 
 float4 ps_main(PSInput input) : SV_TARGET {
-  return Font_Texture.Sample(Sampler, input.uv) + input.color;
+  float4 color_intensity = Font_Texture.Sample(Sampler, input.uv).rrrr;
+  return color_intensity * input.color;
 }

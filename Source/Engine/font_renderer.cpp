@@ -147,23 +147,37 @@ void FontRenderer::draw_string(char* str, u32 len, Float4 color, FontID font_id)
   FontSubregion* font;
   font = get_font_by_id(font_id);
 
+
   if(!str) return;
   if(!font) return;
 
-  ImDrawList* window_draw = ImGui::GetWindowDrawList();
-  ImVec2 window_pos = ImGui::GetWindowPos();
-  window_pos.x += 6;
-  window_pos.y += 40;
+  /*TextLayoutParams*/
+  Float3 world_origin{0.0, 0.0, 0.0};
+  float line_height = font->font->height >> 6;
+  Float4 last_quad{}; // where the last glyph was placed in the world
+  float pen_x = 0;
+  float pen_y = 0;
 
   for(int i = 0; i < len; ++i) {
+
+    if(str[i] == '\n') {
+      pen_y += font->font->font_face->size->metrics.height>>6;
+      pen_x = 0;
+      continue;
+    }
+    GlyphInfo* glyph = &font->font->glyph_info[i];
     Float4 quad = this->generate_quad(str[i], font);
     Float4 uvs = this->calculate_uv(str[i], font);
+
+    quad.x += pen_x;
+    quad.z += pen_x;
+    quad.y -= pen_y;
+    quad.w -= pen_y;
+
     this->generate_vertices(quad, uvs, color);
-    quad.x += window_pos.x;
-    quad.y += window_pos.y;
-    quad.z += window_pos.x;
-    quad.w += window_pos.y;
-    window_draw->AddRect(ImVec2(quad.x, quad.y), ImVec2(quad.z, quad.w), IM_COL32(255, 0, 0, 255));
+    last_quad = quad;
+    pen_x += glyph->advance.x;
+    pen_y += glyph->advance.y;
   }
 }
 
@@ -172,10 +186,12 @@ void FontRenderer::draw_string(char* str, u32 len, Float4 color, FontID font_id)
 Float4 FontRenderer::generate_quad(const char c, FontSubregion* font) {
   Float4 quad{};
   GlyphInfo glyph_info = font->font->glyph_info[c];
-  quad.x = glyph_info.x0;
-  quad.y = glyph_info.y0;
-  quad.z = glyph_info.x1;
-  quad.w = glyph_info.y1;
+  quad.x = 0;
+  quad.y = 0;
+  // quad.x = 0.f;
+  // quad.y = 0.f;
+  quad.z = glyph_info.x1 - glyph_info.x0;
+  quad.w = glyph_info.y1 - glyph_info.y0;
   return quad;
 }
 
@@ -191,7 +207,6 @@ FontSubregion* FontRenderer::get_font_by_id(FontID id) {
 Float4 FontRenderer::calculate_uv(const char c, FontSubregion* font_subregion) {
   GlyphInfo const * const glyph = &font_subregion->font->glyph_info[c];
   Float4 uv;
-
 
   // calculate min
   uv.x = glyph->x0 + font_subregion->rect_bounds.x;
@@ -245,8 +260,6 @@ void FontRenderer::generate_vertices(Float4 min_max, Float4 uvs, Float4 color) {
     Float2{uvs.z, uvs.y}
   };
 
-  this->next_free_vtx += 4;
-
   u32 num_quads = this->next_free_vtx/4;
   this->font_idx_mem[this->next_free_idx + 0] = num_quads * 4 + 2;
   this->font_idx_mem[this->next_free_idx + 1] = num_quads * 4 + 3;
@@ -254,7 +267,9 @@ void FontRenderer::generate_vertices(Float4 min_max, Float4 uvs, Float4 color) {
   this->font_idx_mem[this->next_free_idx + 3] = num_quads * 4 + 2;
   this->font_idx_mem[this->next_free_idx + 4] = num_quads * 4 + 1;
   this->font_idx_mem[this->next_free_idx + 5] = num_quads * 4 + 0;
+
   this->next_free_idx += 6;
+  this->next_free_vtx += 4;
 }
 
 void FontRenderer::submit(Renderer* renderer) {
@@ -325,7 +340,6 @@ void FontRenderer::free_font_memory() {
 
 // resets the buffers to 0
 void FontRenderer::clear_font_memory() {
-
   if(!this->font_vtx_mem) return;
   if(!this->font_idx_mem) return;
 

@@ -66,7 +66,7 @@ void Renderer::init(HWND window, u32 width, u32 height) {
   this->hwnd = window;
   this->width = width;
   this->height = height;
-  this->clear_color = {0.1f, 0.1f, 0.1f, 1.0f};
+  this->clear_color = {1.f, 1.0f, 1.0f, 1.0f};
 
   init_gfx();
   init_imgui();
@@ -223,7 +223,7 @@ bool Renderer::init_gfx() {
   alphaBlend.RenderTarget[0].DestBlend = D3D11_BLEND_INV_SRC_ALPHA;
   alphaBlend.RenderTarget[0].BlendOp = D3D11_BLEND_OP_ADD;
   alphaBlend.RenderTarget[0].SrcBlendAlpha = D3D11_BLEND_ONE;
-  alphaBlend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ZERO;
+  alphaBlend.RenderTarget[0].DestBlendAlpha = D3D11_BLEND_ONE;
   alphaBlend.RenderTarget[0].BlendOpAlpha = D3D11_BLEND_OP_ADD;
   alphaBlend.RenderTarget[0].RenderTargetWriteMask = 0x0f;
 
@@ -281,6 +281,15 @@ bool Renderer::init_gfx() {
   LOG_INFO("Creating scene render texture");
   create_render_texture();
 
+  LOG_INFO("creating fullscreen quad shaders");
+
+  auto fs_shader = Files::get_shader_root() / "fullscreen_quad.hlsl";
+  this->create_pixel_shader(fs_shader, &ps_fullscreen_quad);
+  this->create_vertex_shader(fs_shader, 
+      VertexPosColor::layout(),
+      &vs_fullscreen_quad,
+      &fullscreen_quad_il);
+
   return true;
 }
 
@@ -292,7 +301,7 @@ void Renderer::set_and_clear_backbuffer() {
                                  D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
                                  1.0f,
                                  0);
-  context->ClearRenderTargetView(rtv.Get(), (float *)&clear_color);
+  context->ClearRenderTargetView(rtv.Get(), (float*)&this->clear_color);
 }
 
 void Renderer::present() {
@@ -308,8 +317,8 @@ bool Renderer::init_imgui() {
   LOG_INFO("imgui version: {} docking?: {}",
            ImGui::GetVersion(),
            (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0);
-  // auto font_consolas =
-  // ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
+  auto font_consolas =
+  ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
   ImGui_ImplDX11_Init(device.Get(), context.Get());
   ImGui_ImplWin32_Init(hwnd);
   return true;
@@ -327,260 +336,7 @@ void Renderer::imgui_frame_end() {
   ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
 
-// void Renderer::add_selection_rect(float left, float right, float top, float
-// bottom) {
-//     if (selection_count < MaxSelections) {
-//         selections[selection_count] = SelectionArea{left, right, top,
-//         bottom}; selection_count++;
-//     }
-// }
-//
-// void Renderer::set_selection_rect(int index, float left, float right, float
-// top, float bottom) {
-//     if (index < MaxSelections) {
-//         selections[index] = SelectionArea{left, right, top, bottom};
-//     }
-// }
-//
-// void Renderer::draw_selection_rect() {
-//
-//     /*
-//      * build selection drawing resources
-//      * 1 quad = 4 vertices
-//      * 1 quad = 6 indices
-//      * 4 quads for Border + 1 quad for internal
-//      * num_verts = MaxSelections * (4 + 1)      * 4
-//      *                              ^num quads  ^num verts per quad
-//      * num_indices = MaxSelections * ( 4 + 1 ) * 6
-//      * this can be optimzied because there are shared vertices on the
-//      * edges of the rectangle
-//      *
-//      *
-//        tesellate the selection rects
-//
-//        +------------+
-//        |            |
-//        |            |
-//        |            |
-//        |            |
-//        +------------+
-//     */
-//     //
-//     constexpr auto VertexStride = 4 * 5; // there are 5 quads, 4 verts each
-//     constexpr auto IndexStride  = 6 * 5; // there are 5 quads, 6 indices each
-//     float t = selection_border_thickness;
-//
-//     // using vector here because a stack array would overflow the stack, we
-//     must use heap mem std::vector<VertexPosColorTexcoord> selection_vertices;
-//     std::vector<int> indices;
-//
-//     selection_vertices.resize(VertexStride * MaxSelections); // each
-//     selection is 5 quads, there are 4 verts per quad
-//     indices.resize(IndexStride * MaxSelections);
-//
-//     for(int i = 0; i < selection_count; ++i) {
-//         auto q = selections[i];
-//         // the main quad
-//         VertexPosColorTexcoord quad_verts[] = {
-//             {
-//                 DirectX::XMFLOAT3{q.left, q.top, -1.0f},
-//                 selection_inner_color,
-//                 DirectX::XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 DirectX::XMFLOAT3{q.right, q.top, -1.0f},
-//                 selection_inner_color,
-//                 DirectX::XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 DirectX::XMFLOAT3{q.left, q.bottom, -1.0f},
-//                 selection_inner_color,
-//                 DirectX::XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 DirectX::XMFLOAT3{q.right, q.bottom, -1.0f},
-//                 selection_inner_color,
-//                 DirectX::XMFLOAT2{0.0f, 0.0f}
-//             },
-//         };
-//
-//         VertexPosColorTexcoord top_border[] = {
-//             {
-//                 XMFLOAT3{q.left, q.top - t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right, q.top - t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.left, q.top, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right, q.top, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//         };
-//
-//         VertexPosColorTexcoord left_border[] = {
-//             {
-//                 XMFLOAT3{q.left- t , q.top - t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.left, q.top - t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.left - t, q.bottom + t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.left, q.bottom + t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//         };
-//
-//         VertexPosColorTexcoord right_border[] = {
-//             {
-//                 XMFLOAT3{q.right, q.top - t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right + t, q.top - t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right, q.bottom + t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right + t, q.bottom + t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//         };
-//         VertexPosColorTexcoord bottom_border[] = {
-//             {
-//                 XMFLOAT3{q.left, q.bottom, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right, q.bottom, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.left, q.bottom + t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//             {
-//                 XMFLOAT3{q.right, q.bottom + t, -1.0f},
-//                 selection_border_color,
-//                 XMFLOAT2{0.0f, 0.0f}
-//             },
-//         };
-//
-//         selection_vertices[i * VertexStride + 0] = quad_verts[0];
-//         selection_vertices[i * VertexStride + 1] = quad_verts[1];
-//         selection_vertices[i * VertexStride + 2] = quad_verts[2];
-//         selection_vertices[i * VertexStride + 3] = quad_verts[3];
-//
-//         selection_vertices[i * VertexStride + 4] = top_border[0];
-//         selection_vertices[i * VertexStride + 5] = top_border[1];
-//         selection_vertices[i * VertexStride + 6] = top_border[2];
-//         selection_vertices[i * VertexStride + 7] = top_border[3];
-//
-//         selection_vertices[i * VertexStride + 8]  =  left_border[0];
-//         selection_vertices[i * VertexStride + 9]  =  left_border[1];
-//         selection_vertices[i * VertexStride + 10] = left_border[2];
-//         selection_vertices[i * VertexStride + 11] = left_border[3];
-//
-//         selection_vertices[i * VertexStride + 12] =  bottom_border[0];
-//         selection_vertices[i * VertexStride + 13] =  bottom_border[1];
-//         selection_vertices[i * VertexStride + 14] = bottom_border[2];
-//         selection_vertices[i * VertexStride + 15] = bottom_border[3];
-//
-//         selection_vertices[i * VertexStride + 16] = right_border[0];
-//         selection_vertices[i * VertexStride + 17] = right_border[1];
-//         selection_vertices[i * VertexStride + 18] = right_border[2];
-//         selection_vertices[i * VertexStride + 19] = right_border[3];
-//
-//         indices[i * IndexStride + 0] =  i   * VertexStride + 2;
-//         indices[i * IndexStride + 1] =  i   * VertexStride + 3;
-//         indices[i * IndexStride + 2] =  i   * VertexStride + 1;
-//         indices[i * IndexStride + 3] =  i   * VertexStride + 2;
-//         indices[i * IndexStride + 4] =  i   * VertexStride + 1;
-//         indices[i * IndexStride + 5] =  i   * VertexStride + 0;
-//
-//         indices[i * IndexStride + 6] =  i   * VertexStride + 2 + 4;
-//         indices[i * IndexStride + 7] =  i   * VertexStride + 3 + 4;
-//         indices[i * IndexStride + 8] =  i   * VertexStride + 1 + 4;
-//         indices[i * IndexStride + 9] =  i   * VertexStride + 2 + 4;
-//         indices[i * IndexStride + 10] = i   * VertexStride + 1 + 4;
-//         indices[i * IndexStride + 11] = i   * VertexStride + 0 + 4;
-//
-//         indices[i * IndexStride + 12] = i   * VertexStride + 2 + 8;
-//         indices[i * IndexStride + 13] = i   * VertexStride + 3 + 8;
-//         indices[i * IndexStride + 14] = i   * VertexStride + 1 + 8;
-//         indices[i * IndexStride + 15] = i   * VertexStride + 2 + 8;
-//         indices[i * IndexStride + 16] = i   * VertexStride + 1 + 8;
-//         indices[i * IndexStride + 17] = i   * VertexStride + 0 + 8;
-//
-//         indices[i * IndexStride + 18] = i   * VertexStride + 2 + 12;
-//         indices[i * IndexStride + 19] = i   * VertexStride + 3 + 12;
-//         indices[i * IndexStride + 20] = i   * VertexStride + 1 + 12;
-//         indices[i * IndexStride + 21] = i   * VertexStride + 2 + 12;
-//         indices[i * IndexStride + 22] = i   * VertexStride + 1 + 12;
-//         indices[i * IndexStride + 23] = i   * VertexStride + 0 + 12;
-//
-//         indices[i * IndexStride + 24] = i   * VertexStride + 2 + 16;
-//         indices[i * IndexStride + 25] = i   * VertexStride + 3 + 16;
-//         indices[i * IndexStride + 26] = i   * VertexStride + 1 + 16;
-//         indices[i * IndexStride + 27] = i   * VertexStride + 2 + 16;
-//         indices[i * IndexStride + 28] = i   * VertexStride + 1 + 16;
-//         indices[i * IndexStride + 29] = i   * VertexStride + 0 + 16;
-//     }
-//
-//     update_dynamic_vertex_buffer(
-//         context.Get(),
-//         selection_vertex_buffer.Get(),
-//         (void*)selection_vertices.data(),
-//         sizeof(VertexPosColorTexcoord) * selection_vertices.size()
-//     );
-//
-//     update_dynamic_index_buffer(
-//         context.Get(),
-//         selection_index_buffer.Get(),
-//         indices.data(),
-//         indices.size()
-//     );
-//
-//     bind_dynamic_vertex_buffers(
-//         context.Get(),
-//         selection_vertex_buffer.GetAddressOf(),
-//         sizeof(VertexPosColorTexcoord),
-//         0
-//     );
-//
-//     bind_dynamic_index_buffer(context.Get(), selection_index_buffer.Get());
-//
-//     context->DrawIndexed(indices.size(), 0, 0);
-// }
+
 
 // use debug lines array for now
 void Renderer::create_world_grid() {
@@ -694,7 +450,9 @@ void Renderer::set_topology(D3D11_PRIMITIVE_TOPOLOGY topo) {
 
 f32 Renderer::backbuffer_aspect_ratio() { return width / height; }
 
+
 void Renderer::set_and_clear_render_texture() {
+  float clear_color[] = {0, 0, 0, 1.0};
   context->OMSetRenderTargets(1,
                               render_texture.render_target_view.GetAddressOf(),
                               nullptr);
@@ -702,6 +460,9 @@ void Renderer::set_and_clear_render_texture() {
 
   context->ClearRenderTargetView(render_texture.render_target_view.Get(),
                                  (float *)&clear_color);
+
+  float blend_factor[] = {0, 0, 0, 0};
+  context->OMSetBlendState(alphaBlendState.Get(), blend_factor, 0xffffffff);
 }
 
 void Renderer::resize_render_texture(float w, float h) {
@@ -861,10 +622,24 @@ void Renderer::update_texture_subregion(
     u32 src_pitch, 
     u32 src_depth_pitch) {
 
-  context->UpdateSubresource(texture.texture.Get(), subresource, region, src_data, src_pitch, src_depth_pitch );
+  context->UpdateSubresource(texture.texture.Get(), subresource, region, src_data, src_pitch, src_depth_pitch);
 }
 
 void Renderer::set_texture(Texture2D * texture) {
-  context->PSSetShaderResources(0, 1, texture->srv.GetAddressOf());
+  ID3D11ShaderResourceView* psrv[1] = {nullptr}; // clear the 1st slot
+  if(texture == nullptr) {
+    context->PSSetShaderResources(0, 1, (ID3D11ShaderResourceView**)&psrv); 
+  } else { 
+    context->PSSetShaderResources(0, 1, texture->srv.GetAddressOf());
+  }
+}
+
+void Renderer::draw_fullscreen_quad() {
+  context->VSSetConstantBuffers(0, 1, this->scene_constant_buffer.GetAddressOf());
+  context->PSSetConstantBuffers(0, 1, this->scene_constant_buffer.GetAddressOf());
+  context->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP);
+  this->set_pixel_shader(this->ps_fullscreen_quad.Get());
+  this->set_vertex_shader(this->vs_fullscreen_quad.Get());
+  context->Draw(4, 0); 
 }
 

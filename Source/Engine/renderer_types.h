@@ -34,8 +34,8 @@ struct DebugLine {
 __declspec(align(16)) struct PerSceneConsts {
   XMMATRIX modelViewProjection; // 64 bytes
   XMFLOAT4 timeTickDeltaFrame;  // 16 bytes
-  XMFLOAT2 viewportSize;        // 8 bytes
-  XMFLOAT2 windowSize;          // 8 bytes
+  XMFLOAT4 viewportSize;        // 8 bytes
+  //XMFLOAT2 windowSize;          // 8 bytes
 };
 
 struct ViewportRegion {

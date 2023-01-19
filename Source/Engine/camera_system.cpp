@@ -12,7 +12,7 @@ void CameraSystem::init() {
 // So i think there is a better way to do this
 void CameraSystem::update(Renderer &renderer, f32 timestep) {
   // map the constant buffer and update it
-  renderer.update_shader_constants([=](PerSceneConsts &shader_constants) {
+  renderer.update_shader_constants([&](PerSceneConsts &shader_constants) {
     shader_constants.modelViewProjection =
         XMMatrixIdentity() * get_active().get_transform();
   });

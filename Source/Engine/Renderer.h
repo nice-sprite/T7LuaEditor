@@ -208,6 +208,8 @@ public:
 
   void set_and_clear_render_texture();
 
+  void draw_fullscreen_quad();
+
   void set_viewport(ViewportRegion viewport);
 
   struct EditorViewport {
@@ -231,6 +233,11 @@ private:
   ComPtr<ID3D11SamplerState> gridSS;
   ComPtr<ID3D11Texture2D> depth_stencil_texture;
   ComPtr<ID3D11DepthStencilView> depth_stencil_view;
+
+  ComPtr<ID3D11PixelShader> ps_fullscreen_quad;
+  ComPtr<ID3D11VertexShader> vs_fullscreen_quad;
+  ComPtr<ID3D11InputLayout> fullscreen_quad_il;
+
 
   DirectX::XMFLOAT4 clear_color;
   HWND hwnd;

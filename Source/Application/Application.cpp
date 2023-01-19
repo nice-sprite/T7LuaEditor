@@ -22,15 +22,14 @@ void start(HINSTANCE hinst, const char *appname) {
   logging_start();
   LOG_INFO("starting app");
 
-  main_window = win32::create_window(
-      hinst,
-      appname,
-      "luieditor",
-      DefaultAppWidth,
-      DefaultAppHeight,
-      win32_message_callback,
-      (Files::get_resource_root() / "icon_2.ico").string().c_str()
-      // AppIcon
+  main_window = win32::create_window(hinst,
+                                     appname,
+                                     "luieditor",
+                                     DefaultAppWidth,
+                                     DefaultAppHeight,
+                                     win32_message_callback,
+                                     (Files::get_resource_root() / "icon_2.ico").string().c_str()
+                                     // AppIcon
   );
   RECT rect = main_window.client_rect;
 
@@ -41,13 +40,7 @@ void start(HINSTANCE hinst, const char *appname) {
   // size of the win
   // the + 1 is because the WM_SIZE message doesn't go through
   // if the size is the samedow
-  SetWindowPos(main_window.hwnd,
-               nullptr,
-               0,
-               0,
-               (rect.right - rect.left + 1),
-               (rect.bottom - rect.top),
-               SWP_NOMOVE);
+  SetWindowPos(main_window.hwnd, nullptr, 0, 0, (rect.right - rect.left + 1), (rect.bottom - rect.top), SWP_NOMOVE);
 }
 
 void update(float timestep) {
@@ -59,8 +52,7 @@ void update(float timestep) {
   FrameMarkStart(sl_FrameTick);
 
   renderer.imgui_frame_begin();
-  ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(),
-                               ImGuiDockNodeFlags_PassthruCentralNode);
+  ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
   u32 msg_count = InputSystem::instance().proc_buffered_input();
   InputSystem &is = InputSystem::instance();
@@ -71,16 +63,29 @@ void update(float timestep) {
 
   if (old_size.x != new_size.x || old_size.y != new_size.y) {
     LOG_INFO("Resizing the render texture");
-    renderer.resize_render_texture(new_size.x, new_size.y);
+    renderer.resize_render_texture(fmax(1.0f, new_size.x), fmax(1.0f, new_size.y));
+    renderer.update_shader_constants([&](PerSceneConsts& consts) {
+
+        consts.viewportSize.x = new_size.x;
+        consts.viewportSize.y = new_size.y;
+        consts.viewportSize.z = renderer.width;
+        consts.viewportSize.w = renderer.height;
+
+        });
     old_size = new_size;
   }
 
   static char path_buffer[MAX_PATH]{};
 
-  //static std::string lorem_ipsom = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum";
-  static std::string alphabet = "";
-  static bool fuckon = false;
-  for(int i = 0; i < 128 && !fuckon; ++i) {
+  static std::string lorem_ipsom = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor\n"
+    " incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris\n"
+" nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum\n "
+" dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt\n"
+  "mollit anim id est laborum";
+
+  static std::string alphabet = "int main() { \n    return \"a string\";\n}";
+  static bool fuckon = true;
+  for (int i = 0; i < 128 && !fuckon; ++i) {
     alphabet += (char)i;
   }
   fuckon = true;
@@ -89,25 +94,24 @@ void update(float timestep) {
   if (ImGui::Begin("Font atlases")) {
     ImGui::InputText("font path:", path_buffer, MAX_PATH);
     ImGui::SameLine();
-    if(ImGui::Button("+load")) {
+    if (ImGui::Button("+load")) {
       font_id = fonts->load_font(&renderer, std::string(path_buffer), 24);
       memset(path_buffer, 0, MAX_PATH);
     }
-    Texture2D* atlas = fonts->get_atlas();
+    Texture2D *atlas = fonts->get_atlas();
     ImGui::Image(atlas->srv.Get(), ImVec2(atlas->width, atlas->height));
   }
   ImGui::End();
 
+  //draw to render texture
   renderer.set_and_clear_render_texture();
-
+  renderer.draw_fullscreen_quad();
   renderer.set_viewport(scene_viewport);
   RayCaster::instance().set_viewport(scene_viewport);
 
-  fonts->draw_string((char*)alphabet.c_str(), alphabet.length(), Float4{0, 0, 0, 1}, 1);
-  fonts->submit(&renderer);
   camera_system.update(renderer, timestep);
-  camera_system.get_active().set_aspect_ratio(scene_viewport.w /
-                                              scene_viewport.h);
+  camera_system.get_active().set_aspect_ratio(scene_viewport.w / scene_viewport.h);
+
   // TODO camera system should handle this, as it can better keep track
   // of which cameras are in what mode, what viewport they are looking at,
   // etc
@@ -115,10 +119,32 @@ void update(float timestep) {
 
   scene.update(renderer, timestep);
   scene.draw(renderer);
+  fonts->draw_string((char *)alphabet.c_str(), alphabet.length(), Float4{0, 0.2, 0.7, 1}, 1);
+  fonts->draw_string((char *)lorem_ipsom.c_str(), lorem_ipsom.length(), Float4{1, 1, 1, 1});
+  fonts->submit(&renderer);
 
-  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(2, 2));
+  // draw the world orientation lines
+  // todo move to a function
+  XMVECTOR origin = XMVECTORF32{0, 0, 0, 0};
+  float length = 1000.f;
+  DebugRenderSystem::instance().debug_line_vec4(XMVECTORF32{-length, 0, 0, 0}, 
+                                                XMVECTORF32{length, 0, 0, 0},
+                                                colors[DebugColors::Blue]);
+  DebugRenderSystem::instance().debug_line_vec4(XMVECTORF32{ 0, -length, 0, 0}, 
+                                                XMVECTORF32{ 0,  length, 0, 0},
+                                                colors[DebugColors::Red]);
 
-  if (ImGui::Begin("Scene", nullptr)) {
+  DebugRenderSystem::instance().debug_line_vec4(XMVECTORF32{ 0, 0, -length, 0 }, 
+                                                XMVECTORF32{ 0, 0, length,  0 },
+                                                colors[DebugColors::Green]);
+  DebugRenderSystem::instance().update(renderer);
+  DebugRenderSystem::instance().draw(renderer);
+
+  // draw to main viewport 
+  renderer.set_and_clear_backbuffer(); 
+  ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+
+  if (ImGui::Begin("Scene", nullptr, ImGuiWindowFlags_NoBackground)) {
     new_size = ImGui::GetContentRegionAvail();
     ImVec2 pos = ImGui::GetWindowContentRegionMin();
     {
@@ -133,9 +159,7 @@ void update(float timestep) {
       scene_viewport.x = vMin.x;
       scene_viewport.y = vMin.y;
 
-      // ImGui::GetForegroundDrawList()->AddRect(vMin,
-      //                                         vMax,
-      //                                         IM_COL32(255, 255, 0, 255));
+      // ImGui::GetForegroundDrawList()->AddRect(vMin, vMax, IM_COL32(50, 255, 128, 255));
     }
     scene_viewport.w = new_size.x;
     scene_viewport.h = new_size.y;
@@ -176,9 +200,7 @@ void update(float timestep) {
   ImDrawList *imdraw = ImGui::GetForegroundDrawList();
 
   Vec4 screen_pos = RayCaster::instance().project(XMVECTORF32{0, 0, 0, 0});
-  imdraw->AddText(ImVec2(XMVectorGetX(screen_pos), XMVectorGetY(screen_pos)),
-                  ImU32(0xFFFFFFFF),
-                  "Origin");
+  imdraw->AddText(ImVec2(XMVectorGetX(screen_pos), XMVectorGetY(screen_pos)), ImU32(0xFFFFFFFF), "Origin");
 
 #if 0
   if(Input::GameInput::key_oneshot(VK_F2)) { 
@@ -188,9 +210,6 @@ void update(float timestep) {
   }
 #endif
 
-  DebugRenderSystem::instance().update(renderer);
-  DebugRenderSystem::instance().draw(renderer);
-  renderer.set_and_clear_backbuffer();
 
   renderer.imgui_frame_end();
   renderer.present();
@@ -198,16 +217,10 @@ void update(float timestep) {
   FrameMarkEnd(sl_FrameTick);
 }
 
-LRESULT CALLBACK win32_message_callback(HWND hwnd,
-                                        UINT msg,
-                                        WPARAM wparam,
-                                        LPARAM lparam) {
+LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
 
   if (msg == WM_INPUT) {
-    return InputSystem::instance().raw_input(hwnd,
-                                             msg,
-                                             GET_RAWINPUT_CODE_WPARAM(wparam),
-                                             (HRAWINPUT)lparam);
+    return InputSystem::instance().raw_input(hwnd, msg, GET_RAWINPUT_CODE_WPARAM(wparam), (HRAWINPUT)lparam);
   }
 
   if (ImGui_ImplWin32_WndProcHandler(hwnd, msg, wparam, lparam))
@@ -221,9 +234,7 @@ LRESULT CALLBACK win32_message_callback(HWND hwnd,
     return 0;
   }
   case WM_CREATE:
-    renderer.init(hwnd,
-                  ((CREATESTRUCT *)lparam)->cx,
-                  ((CREATESTRUCT *)lparam)->cy);
+    renderer.init(hwnd, ((CREATESTRUCT *)lparam)->cx, ((CREATESTRUCT *)lparam)->cy);
     scene.init(renderer);
     init_systems();
     break;
