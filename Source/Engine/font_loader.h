@@ -1,12 +1,15 @@
 #pragma once
 #include "../defines.h"
 #include "files.h"
-#include <freetype/freetype.h>
-#include <ft2build.h>
 #include "math.h"
+#include <freetype/freetype.h>
+#include <freetype/ftglyph.h>
+#include <freetype/ftmodapi.h>
 #include FT_FREETYPE_H
+#include <ft2build.h>
 #include <unordered_map>
 
+static constexpr u32 Start_Glyph = 32; // the first 32 are just control codes;
 struct GlyphInfo {
   i32 x0, y0, x1, y1;
   i32 x_offset, y_offset;
@@ -43,13 +46,12 @@ private:
   // free all loaded font faces and shutdown freetype
   void shutdown();
 
+  Float2 calculate_atlas_dimensions(FT_Face font_face, i32 num_glyphs = 128, i32 max_width = 2048);
+
 public:
   // initialize freetype
 
   // loads a ttf font
   Font* load_font(fs::path path, u32 font_height, u32 resolution, u32 num_glyphs);
 
-  // u8 *get_atlas_texture(std::string family_name);
-
-  // FontAtlas *get_ptr(std::string family_name);
 };

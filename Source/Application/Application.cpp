@@ -95,7 +95,7 @@ void update(float timestep) {
     ImGui::InputText("font path:", path_buffer, MAX_PATH);
     ImGui::SameLine();
     if (ImGui::Button("+load")) {
-      font_id = fonts->load_font(&renderer, std::string(path_buffer), 24);
+      font_id = fonts->load_font(&renderer, std::string(path_buffer), 24, 128, true);
       memset(path_buffer, 0, MAX_PATH);
     }
     Texture2D *atlas = fonts->get_atlas();
@@ -119,8 +119,8 @@ void update(float timestep) {
 
   scene.update(renderer, timestep);
   scene.draw(renderer);
-  fonts->draw_string((char *)alphabet.c_str(), alphabet.length(), Float4{0, 0.2, 0.7, 1}, 1);
-  fonts->draw_string((char *)lorem_ipsom.c_str(), lorem_ipsom.length(), Float4{1, 1, 1, 1});
+  fonts->draw_string((char *)alphabet.c_str(), alphabet.length(), Float4{0, 0.0, 0.0, 1.0}, 1);
+  //fonts->draw_string((char *)lorem_ipsom.c_str(), lorem_ipsom.length(), Float4{1, 1, 1, 1});
   fonts->submit(&renderer);
 
   // draw the world orientation lines
@@ -287,8 +287,8 @@ void init_systems() {
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
 
   fonts = new FontRenderer(&renderer);
-  fonts->load_font(&renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 24);
-  fonts->load_font(&renderer, "C:/Windows/Fonts/consola.ttf", 24);
+  fonts->load_font(&renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 24, 128, true);
+  fonts->load_font(&renderer, "C:/Windows/Fonts/consola.ttf", 24, 128, true);
 
   // FontAtlas *atlas;
   // if ((atlas = fonts.get_ptr("Cascadia Code"))) {

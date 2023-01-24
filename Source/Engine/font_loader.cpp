@@ -1,7 +1,11 @@
 #include "font_loader.h"
 #include "files.h"
+#include <freetype/ftsystem.h>
 #include "logging.h"
 #include <cmath>
+#include <Windows.h>
+#include <unordered_map>
+#include <map>
 
 FontLoader::FontLoader() { init(); }
 
@@ -10,6 +14,16 @@ FontLoader::~FontLoader() { shutdown(); }
 void FontLoader::init() {
   FT_Error e = FT_Init_FreeType(&library);
   LOG_INFO("init freetype... {}", FT_Error_String(e));
+
+  FT_Module sdf_module = FT_Get_Module(library, "sdf");
+  FT_Module bsdf_module = FT_Get_Module(library, "bsdf");
+  if(sdf_module == 0) {
+    LOG_WARNING("no sdf motherfucker");
+  }
+
+  if(bsdf_module == 0) {
+    LOG_WARNING("no bsdf motherfucker");
+  }
 }
 
 void FontLoader::shutdown() {
@@ -23,6 +37,7 @@ Font *FontLoader::load_font(fs::path path,
                             u32 num_glyphs) {
   FT_Error fterror{};
   FT_Face font_face{};
+  FT_Error check;
   Font *font_data;
 
   if (!Files::file_exists(path)) {
@@ -41,47 +56,34 @@ Font *FontLoader::load_font(fs::path path,
   }
 
   font_data = new Font(font_face);
-  // if this is a new font family
-  // make new font atlas
-
-  // create the font
-
-  FT_Error check;
-
+  
   // set the fonts size to the requested height
   // error = FT_Set_Pixel_Sizes(face_ref, 0, height_px);
-  check =
-      FT_Set_Char_Size(font_face, 0, font_height << 6, resolution, resolution);
+  check = FT_Set_Char_Size(font_face, 0, font_height << 6, resolution, resolution);
 
-  // TODO improve the calculation here to a bit better,
-  // currently this wastes a lot of space
 
-  i32 max_size =
-      (1 + (font_face->size->metrics.height >> 6)) * ceilf(sqrtf(num_glyphs));
-
-  font_data->width = 1;
-  while (font_data->width < max_size) {
-    font_data->width <<= 1; // increment in powers of 2
-  }
+  Float2 atlas_dims = this->calculate_atlas_dimensions(font_face, num_glyphs);
+  LOG_INFO("atlas dimensions should be: {}x{}", atlas_dims.x, atlas_dims.y);
 
   // Its a square texture I guess? The font_data->probably wont be packed well
   // see TODO above.
-  font_data->height = font_data->width;
+  font_data->width = atlas_dims.x;
+  font_data->height = atlas_dims.y;
   // LOG_INFO("creating font altas w/ dims = ({}, {})", width, height);
 
   // allocate enough space for the requested glyphs
-
   font_data->glyph_count = num_glyphs;
   font_data->glyph_info = new GlyphInfo[font_data->glyph_count];
-  u32 freetype_load_mode =
-      FT_LOAD_RENDER | FT_LOAD_FORCE_AUTOHINT | FT_LOAD_TARGET_NORMAL;
+  u32 freetype_load_mode = FT_LOAD_DEFAULT;
   // setup pen
   i32 pen_x = 0;
   i32 pen_y = 0;
 
   // extract all the glyphs and put them into the font_data->bitmap buffer
-  for (int i = 0; i < num_glyphs; ++i) {
-    FT_Load_Char(font_face, i, freetype_load_mode);
+  for (int i = Start_Glyph; i < num_glyphs; ++i) {
+    FT_UInt glyph_index = FT_Get_Char_Index(font_face, i);
+    FT_Set_Pixel_Sizes(font_face, 0, (FT_UInt)24);
+    FT_Load_Glyph(font_face, glyph_index, freetype_load_mode);
     FT_Bitmap *bitmap = &font_face->glyph->bitmap;
 
     // if we filled up this row, go to next one
@@ -89,16 +91,6 @@ Font *FontLoader::load_font(fs::path path,
       pen_x = 0;
       pen_y += (font_face->size->metrics.height >> 6) + 1;
     }
-
-    // surely this can be re-written as a memcpy or something?
-    //      for (i32 row = 0; row < bitmap->rows; ++row) {
-    //        for (i32 col = 0; col < bitmap->width; ++col) {
-    //          u32 x = (pen_x + col);
-    //          u32 y = (pen_y + row);
-    //          font_data->buffer[y * font_data->width + x] =
-    //              bitmap->buffer[row * bitmap->pitch + col];
-    //        }
-    //      }
 
     font_data->glyph_info[i].x0 = pen_x;
     font_data->glyph_info[i].y0 = pen_y;
@@ -119,27 +111,36 @@ Font *FontLoader::load_font(fs::path path,
   return font_data;
 }
 
-// u8 *FontLoader::get_atlas_texture(std::string family_name) {
-//   u8 *texture_data{};
-//   if (is_loaded(family_name)) {
-//     FontAtlas &atlas = loaded_fonts[family_name];
-//     // we need to put the font into RGBA format
-//     texture_data = new u8[atlas.width * atlas.height * 4]{};
-//     if (atlas.atlas_buffer) {
-//       for (int i = 0; i < (atlas.width * atlas.height); ++i) {
-//         texture_data[i * 4 + 0] = atlas.atlas_buffer[i];
-//         texture_data[i * 4 + 1] = atlas.atlas_buffer[i];
-//         texture_data[i * 4 + 2] = atlas.atlas_buffer[i];
-//         texture_data[i * 4 + 3] = 0xff;
-//       }
-//     }
-//   }
-//   return texture_data; // caller owns this allocation
-// }
+// max_width makes sure that the total width of the GPU buffer isnt used
+// by 1 font atlas. 
+// this may not actually matter, but I think we get better packing this way
+Float2 FontLoader::calculate_atlas_dimensions(
+    FT_Face font_face, 
+    i32 num_glyphs,
+    i32 max_width) {
+  Float2 dims{};
+  // freetype really sucks, so the only way I can 
+  // imagine getting the actual correct total width and height
+  // for the atlas texture is by rendering it all twice!!! 
+  // Everything is terrible and needs re-written
+  for(int i = Start_Glyph; i < num_glyphs; ++i) {
+    FT_Set_Pixel_Sizes(font_face, 0, (FT_UInt)24);
+    FT_UInt glyph_index = FT_Get_Char_Index(font_face, i);
+    FT_Error check = FT_Load_Glyph(font_face, i, FT_LOAD_DEFAULT);
+    if(check != FT_Err_Ok)
+      LOG_INFO("failed to load the glyph: {}", FT_Error_String(check));
 
-// FontAtlas *FontLoader::get_ptr(std::string family_name) {
-//   if (is_loaded(family_name))
-//     return &loaded_fonts[family_name];
-//   else
-//     return nullptr;
-// }
+    FT_Error check3 = FT_Render_Glyph(font_face->glyph, FT_RENDER_MODE_NORMAL);
+    //FT_Error check2 = FT_Render_Glyph(font_face->glyph, FT_RENDER_MODE_SDF);
+
+    if(dims.x + font_face->glyph->bitmap.width > max_width) {
+      // new row;
+      dims.x = 0;
+      dims.y += font_face->glyph->metrics.height >> 6;
+    }
+
+    dims.x += font_face->glyph->bitmap.width;
+  }
+  return dims;
+}
+

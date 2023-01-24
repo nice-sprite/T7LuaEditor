@@ -4,7 +4,6 @@
 #include "../defines.h"
 #include "camera.h"
 #include "files.h"
-#include "font_loader.h"
 #include "gpu_resources.h"
 #include "logging.h"
 #include "renderer_types.h"
@@ -219,7 +218,6 @@ public:
   };
 
   // uses freetype to load fonts
-  FontLoader font_loader;
 
 private:
   ComPtr<IDXGISwapChain4> swapChain;

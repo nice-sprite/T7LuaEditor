@@ -86,8 +86,7 @@ void Renderer::init(HWND window, u32 width, u32 height) {
   bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
 }
 
-Renderer::Renderer()
-    : font_loader() {
+Renderer::Renderer() {
   /* DO DEBUG NAMES */
   // static const char selection_vbuf_name[] = "Selection Vertices";
   // static const char selection_index_name[] = "Selection Indices";
