@@ -1,5 +1,4 @@
 #pragma once
-#include "font_loader.h"
 #include "ray_cast.h"
 #include "renderer.h"
 #include "renderer_types.h"

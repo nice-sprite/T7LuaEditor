@@ -94,6 +94,12 @@ struct MouseEvent {
   // u64 timestamp;
 };
 
+enum InputFocusScope {
+  IMGUI,
+  WORLD_EDIT,
+  CAMERA_CTRL,
+};
+
 // TODO input layers might be a natural way to let listeners declare when they
 // are interested in certain messages. Maybe an array of layers like
 // register_event_listener( {Layer_Global, Layer_EditorImgui, Layer_Scene}, ..r)
@@ -115,6 +121,7 @@ struct InputSystem {
   Keyboard keyboard{};
   bool window_active = true;
   bool imgui_active = true;
+  InputFocusScope focus_scope;
 
   Timer timer;
   static constexpr u32 MaxMouseListeners = 1024;

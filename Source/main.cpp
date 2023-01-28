@@ -3,7 +3,6 @@
 
 #include "main.h"
 #include "./Application/Application.h"
-//#include <memory>
 
 int WINAPI wWinMain(HINSTANCE hInstance,
                     HINSTANCE hPrevInstance,

@@ -84,7 +84,7 @@ public:
   // vertex buffer
   // index buffer
   // vertex and fragment shader, which we store for now
-  void init(Renderer &renderer); // create the resources needed to draw
+  void init(Renderer *renderer); // create the resources needed to draw
 
   int add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation);
 
@@ -94,11 +94,11 @@ public:
 
   void add_lots_of_quads();
 
-  void update(Renderer &renderer, float timestep);
+  void update(Renderer *renderer, float timestep);
 
-  void update_resources(Renderer &renderer);
+  void update_resources(Renderer *renderer);
 
-  void draw(Renderer &renderer);
+  void draw(Renderer *renderer);
 
   void tesselate_quads(VertexPosColorTexcoord *mapped_vertex_memory);
 

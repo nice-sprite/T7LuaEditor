@@ -31,6 +31,7 @@ void start(HINSTANCE hinst, const char *appname) {
                                      (Files::get_resource_root() / "icon_2.ico").string().c_str()
                                      // AppIcon
   );
+
   RECT rect = main_window.client_rect;
 
   // scene.add_quad(XMFLOAT4{0, 1280, 0, 720}, colors[Red], XMFLOAT4{});
@@ -54,41 +55,35 @@ void update(float timestep) {
   renderer.imgui_frame_begin();
   ImGui::DockSpaceOverViewport(ImGui::GetMainViewport(), ImGuiDockNodeFlags_PassthruCentralNode);
 
+  /* TODO: singleton is not a good idea here, it would be better 
+   * if we can just pass a pointer to systems interested in inputs */
   u32 msg_count = InputSystem::instance().proc_buffered_input();
   InputSystem &is = InputSystem::instance();
-  // is.imgui_active =
-  //     ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
-  is.imgui_active = false;
+  //is.imgui_active = ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard;
+  //is.imgui_active = false;
   is.update();
 
   if (old_size.x != new_size.x || old_size.y != new_size.y) {
     LOG_INFO("Resizing the render texture");
     renderer.resize_render_texture(fmax(1.0f, new_size.x), fmax(1.0f, new_size.y));
     renderer.update_shader_constants([&](PerSceneConsts& consts) {
-
         consts.viewportSize.x = new_size.x;
         consts.viewportSize.y = new_size.y;
         consts.viewportSize.z = renderer.width;
         consts.viewportSize.w = renderer.height;
-
-        });
+    });
     old_size = new_size;
   }
 
   static char path_buffer[MAX_PATH]{};
 
   static std::string lorem_ipsom = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor\n"
-    " incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris\n"
-" nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum\n "
-" dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt\n"
-  "mollit anim id est laborum";
+    "incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris\n"
+    "nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum\n "
+    "dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt\n"
+    "mollit anim id est laborum";
 
-  static std::string alphabet = "int main() { \n    return \"a string\";\n}";
-  static bool fuckon = true;
-  for (int i = 0; i < 128 && !fuckon; ++i) {
-    alphabet += (char)i;
-  }
-  fuckon = true;
+  static std::string alphabet = "hello there, This is some capital LEtterS!";
 
   static FontID font_id = 0;
   if (ImGui::Begin("Font atlases")) {
@@ -103,7 +98,7 @@ void update(float timestep) {
   }
   ImGui::End();
 
-  //draw to render texture
+  /* Begin rendering to scene texture */
   renderer.set_and_clear_render_texture();
   renderer.draw_fullscreen_quad();
   renderer.set_viewport(scene_viewport);
@@ -114,22 +109,30 @@ void update(float timestep) {
 
   // TODO camera system should handle this, as it can better keep track
   // of which cameras are in what mode, what viewport they are looking at,
-  // etc
+  // etc.
   camera_controller::flycam_fps(timestep, camera_system.get_active());
 
-  scene.update(renderer, timestep);
-  scene.draw(renderer);
-  fonts->draw_string((char *)alphabet.c_str(), alphabet.length(), Float4{0, 0.0, 0.0, 1.0}, 1);
-  //fonts->draw_string((char *)lorem_ipsom.c_str(), lorem_ipsom.length(), Float4{1, 1, 1, 1});
+  scene.update(&renderer, timestep);
+  scene.draw(&renderer);
+
+  fonts->draw_string(&lorem_ipsom, Float2(-200, -100), Float4{1, 0.0, 0.0, 1.0}, 0); 
+  static f32 monotonic_time = 0.0f;
+  monotonic_time += 0.001;
+  Float2 text_pos(100.f* sin(monotonic_time ), 100.f * cos(monotonic_time));
+
+  fonts->draw_string(&alphabet, text_pos, Float4(1, 1, 1, 1), 0);
+
   fonts->submit(&renderer);
 
   // draw the world orientation lines
   // todo move to a function
   XMVECTOR origin = XMVECTORF32{0, 0, 0, 0};
   float length = 1000.f;
+
   DebugRenderSystem::instance().debug_line_vec4(XMVECTORF32{-length, 0, 0, 0}, 
                                                 XMVECTORF32{length, 0, 0, 0},
                                                 colors[DebugColors::Blue]);
+
   DebugRenderSystem::instance().debug_line_vec4(XMVECTORF32{ 0, -length, 0, 0}, 
                                                 XMVECTORF32{ 0,  length, 0, 0},
                                                 colors[DebugColors::Red]);
@@ -168,6 +171,7 @@ void update(float timestep) {
     //             scene_viewport.y,
     //             scene_viewport.w,
     //             scene_viewport.h);
+    is.imgui_active = !ImGui::IsWindowFocused() && ( ImGui::GetIO().WantCaptureMouse || ImGui::GetIO().WantCaptureKeyboard );
     ImGui::Image((void *)renderer.render_texture.srv.Get(), old_size);
   }
   ImGui::End();
@@ -235,7 +239,7 @@ LRESULT CALLBACK win32_message_callback(HWND hwnd, UINT msg, WPARAM wparam, LPAR
   }
   case WM_CREATE:
     renderer.init(hwnd, ((CREATESTRUCT *)lparam)->cx, ((CREATESTRUCT *)lparam)->cy);
-    scene.init(renderer);
+    scene.init(&renderer);
     init_systems();
     break;
 
@@ -287,8 +291,8 @@ void init_systems() {
   DebugRenderSystem::instance().debug_line_vec4(a, b, colors[Red]);
 
   fonts = new FontRenderer(&renderer);
-  fonts->load_font(&renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 24, 128, true);
-  fonts->load_font(&renderer, "C:/Windows/Fonts/consola.ttf", 24, 128, true);
+  fonts->load_font(&renderer, "C:/Windows/Fonts/CascadiaCode.ttf", 64, 128, true);
+  fonts->load_font(&renderer, "C:/Windows/Fonts/consola.ttf", 64, 128, true);
 
   // FontAtlas *atlas;
   // if ((atlas = fonts.get_ptr("Cascadia Code"))) {
@@ -305,5 +309,8 @@ void init_systems() {
   // }
 }
 
-void shutdown_systems() { InputSystem::instance().shutdown(); }
+void shutdown_systems() { 
+  InputSystem::instance().shutdown();
+}
+
 }; // namespace App

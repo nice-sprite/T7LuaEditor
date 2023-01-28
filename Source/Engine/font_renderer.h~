@@ -39,7 +39,7 @@ struct FontSubregion {
   Float4 rect_bounds;
 };
 
-struct TextStyle {
+struct TextLayout {
   Float2 pos;
   Float2 size;
   Float2 scale;
@@ -118,12 +118,9 @@ public:
       b8 generate_sdf
       );
   
-  void draw_string(const char* str, u32 len, Float2 translate, Float4 color, FontID font_id = 0);
-  void draw_string(std::string* str, Float2 translate, Float4 color, FontID font_id = 0);
-  void draw_string(std::string* str, TextStyle style);
-
-  void draw_string(std::string str, Float2 translate, Float4 color, FontID = 0);
-  void draw_string(std::string str, TextStyle style);
+  void draw_string(char* str, u32 len, Float2 translate, Float4 color, FontID font_id = 0);
+  void draw_string(std::string* str, Float2 translate, Float4 color, FontID = 0);
+  void draw_string(TextParams layout);
   
   Texture2D* get_atlas();
 

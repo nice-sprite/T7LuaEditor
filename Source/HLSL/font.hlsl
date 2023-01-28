@@ -28,5 +28,5 @@ PSInput vs_main(float4 position : POSITION, float4 color : COLOR, float2 texcoor
 
 float4 ps_main(PSInput input) : SV_TARGET {
   float4 color_intensity = Font_Texture.Sample(Sampler, input.uv).rrrr;
-  return color_intensity * input.color;
+  return smoothstep(0.45, 0.5, color_intensity) * input.color;
 }

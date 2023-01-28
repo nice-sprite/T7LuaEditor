@@ -143,16 +143,16 @@ struct __attribute__((aligned(8))) LUIAnimationState
 // scene keeps track of all the screen quads
 Scene::Scene() { num_quads = 0; }
 
-void Scene::init(Renderer &renderer) {
+void Scene::init(Renderer *renderer) {
   fs::path quad_shader = Files::get_shader_root() / "TexturedQuad.hlsl";
-  renderer.create_vertex_buffer(&scene_vertex_buffer,
+  renderer->create_vertex_buffer(&scene_vertex_buffer,
                                 4 * sizeof(VertexPosColorTexcoord) * MaxQuads);
-  renderer.create_index_buffer(&scene_index_buffer, 6 * MaxQuads);
-  renderer.create_vertex_shader(quad_shader,
+  renderer->create_index_buffer(&scene_index_buffer, 6 * MaxQuads);
+  renderer->create_vertex_shader(quad_shader,
                                 VertexPosColorTexcoord::layout(),
                                 &scene_vertex_shader,
                                 &vertex_layout);
-  renderer.create_pixel_shader(quad_shader, &scene_pixel_shader);
+  renderer->create_pixel_shader(quad_shader, &scene_pixel_shader);
 
   MouseEventListener test_listener{};
   test_listener.self = (void *)this;
@@ -259,15 +259,15 @@ void Scene::ui_draw_selection() {
                      ImU32(0xFFFFBE00));
 }
 
-void Scene::update(Renderer &renderer, float timestep) {
+void Scene::update(Renderer *renderer, float timestep) {
   InputSystem &input = InputSystem::instance();
   static i32 last_quad = -1;
   static XMFLOAT4 bb, col;
   static f32 time_total = 0.f;
   f32 grow = 1.f;
 
-  ui_draw_selection();
-  ui_draw_element_list();
+  this->ui_draw_selection();
+  this->ui_draw_element_list();
   // calculate_selected_quads();
 
   // selected_quad = get_quad_under_cursor(InputSystem::instance().mouse_pos);
@@ -326,28 +326,28 @@ int Scene::get_quad_under_cursor(ScreenPos mouse) {
   return -1;
 }
 
-void Scene::draw(Renderer &renderer) {
-  renderer.set_vertex_buffer(scene_vertex_buffer.GetAddressOf(),
+void Scene::draw(Renderer *renderer) {
+  renderer->set_vertex_buffer(scene_vertex_buffer.GetAddressOf(),
                              1,
                              sizeof(VertexPosColorTexcoord),
                              0);
-  renderer.set_texture(nullptr);
-  renderer.set_index_buffer(scene_index_buffer.Get());
-  renderer.set_pixel_shader(scene_pixel_shader.Get());
-  renderer.set_vertex_shader(scene_vertex_shader.Get());
-  renderer.set_input_layout(vertex_layout.Get());
-  renderer.set_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  renderer.draw_indexed(num_quads * 6);
+  renderer->set_texture(nullptr);
+  renderer->set_index_buffer(scene_index_buffer.Get());
+  renderer->set_pixel_shader(scene_pixel_shader.Get());
+  renderer->set_vertex_shader(scene_vertex_shader.Get());
+  renderer->set_input_layout(vertex_layout.Get());
+  renderer->set_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  renderer->draw_indexed(num_quads * 6);
 }
 
-void Scene::update_resources(Renderer &renderer) {
-  renderer.update_buffer(scene_vertex_buffer.Get(),
+void Scene::update_resources(Renderer *renderer) {
+  renderer->update_buffer(scene_vertex_buffer.Get(),
                          [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
                            tesselate_quads(
                                (VertexPosColorTexcoord *)mapped_mem.pData);
                          });
 
-  renderer.update_buffer(scene_index_buffer.Get(),
+  renderer->update_buffer(scene_index_buffer.Get(),
                          [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
                            upload_indices((u32 *)mapped_mem.pData);
                          });

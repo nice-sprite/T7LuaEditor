@@ -66,7 +66,7 @@ void Renderer::init(HWND window, u32 width, u32 height) {
   this->hwnd = window;
   this->width = width;
   this->height = height;
-  this->clear_color = {1.f, 1.0f, 1.0f, 1.0f};
+  this->clear_color = {0.1f, 0.1f, 0.1f, 1.0f};
 
   init_gfx();
   init_imgui();
@@ -316,8 +316,8 @@ bool Renderer::init_imgui() {
   LOG_INFO("imgui version: {} docking?: {}",
            ImGui::GetVersion(),
            (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_DockingEnable) != 0);
-  auto font_consolas =
-  ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
+ // auto font_consolas =
+ // ImGui::GetIO().Fonts->AddFontFromFileTTF("c:\\windows\\fonts\\consola.ttf", 16.0f);
   ImGui_ImplDX11_Init(device.Get(), context.Get());
   ImGui_ImplWin32_Init(hwnd);
   return true;

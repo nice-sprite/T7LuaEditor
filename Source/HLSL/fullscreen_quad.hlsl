@@ -17,5 +17,6 @@ float4 ps_main(float4 pos: SV_POSITION) : SV_TARGET {
   pos.x = pos.x / viewportSize.x;
   pos.y = pos.y / viewportSize.y;
 
-  return float4(1.0-lerp(0.0, 0.1, pos.y), 1, 1, 1);
+  //return float4(1.0-lerp(0.0, 0.1, pos.y), 1, 1, 1);
+  return float4(0, 0.0, lerp(0.0, 0.1, pos.y), 1.0);
 }

@@ -35,8 +35,6 @@ add_library(imgui STATIC
   "Source/ThirdParty/imgui/imgui_demo.cpp"
 )
 
-
-
 file(GLOB ENGINE_SRC "Source/Engine/*.cpp")
 file(GLOB APP_SRC "Source/Application/*.cpp")
 set(IMGUI_SRC "Source/ThirdParty/imgui/imgui_impl_dx11.cpp" "Source/ThirdParty/imgui/imgui_impl_win32.cpp")
