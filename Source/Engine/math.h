@@ -3,6 +3,7 @@
 #include "../defines.h"
 #include <DirectXMath.h>
 
+using namespace DirectX;
 typedef DirectX::XMVECTOR Vec4;
 typedef DirectX::XMFLOAT4 Float4;
 typedef DirectX::XMFLOAT3 Float3;

@@ -1,12 +1,9 @@
 #pragma once
 #include "../defines.h"
-
 #include "math.h"
 #include "renderer_types.h"
 #include <fmt/format.h>
 
-struct Camera;
-struct CameraSystem;
 
 struct Ray {
   Vec4 origin;
@@ -14,10 +11,10 @@ struct Ray {
 };
 
 struct RayCaster {
-  CameraSystem *cam_sys;
+  //CameraSystem *cam_sys;
   ViewportRegion active_viewport;
 
-  void init(CameraSystem *cam_sys);
+  //void init(CameraSystem *cam_sys);
   RayCaster() = default;
   RayCaster(RayCaster &) = delete;
   static RayCaster &instance();
@@ -38,23 +35,22 @@ struct RayCaster {
   bool ray_volume(Ray min, Ray max, Float4 quad_bounds);
 };
 
-Float2
-world_to_screen(Float3 world, f32 width, f32 height, const Camera &camera);
+//Float2 world_to_screen(Float3 world, f32 width, f32 height, const Camera &camera);
 
 // converts screen coordinates to ray origin and direction
-Ray screen_to_world_ray(float x,
-                        float y,
-                        float width,
-                        float height,
-                        const Camera &camera,
-                        Matrix world);
-
-bool against_quad(Ray const &ray,
-                  float left,
-                  float right,
-                  float top,
-                  float bottom);
-
+//Ray screen_to_world_ray(float x,
+//                        float y,
+//                        float width,
+//                        float height,
+//                        const Camera &camera,
+//                        Matrix world);
+//
+//bool against_quad(Ray const &ray,
+//                  float left,
+//                  float right,
+//                  float top,
+//                  float bottom);
+//
 inline Vec4 plane_from_quad(float left, float right, float top, float bottom);
 
 bool against_quad(Ray const &ray, Float4 const &bounds);

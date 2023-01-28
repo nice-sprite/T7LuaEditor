@@ -14,31 +14,31 @@ else
   set shortmess=aoO
 endif
 badd +1 W:/Priscilla
-badd +221 W:/Priscilla/Source/Engine/renderer.h
-badd +249 W:/Priscilla/Source/Engine/scene.cpp
+badd +170 W:/Priscilla/Source/Engine/renderer.h
+badd +252 W:/Priscilla/Source/Engine/scene.cpp
 badd +42 W:/Priscilla/Build.bat
 badd +35 W:/Priscilla/scratch
 badd +152 W:/Priscilla/Source/Engine/win32_input.h
 badd +290 W:/Priscilla/Source/Engine/win32_input.cpp
-badd +25 W:/Priscilla/Source/Application/Application.cpp
+badd +263 W:/Priscilla/Source/Application/Application.cpp
 badd +11 W:/Priscilla/Source/Engine/camera.cpp
-badd +49 W:/Priscilla/Source/Engine/camera_controller.cpp
-badd +105 W:/Priscilla/Source/Engine/scene.h
-badd +636 W:/Priscilla/Source/Engine/renderer.cpp
-badd +95 W:/Priscilla/Source/Engine/ray_cast.cpp
-badd +43 W:/Priscilla/Source/Engine/ray_cast.h
+badd +21 W:/Priscilla/Source/Engine/camera_controller.cpp
+badd +110 W:/Priscilla/Source/Engine/scene.h
+badd +72 W:/Priscilla/Source/Engine/renderer.cpp
+badd +1 W:/Priscilla/Source/Engine/ray_cast.cpp
+badd +2 W:/Priscilla/Source/Engine/ray_cast.h
 badd +25 W:/Priscilla/Source/Engine/debug_lines.h
 badd +15 W:/Priscilla/Source/Engine/renderer_types.h
-badd +37 CMakeLists.txt
+badd +46 CMakeLists.txt
 badd +6 build.ps1
 badd +17 Source/defines.h
 badd +11 .clang-format
 badd +8 Source/Engine/logging.h
 badd +12 W:/Priscilla/Source/Engine/logging.cpp
 badd +9 W:/Priscilla/SetupEnv.bat
-badd +3 setupenv.ps1
-badd +16 Source/Application/Application.h
-badd +12 W:/Priscilla/Source/main.cpp
+badd +1 setupenv.ps1
+badd +64 Source/Application/Application.h
+badd +19 W:/Priscilla/Source/main.cpp
 badd +70 Source/Engine/font_renderer.cpp
 badd +8 Source/Engine/font_loader.h
 badd +8 Source/Engine/font_loader.cpp
@@ -49,17 +49,29 @@ badd +698 w:/freetype-demos/src/ftsdf.c
 badd +1 W:/Priscilla/Source/ThirdParty/freetype/include/freetype/freetype.h
 badd +37 W:/Priscilla/Source/ThirdParty/freetype/include/ft2build.h
 badd +541 W:/Priscilla/Source/ThirdParty/freetype/include/freetype/config/ftheader.h
-badd +30 Source/Engine/font_renderer.h
+badd +31 Source/Engine/font_renderer.h
 badd +30 Source/HLSL/font.hlsl
 badd +495 ~/source/repos/freetype-demos/src/ftcommon.c
-badd +20 Source/Engine/math.h
+badd +6 Source/Engine/math.h
 badd +36 Source/Engine/math.cpp
-badd +32 Source/Engine/input_system.cpp
+badd +460 Source/Engine/input_system.cpp
 badd +34 Source/Engine/debug_render.h
 badd +22 Source/HLSL/fullscreen_quad.hlsl
 badd +2 Source/Editor/EditorLayer.cpp
 badd +1 Source/Editor/EditorLayer.h
 badd +155 Source/Engine/input_system.h
+badd +1 Source/main.h
+badd +17 Source/main.cpp
+badd +175 Source/Application/Application.cpp
+badd +35 Source/Engine/renderer.h
+badd +330 Source/Engine/renderer.cpp
+badd +30 Source/Engine/win32_lib.h
+badd +11 Source/Engine/win32_lib.cpp
+badd +98 Source/Engine/camera_system.cpp
+badd +48 Source/Engine/camera_system.h
+badd +1 Source/Engine/camera_controller.cpp
+badd +12 Source/Engine/camera.h
+badd +1 Source/Engine/camera_controller.h
 argglobal
 %argdel
 $argadd W:/Priscilla
@@ -67,16 +79,13 @@ set stal=2
 tabnew +setlocal\ bufhidden=wipe
 tabnew +setlocal\ bufhidden=wipe
 tabrewind
-edit W:/Priscilla/Source/main.cpp
+edit Source/Application/Application.h
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
-wincmd _ | wincmd |
-vsplit
-2wincmd h
-wincmd w
+1wincmd h
 wincmd w
 let &splitbelow = s:save_splitbelow
 let &splitright = s:save_splitright
@@ -87,11 +96,9 @@ set winminheight=0
 set winheight=1
 set winminwidth=0
 set winwidth=1
-exe 'vert 1resize ' . ((&columns * 93 + 156) / 312)
-exe 'vert 2resize ' . ((&columns * 114 + 156) / 312)
-exe 'vert 3resize ' . ((&columns * 103 + 156) / 312)
+wincmd =
 argglobal
-balt Source/Engine/input_system.cpp
+balt Source/Engine/camera_system.h
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -102,42 +109,19 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 12 - ((11 * winheight(0) + 42) / 85)
+let s:l = 64 - ((30 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 12
-normal! 03|
-wincmd w
-argglobal
-if bufexists(fnamemodify("Source/Application/Application.h", ":p")) | buffer Source/Application/Application.h | else | edit Source/Application/Application.h | endif
-if &buftype ==# 'terminal'
-  silent file Source/Application/Application.h
-endif
-balt W:/Priscilla/Source/Application/Application.cpp
-setlocal fdm=manual
-setlocal fde=0
-setlocal fmr={{{,}}}
-setlocal fdi=#
-setlocal fdl=0
-setlocal fml=1
-setlocal fdn=20
-setlocal fen
-silent! normal! zE
-let &fdl = &fdl
-let s:l = 1 - ((0 * winheight(0) + 42) / 85)
-if s:l < 1 | let s:l = 1 | endif
-keepjumps exe s:l
-normal! zt
-keepjumps 1
+keepjumps 64
 normal! 0
 wincmd w
 argglobal
-if bufexists(fnamemodify("W:/Priscilla/Source/Application/Application.cpp", ":p")) | buffer W:/Priscilla/Source/Application/Application.cpp | else | edit W:/Priscilla/Source/Application/Application.cpp | endif
+if bufexists(fnamemodify("Source/Application/Application.cpp", ":p")) | buffer Source/Application/Application.cpp | else | edit Source/Application/Application.cpp | endif
 if &buftype ==# 'terminal'
-  silent file W:/Priscilla/Source/Application/Application.cpp
+  silent file Source/Application/Application.cpp
 endif
-balt Source/HLSL/fullscreen_quad.hlsl
+balt Source/Engine/camera_system.cpp
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -148,17 +132,15 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 26 - ((25 * winheight(0) + 42) / 85)
+let s:l = 66 - ((26 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 26
-normal! 044|
+keepjumps 66
+normal! 0
 wincmd w
 2wincmd w
-exe 'vert 1resize ' . ((&columns * 93 + 156) / 312)
-exe 'vert 2resize ' . ((&columns * 114 + 156) / 312)
-exe 'vert 3resize ' . ((&columns * 103 + 156) / 312)
+wincmd =
 tabnext
 edit W:/Priscilla/Source/Application/Application.cpp
 argglobal
@@ -172,11 +154,11 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 35 - ((19 * winheight(0) + 23) / 47)
+let s:l = 86 - ((53 * winheight(0) + 42) / 85)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 35
+keepjumps 86
 normal! 0
 tabnext
 edit w:/freetype-demos/src/ftsdf.c
@@ -192,12 +174,12 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 1 - ((0 * winheight(0) + 23) / 47)
+let s:l = 70 - ((0 * winheight(0) + 42) / 85)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 1
-normal! 034|
+keepjumps 70
+normal! 033|
 tabnext 1
 set stal=1
 if exists('s:wipebuf') && len(win_findbuf(s:wipebuf)) == 0 && getbufvar(s:wipebuf, '&buftype') isnot# 'terminal'

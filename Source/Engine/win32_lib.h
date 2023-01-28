@@ -27,7 +27,8 @@ Window create_window(HINSTANCE hinst,
                      int width,
                      int height,
                      WNDPROC proc,
-                     const char *window_icon_path);
+                     const char *window_icon_path,
+                     void* userdata);
 
 void set_window_icon(HWND hwnd, const char *iconPath);
 

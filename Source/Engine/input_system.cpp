@@ -457,20 +457,20 @@ void InputSystem::handle_win32_input(HWND hwnd,
 
 void InputSystem::update() {
 #ifdef INPUT_DEBUG
-  ImGui::Text("mouse delta: %d, %d", mouse_delta.dx, mouse_delta.dy);
-  ImGui::Text("cursor pos: %f %f", mouse_pos.x, mouse_pos.y);
-  ImGui::Text("wheel_delta : %d ", mouse_wheel);
+ // ImGui::Text("mouse delta: %d, %d", mouse_delta.dx, mouse_delta.dy);
+ // ImGui::Text("cursor pos: %f %f", mouse_pos.x, mouse_pos.y);
+ // ImGui::Text("wheel_delta : %d ", mouse_wheel);
 
-  ImGui::Text("left %d ", mouse_buttons.left);
-  ImGui::Text("right %d ", mouse_buttons.right);
-  ImGui::Text("middle %d ", mouse_buttons.middle);
-  ImGui::Text("x1 %d ", mouse_buttons.x1);
-  ImGui::Text("x2 %d ", mouse_buttons.x2);
-  ImGui::Text("right_dbl %d ", mouse_buttons.right_dbl);
-  ImGui::Text("left_dbl %d ", mouse_buttons.left_dbl);
-  ImGui::Text("middle_dbl %d ", mouse_buttons.middle_dbl);
-  ImGui::Text("x1_dbl %d ", mouse_buttons.x1_dbl);
-  ImGui::Text("x2_dbl %d ", mouse_buttons.x2_dbl);
+ // ImGui::Text("left %d ", mouse_buttons.left);
+ // ImGui::Text("right %d ", mouse_buttons.right);
+ // ImGui::Text("middle %d ", mouse_buttons.middle);
+ // ImGui::Text("x1 %d ", mouse_buttons.x1);
+ // ImGui::Text("x2 %d ", mouse_buttons.x2);
+ // ImGui::Text("right_dbl %d ", mouse_buttons.right_dbl);
+ // ImGui::Text("left_dbl %d ", mouse_buttons.left_dbl);
+ // ImGui::Text("middle_dbl %d ", mouse_buttons.middle_dbl);
+ // ImGui::Text("x1_dbl %d ", mouse_buttons.x1_dbl);
+ // ImGui::Text("x2_dbl %d ", mouse_buttons.x2_dbl);
 #endif
   u32 i = 0;
   // TODO some events might still want to fire even if the window is not active

@@ -21,11 +21,10 @@ include_directories(
   "Source/ThirdParty/freetype/include"
 )
 
-
-
 add_library(tracy STATIC "Source/ThirdParty/tracy/TracyClient.cpp")
 
 add_library(fmt STATIC "Source/ThirdParty/fmt/src/format.cc" "Source/ThirdParty/fmt/src/os.cc" "Source/ThirdParty/fmt/src/os.cc")
+
 
 add_library(imgui STATIC
   "Source/ThirdParty/imgui/imgui.cpp"

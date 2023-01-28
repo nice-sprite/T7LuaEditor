@@ -14,7 +14,7 @@ Window create_window(HINSTANCE hinst,
                      int width,
                      int height,
                      WNDPROC proc,
-                     const char *window_icon_path) {
+                     const char *window_icon_path, void* userdata) {
   Window window;
   BOOL attribute_state = TRUE;
   DWORD style = WS_OVERLAPPEDWINDOW;
@@ -43,7 +43,7 @@ Window create_window(HINSTANCE hinst,
                                nullptr,
                                nullptr,
                                hinst,
-                               nullptr);
+                               userdata);
 
   DwmSetWindowAttribute(window.hwnd,
                         DWMWA_TRANSITIONS_FORCEDISABLED,

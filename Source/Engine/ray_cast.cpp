@@ -1,5 +1,4 @@
 #include "ray_cast.h"
-#include "camera.h"
 #include "camera_system.h"
 #include "imgui_fmt.h"
 #include <DirectXMath.h>
@@ -22,22 +21,22 @@ RayCaster &RayCaster::instance() {
   return rc;
 }
 
-void RayCaster::init(CameraSystem *cam_sys) { this->cam_sys = cam_sys; }
+//void RayCaster::init(CameraSystem *cam_sys) { this->cam_sys = cam_sys; }
 
 // transforms a world-space vector into screenspace
 Vec4 RayCaster::project(Vec4 world) {
 
-  Vec4 ret = DirectX::XMVector3Project(world,
-                                       active_viewport.x,
-                                       active_viewport.y,
-                                       active_viewport.w,
-                                       active_viewport.h,
-                                       0.0,
-                                       1.0,
-                                       cam_sys->get_active().get_projection(),
-                                       cam_sys->get_active().get_view(),
-                                       XMMatrixIdentity());
-  return ret;
+ // Vec4 ret = DirectX::XMVector3Project(world,
+ //                                      active_viewport.x,
+ //                                      active_viewport.y,
+ //                                      active_viewport.w,
+ //                                      active_viewport.h,
+ //                                      0.0,
+ //                                      1.0,
+ //                                      cam_sys->get_active().get_projection(),
+ //                                      cam_sys->get_active().get_view(),
+ //                                      XMMatrixIdentity());
+  return {};
 }
 
 // transforms a screen-space vector (2d xy) into a normalized Ray
@@ -56,16 +55,17 @@ Ray RayCaster::picking_ray(Vec4 screen) {
 }
 
 Vec4 RayCaster::unproject(Vec4 xyz) {
-  return XMVector3Unproject(xyz,
-                            active_viewport.x,
-                            active_viewport.y,
-                            active_viewport.w,
-                            active_viewport.h,
-                            0.0,
-                            1.0,
-                            cam_sys->get_active().get_projection(),
-                            cam_sys->get_active().get_view(),
-                            XMMatrixIdentity());
+//  return XMVector3Unproject(xyz,
+//                            active_viewport.x,
+//                            active_viewport.y,
+//                            active_viewport.w,
+//                            active_viewport.h,
+//                            0.0,
+//                            1.0,
+//                            cam_sys->get_active().get_projection(),
+//                            cam_sys->get_active().get_view(),
+//                            XMMatrixIdentity());
+  return {};
 }
 
 bool RayCaster::ray_quad(Ray ray, Float4 quad_bounds) {
@@ -92,42 +92,42 @@ inline Vec4 RayCaster::quad_plane(Vec4 quad) {
 void RayCaster::set_viewport(ViewportRegion vp) { active_viewport = vp; }
 namespace ray_cast {
 
-Ray screen_to_world_ray(float x,
-                        float y,
-                        float width,
-                        float height,
-                        const Camera &camera,
-                        XMMATRIX world) {
-  XMFLOAT4X4 projection;
-  XMFLOAT4X4 inverse_view;
-  XMVECTOR ray_origin, ray_dir;
-  // XMVECTOR ray_origin, ray_dir;
-
-  // load the matrices into addressible form
-  XMStoreFloat4x4(&projection, camera.get_projection());
-  XMStoreFloat4x4(&inverse_view, XMMatrixInverse(nullptr, camera.get_view()));
-
-  ray_origin = XMVectorSet(0.0, 0.0, 0.0, 0.0);
-  ray_dir = XMVectorSet((((2.0f * x) / width) - 1.0f) / projection(0, 0),
-                        -(((2.0f * y) / height) - 1.0f) / projection(1, 1),
-                        1.0,
-                        0.0);
-
-  XMMATRIX vi = XMMatrixInverse(nullptr, camera.get_view());
-  ray_origin = XMVector3TransformCoord(ray_origin, vi);
-  ray_dir = XMVector3Normalize(XMVector3TransformNormal(ray_dir, vi));
-  return Ray{ray_origin, ray_dir};
-}
-
-inline XMVECTOR
-plane_from_quad(float left, float right, float top, float bottom) {
-  XMVECTOR left_top, left_bottom, right_bottom;
-  left_top = XMVectorSet(left, top, 0.0, 0.0);
-  left_bottom = XMVectorSet(left, bottom, 0.0, 0.0);
-  right_bottom = XMVectorSet(right, bottom, 0.0, 0.0);
-
-  return XMPlaneFromPoints(left_top, left_bottom, right_bottom);
-}
+//Ray screen_to_world_ray(float x,
+//                        float y,
+//                        float width,
+//                        float height,
+//                        const Camera &camera,
+//                        XMMATRIX world) {
+//  XMFLOAT4X4 projection;
+//  XMFLOAT4X4 inverse_view;
+//  XMVECTOR ray_origin, ray_dir;
+//  // XMVECTOR ray_origin, ray_dir;
+//
+//  // load the matrices into addressible form
+//  XMStoreFloat4x4(&projection, camera.get_projection());
+//  XMStoreFloat4x4(&inverse_view, XMMatrixInverse(nullptr, camera.get_view()));
+//
+//  ray_origin = XMVectorSet(0.0, 0.0, 0.0, 0.0);
+//  ray_dir = XMVectorSet((((2.0f * x) / width) - 1.0f) / projection(0, 0),
+//                        -(((2.0f * y) / height) - 1.0f) / projection(1, 1),
+//                        1.0,
+//                        0.0);
+//
+//  XMMATRIX vi = XMMatrixInverse(nullptr, camera.get_view());
+//  ray_origin = XMVector3TransformCoord(ray_origin, vi);
+//  ray_dir = XMVector3Normalize(XMVector3TransformNormal(ray_dir, vi));
+//  return Ray{ray_origin, ray_dir};
+//}
+//
+//inline XMVECTOR
+//plane_from_quad(float left, float right, float top, float bottom) {
+//  XMVECTOR left_top, left_bottom, right_bottom;
+//  left_top = XMVectorSet(left, top, 0.0, 0.0);
+//  left_bottom = XMVectorSet(left, bottom, 0.0, 0.0);
+//  right_bottom = XMVectorSet(right, bottom, 0.0, 0.0);
+//
+//  return XMPlaneFromPoints(left_top, left_bottom, right_bottom);
+//}
 
 // rect.x, rect.y == left, right
 // rect.z, rect.w == top, bottom
@@ -142,9 +142,10 @@ bool against_quad(Ray const &ray,
 
   XMVECTOR intersects;
 
-  intersects = XMPlaneIntersectLine(plane_from_quad(left, right, top, bottom),
-                                    ray.origin,
-                                    XMVectorAdd(ray.origin, ray.direction));
+  intersects = {}; 
+ // XMPlaneIntersectLine(plane_from_quad(left, right, top, bottom),
+ //                                   ray.origin,
+ //                                   XMVectorAdd(ray.origin, ray.direction));
 
   return !XMVectorGetIntX(XMVectorIsNaN(intersects)) &&
          point_inside_rect(intersects, XMFLOAT4{left, right, top, bottom});
@@ -165,7 +166,7 @@ bool volume_intersection(Ray mins, Ray maxs, XMFLOAT4 quad) {
   top = quad.z;
   bottom = quad.w;
 
-  quad_plane = plane_from_quad(quad.x, quad.y, quad.z, quad.w);
+  quad_plane = {}; //plane_from_quad(quad.x, quad.y, quad.z, quad.w);
 
   mins_intersection =
       XMPlaneIntersectLine(quad_plane,

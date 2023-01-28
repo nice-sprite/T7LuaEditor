@@ -2,7 +2,6 @@
 #define GFX_HELPERS_H
 
 #include "../defines.h"
-#include "camera.h"
 #include "files.h"
 #include "gpu_resources.h"
 #include "logging.h"
@@ -19,15 +18,14 @@ using namespace DirectX;
 class Renderer {
 
 public:
-  Renderer();
+
+  Renderer(HWND hwnd, i32 width, i32 height);
 
   ~Renderer();
 
   Renderer(const Renderer &Gfx) = delete;
 
   Renderer &operator=(const Renderer &) = delete;
-
-  void init(HWND hwnd, u32 width, u32 height);
 
   void set_and_clear_backbuffer();
 
@@ -154,17 +152,22 @@ public:
   bool create_texture(TextureParams const &params, Texture2D &out_texture);
 
 private:
-  bool init_gfx();
 
+  /* Creates dx11 device, swapchain, and objects for rendering to `hwnd`
+   * swapchain dimensions will be `width` x `height`
+   * */
+  bool d3d11_init(HWND hwnd, i32 width, i32 height);
+
+  /* TODO remove */
   bool init_imgui();
 
   void create_backbuffer_view();
 
   void reset_backbuffer_views();
 
-  void scene_pick(f32 x, f32 y);
 
 public:
+
   f32 width, height;
 
   struct RenderToTexture {

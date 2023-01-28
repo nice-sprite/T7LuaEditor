@@ -11,6 +11,7 @@
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
+#include "win32_lib.h"
 
 VertexLayout<3> VertexPosColorTexcoord::layout() {
 
@@ -62,31 +63,36 @@ VertexLayout<2> VertexPosColor::layout() {
  * Helper functions for debugging
  */
 
-void Renderer::init(HWND window, u32 width, u32 height) {
-  this->hwnd = window;
+//void Renderer::init(HWND window, u32 width, u32 height) {
+//  this->hwnd = window;
+//  this->width = width;
+//  this->height = height;
+//  this->clear_color = {0.1f, 0.1f, 0.1f, 1.0f};
+//
+//  //d3d11_init(window);
+//  init_imgui();
+//  create_constant_buffer(device.Get(),
+//                         sizeof(PerSceneConsts),
+//                         scene_constant_buffer.GetAddressOf());
+//
+//  // scene_consts.modelViewProjection =
+//  //     DirectX::XMMatrixIdentity() * camera.get_transform();
+//
+//  update_constant_buffer(context.Get(),
+//                         0,
+//                         (void *)&scene_consts,
+//                         sizeof(scene_consts),
+//                         scene_constant_buffer.Get());
+//
+//  bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
+//}
+
+Renderer::Renderer(HWND hwnd, i32 width, i32 height) {
   this->width = width;
   this->height = height;
-  this->clear_color = {0.1f, 0.1f, 0.1f, 1.0f};
+  this->hwnd = hwnd;
+  d3d11_init(hwnd, width, height);
 
-  init_gfx();
-  init_imgui();
-  create_constant_buffer(device.Get(),
-                         sizeof(PerSceneConsts),
-                         scene_constant_buffer.GetAddressOf());
-
-  // scene_consts.modelViewProjection =
-  //     DirectX::XMMatrixIdentity() * camera.get_transform();
-
-  update_constant_buffer(context.Get(),
-                         0,
-                         (void *)&scene_consts,
-                         sizeof(scene_consts),
-                         scene_constant_buffer.Get());
-
-  bind_constant_buffer(context.Get(), 0, scene_constant_buffer.Get());
-}
-
-Renderer::Renderer() {
   /* DO DEBUG NAMES */
   // static const char selection_vbuf_name[] = "Selection Vertices";
   // static const char selection_index_name[] = "Selection Indices";
@@ -152,7 +158,7 @@ void Renderer::resize_swapchain_backbuffer(i32 new_width,
   }
 }
 
-bool Renderer::init_gfx() {
+bool Renderer::d3d11_init(HWND hwnd, i32 width, i32 height) {
   UINT createDeviceFlags =
       D3D11_CREATE_DEVICE_DEBUG | D3D11_CREATE_DEVICE_BGRA_SUPPORT;
   D3D_FEATURE_LEVEL featureLevel;
@@ -186,8 +192,7 @@ bool Renderer::init_gfx() {
       if (SUCCEEDED(dxgiDevice->GetAdapter(&adapter))) {
         HRESULT hr = adapter->GetParent(IID_PPV_ARGS(&dxgiBaseFact));
         if (SUCCEEDED(hr)) {
-          dxgiBaseFact.As(
-              &dxgiFactory); // get the factory that created the d3d11 device
+          dxgiBaseFact.As(&dxgiFactory); // get the factory that created the d3d11 device
         }
       }
     }
@@ -196,8 +201,8 @@ bool Renderer::init_gfx() {
   LOG_INFO("creating swapchain");
   // Setup swap chain
   DXGI_SWAP_CHAIN_DESC1 sd = {0};
-  sd.Width = static_cast<UINT>(width);
-  sd.Height = static_cast<UINT>(height);
+  sd.Width = (u32)width;
+  sd.Height = (u32)height;
   sd.BufferCount = 2;
   sd.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
   sd.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
@@ -334,8 +339,6 @@ void Renderer::imgui_frame_end() {
   ImGui::Render();
   ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 }
-
-
 
 // use debug lines array for now
 void Renderer::create_world_grid() {
