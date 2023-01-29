@@ -43,7 +43,7 @@ void app_message_loop(AppState* app) {
 }
 
 void app_begin_frame(AppState* app) {
-  app->gfx->set_and_clear_backbuffer();
+  app->gfx->backbuffer_clear();
   ImGui_ImplDX11_NewFrame();
   ImGui_ImplWin32_NewFrame();
   ImGui::NewFrame();
@@ -70,6 +70,8 @@ void app_systems_run(AppState* app) {
   f32 time_delta = 0.f;
   camera_input(app->camera_system, app->input_system, time_delta);
 
+  scene_run_interaction(app->scene, app->input_system, app->ray, time_delta);
+  scene_render(app->scene, app->scene_gfx, app->gfx, app->font_system, time_delta);
 
   app_cbuffer_update(app);
 
@@ -82,6 +84,7 @@ void app_systems_run(AppState* app) {
 }
 
 void app_shutdown(AppState* app) {
+  scene_gfx_destroy(app->scene_gfx);
 
   delete app->gfx;
   delete app->debug_gfx;
@@ -90,6 +93,7 @@ void app_shutdown(AppState* app) {
   delete app->input_system;
   delete app->camera_system;
   delete app->ray;
+
  // delete app->layout_system ;
  // delete app->live_game ;
 }
@@ -106,13 +110,15 @@ void app_handle_window_create(AppState* app,
   app->gfx = new Renderer(hwnd, width, height);
   app->debug_gfx = new DebugRenderSystem();
   app->font_system = new FontRenderer(app->gfx);
-  app->scene = new Scene();
   app->input_system = new InputSystem();
   app->camera_system = new CameraSystem();
   app->ray = new RayCaster();
   app->layout_system = nullptr;
   app->live_game = nullptr;
+  app->scene = new SceneDef();
+  app->scene_gfx = new GfxSceneResources();
 
+  scene_gfx_create(app->scene_gfx, app->gfx, app->scene);
 
   /* setup imgui */
 
@@ -131,7 +137,7 @@ void app_handle_window_create(AppState* app,
 void app_resize(AppState* app, i32 w, i32 h) {
   LOG_INFO("Resize to: {} {}", w, h);
 
-  app->gfx->resize_swapchain_backbuffer(w, h, false);
+  app->gfx->backbuffer_resize(w, h, false);
 }
 
 void input_update(InputSystem* input) {
@@ -158,15 +164,15 @@ void editor_main_ui(AppState* app) {
   ImGui::End();
 }
 
-void editor_scene_display(Scene* scene) {
+void editor_scene_display(SceneDef* scene) {
   if(ImGui::Begin("Scene Tree")) {
     if(ImGui::Button("Add UI Element")) {
-      scene->add_quad(Float4(-50, 50, -100, 100), Float4(1, 1, 1, 1), Float4());
+      //scene->add_quad(Float4(-50, 50, -100, 100), Float4(1, 1, 1, 1), Float4());
     }
 
-    for(int i = 0; i < scene->num_quads; ++i) {
-      Float4 bb = scene->root_data.bounding_boxs[i];
-      ImGui::TextFmt("box: {} {} {} {}", bb.x, bb.y, bb.z, bb.w );
+    for(int i = 0; i < scene->element_count; ++i) {
+     // Float4 bb = scene->root_data.bounding_boxs[i];
+     // ImGui::TextFmt("box: {} {} {} {}", bb.x, bb.y, bb.z, bb.w );
     }
 
   }
@@ -197,7 +203,31 @@ void camera_input(CameraSystem* camera_sys, InputSystem* input, f32 time_delta) 
   }
 }
 
+void scene_run_interaction(SceneDef* scene, InputSystem* input, RayCaster* ray, f32 time_delta) {
 
+
+
+}
+
+void scene_render(SceneDef* active_scene, 
+    GfxSceneResources* resources, 
+    Renderer* gfx, 
+    FontRenderer* font_sys, 
+    f32 frame_delta) {
+
+  gfx->set_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  gfx->input_layout_bind(resources->vertex_layout);
+  gfx->vertex_buffer_bind(&resources->vertex_buffer, 1, sizeof(VertexPosColorTexcoord), 0);
+  gfx->index_buffer_bind(resources->index_buffer);
+
+  gfx->texture_bind(nullptr);
+  gfx->vertex_shader_bind(resources->vertex_shader);
+  gfx->pixel_shader_bind(resources->pixel_shader);
+
+  gfx->draw_indexed(active_scene->element_count * 6);
+
+
+}
 
 LRESULT CALLBACK win32_message_callback(HWND hwnd, 
                                         u32 msg,

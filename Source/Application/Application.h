@@ -31,7 +31,8 @@ struct AppState {
   Renderer* gfx;
   DebugRenderSystem* debug_gfx;
   FontRenderer* font_system;
-  Scene* scene;
+  SceneDef* scene;
+  GfxSceneResources* scene_gfx;
   CameraSystem* camera_system;
   InputSystem* input_system;
   RayCaster* ray;
@@ -68,17 +69,18 @@ void input_update(InputSystem* input);
 /* processes user interaction w/ the scene 
  * calculates selected, hovered, dragging, etc 
  * */
-void scene_run_interaction(Scene* scene, InputSystem* input, RayCaster* ray);
+void scene_run_interaction(SceneDef* scene, InputSystem* input, RayCaster* ray, f32 time_delta);
+
+/* renders the scene */
+void scene_render(SceneDef* active_scene, GfxSceneResources* resources, Renderer* gfx, FontRenderer* font_sys, f32 frame_delta);
 
 /*
  * Render the editor UI for the current scene
  * */
-void editor_scene_display(Scene* scene);
+void editor_scene_display(SceneDef* scene);
 void editor_main_ui(AppState* app);
 void editor_camera_controls(CameraSystem* camera_system);
 
-/* renders the scene */
-void scene_render(Renderer* gfx, FontRenderer* font_sys, Scene* active_scene, f64 frame_delta);
 
 void camera_input(CameraSystem* camera_sys, InputSystem* input, f32 time_delta);
 

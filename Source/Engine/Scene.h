@@ -52,31 +52,51 @@ struct Selection {
   std::vector<int> quads;
 };
 
+
+static constexpr auto MaxQuads = 10000;
+static constexpr auto MaxWidgetNameSize = 128;
+static constexpr auto MaxIndices = 6 * MaxQuads; // there are 6 indices per quad
+
+/* Holds data about the widget hierarchy and layout */
+struct SceneDef {
+  Float4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
+  Float4 rotations[MaxQuads]{};     // maybe make this a transform Matrix?
+  Float4 colors[MaxQuads]{};        // maybe compress this into a u32?
+  std::string name[MaxQuads]{};
+
+  u32 element_count; // number of active elements
+};
+
+void scene_add_element();
+
+struct GfxSceneResources {
+  ID3D11Buffer* vertex_buffer;
+  ID3D11Buffer* index_buffer;
+  ID3D11InputLayout* vertex_layout;
+
+  // TODO make a "Material" def and live shader reload
+  ID3D11VertexShader* vertex_shader;
+  ID3D11PixelShader* pixel_shader;
+};
+
+/* initialize the renderer resources to render a scene */
+void scene_gfx_create(GfxSceneResources* gfx_resources, Renderer* gfx_state, SceneDef* scene);
+
+/* free the resources */
+void scene_gfx_destroy(GfxSceneResources* gfx_resources);
+
+
 class Scene {
-private:
-  ComPtr<ID3D11Buffer> scene_vertex_buffer;
-  ComPtr<ID3D11Buffer> scene_index_buffer;
-  ComPtr<ID3D11InputLayout> vertex_layout;
-  ComPtr<ID3D11VertexShader> scene_vertex_shader;
-  ComPtr<ID3D11PixelShader> scene_pixel_shader;
 
 public:
-  static constexpr auto MaxQuads = 10000;
-  static constexpr auto MaxWidgetNameSize = 128;
-  // there are 6 indices per quad
-  static constexpr auto MaxIndices = 6 * MaxQuads;
 
   u32 num_quads;
-  u32 num_dirty;
-  u32 priority[MaxQuads]{};
   i32 selected_quad = -1;
 
-  struct UIElementData {
-    XMFLOAT4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
-    XMFLOAT4 rotations[MaxQuads]{};
-    XMFLOAT4 colors[MaxQuads]{};
-    std::string name[MaxQuads]{};
-  } root_data;
+  XMFLOAT4 bounding_boxs[MaxQuads]{}; // left, right, top, bottom
+  XMFLOAT4 rotations[MaxQuads]{};
+  XMFLOAT4 colors[MaxQuads]{};
+  std::string name[MaxQuads]{};
 
   Scene();
 

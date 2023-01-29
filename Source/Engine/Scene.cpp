@@ -140,61 +140,93 @@ struct __attribute__((aligned(8))) LUIAnimationState
 };
 */
 
+void scene_gfx_create(GfxSceneResources* gfx_resources, 
+    Renderer* gfx_state, 
+    SceneDef* scene) {
+  
+  fs::path quad_shader = Files::get_shader_root() / "TexturedQuad.hlsl";
+
+  gfx_state->vertex_buffer_create(&gfx_resources->vertex_buffer,
+                                  4 * sizeof(VertexPosColorTexcoord) * MaxQuads);
+
+  gfx_state->index_buffer_create(&gfx_resources->index_buffer,
+                                 6 * MaxQuads);
+
+  gfx_state->vertex_shader_create(quad_shader, 
+                                  VertexPosColorTexcoord::layout(),
+                                  &gfx_resources->vertex_shader,
+                                  &gfx_resources->vertex_layout
+                                  );
+
+  
+  gfx_state->pixel_shader_create(quad_shader, &gfx_resources->pixel_shader);
+
+}
+
+void scene_gfx_destroy(GfxSceneResources* gfx_resources) {
+
+  safe_release(&gfx_resources->index_buffer);
+  safe_release(&gfx_resources->pixel_shader);
+  safe_release(&gfx_resources->vertex_buffer);
+  safe_release(&gfx_resources->vertex_layout);
+  safe_release(&gfx_resources->vertex_shader);
+
+}
+
 // scene keeps track of all the screen quads
 Scene::Scene() { num_quads = 0; }
 
 void Scene::init(Renderer *renderer) {
-  fs::path quad_shader = Files::get_shader_root() / "TexturedQuad.hlsl";
-  renderer->create_vertex_buffer(&scene_vertex_buffer,
-                                4 * sizeof(VertexPosColorTexcoord) * MaxQuads);
-  renderer->create_index_buffer(&scene_index_buffer, 6 * MaxQuads);
-  renderer->create_vertex_shader(quad_shader,
-                                VertexPosColorTexcoord::layout(),
-                                &scene_vertex_shader,
-                                &vertex_layout);
-  renderer->create_pixel_shader(quad_shader, &scene_pixel_shader);
+  //fs::path quad_shader = Files::get_shader_root() / "TexturedQuad.hlsl";
+  //renderer->create_vertex_buffer(&scene_vertex_buffer,
+  //                              4 * sizeof(VertexPosColorTexcoord) * MaxQuads);
+  //renderer->create_index_buffer(&scene_index_buffer, 6 * MaxQuads);
+  //renderer->create_vertex_shader(quad_shader,
+  //                              VertexPosColorTexcoord::layout(),
+  //                              &scene_vertex_shader,
+  //                              &vertex_layout);
+  //renderer->create_pixel_shader(quad_shader, &scene_pixel_shader);
 
-  MouseEventListener test_listener{};
-  test_listener.self = (void *)this;
-  test_listener.function = (void *)[](void *self, MouseEvent e) {
-    auto *me = (Scene *)self;
-    // Dragging test uwu
-    switch (e.type) {
-    case DragStart:
-      // LOG_INFO("DragStart @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
-      me->selection.min = e.mouse_pos;
-      me->selection.max = e.mouse_pos;
-      break;
-    case Dragging:
-      me->selection.max = e.mouse_pos;
-      break;
-    case DragEnd:
-      // LOG_INFO("DragEnd @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
-      me->selection.min.x = 0;
-      me->selection.min.y = 0;
+  //MouseEventListener test_listener{};
+  //test_listener.self = (void *)this;
+  //test_listener.function = (void *)[](void *self, MouseEvent e) {
+  //  auto *me = (Scene *)self;
+  //  switch (e.type) {
+  //  case DragStart:
+  //    // LOG_INFO("DragStart @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
+  //    me->selection.min = e.mouse_pos;
+  //    me->selection.max = e.mouse_pos;
+  //    break;
+  //  case Dragging:
+  //    me->selection.max = e.mouse_pos;
+  //    break;
+  //  case DragEnd:
+  //    // LOG_INFO("DragEnd @ ({} {})", e.mouse_pos.x, e.mouse_pos.y);
+  //    me->selection.min.x = 0;
+  //    me->selection.min.y = 0;
 
-      me->selection.max.x = 0;
-      me->selection.max.y = 0;
-      break;
-    case MouseLeftDblClick:
-      // LOG_INFO("MouseLeftDblClick", e.mouse_pos.x, e.mouse_pos.y);
-      me->selected_quad = me->get_quad_under_cursor(e.mouse_pos);
+  //    me->selection.max.x = 0;
+  //    me->selection.max.y = 0;
+  //    break;
+  //  case MouseLeftDblClick:
+  //    // LOG_INFO("MouseLeftDblClick", e.mouse_pos.x, e.mouse_pos.y);
+  //    me->selected_quad = me->get_quad_under_cursor(e.mouse_pos);
 
-    default:
-      break;
-    }
-  };
+  //  default:
+  //    break;
+  //  }
+  //};
 
-  if (InputSystem::instance().add_mouse_listener(test_listener)) {
-    LOG_INFO("(scene) added mouse handler");
-  }
+  //if (InputSystem::instance().add_mouse_listener(test_listener)) {
+  //  LOG_INFO("(scene) added mouse handler");
+  //}
 }
 
 int Scene::add_quad(XMFLOAT4 bounds, XMFLOAT4 color, XMFLOAT4 rotation) {
-  root_data.bounding_boxs[num_quads] = bounds;
-  root_data.colors[num_quads] = color;
-  root_data.rotations[num_quads] = rotation;
-  num_quads++;
+  //root_data.bounding_boxs[num_quads] = bounds;
+  //root_data.colors[num_quads] = color;
+  //root_data.rotations[num_quads] = rotation;
+  //num_quads++;
   return num_quads - 1;
 }
 
@@ -272,7 +304,7 @@ void Scene::update(Renderer *renderer, float timestep) {
 
   // selected_quad = get_quad_under_cursor(InputSystem::instance().mouse_pos);
   if (this->selected_quad >= 0) {
-    root_data.colors[selected_quad] = colors[DebugColors::Blue];
+  //  root_data.colors[selected_quad] = colors[DebugColors::Blue];
   }
 
   update_resources(renderer); 
@@ -314,62 +346,62 @@ void Scene::calculate_selected_quads() {
 }
 
 int Scene::get_quad_under_cursor(ScreenPos mouse) {
-  Ray r;
-  r = RayCaster::instance().picking_ray(XMLoadFloat2(&mouse));
-  DebugRenderSystem::instance().debug_ray(r);
+  //Ray r;
+  //r = RayCaster::instance().picking_ray(XMLoadFloat2(&mouse));
+  //DebugRenderSystem::instance().debug_ray(r);
 
-  for (int i = 0; i < num_quads; ++i) {
-    if (RayCaster::instance().ray_quad(r, root_data.bounding_boxs[i])) {
-      return i;
-    }
-  }
-  return -1;
+  //for (int i = 0; i < num_quads; ++i) {
+  //  if (RayCaster::instance().ray_quad(r, root_data.bounding_boxs[i])) {
+  //    return i;
+  //  }
+  //}
+  //return -1;
 }
 
 void Scene::draw(Renderer *renderer) {
-  renderer->set_vertex_buffer(scene_vertex_buffer.GetAddressOf(),
-                             1,
-                             sizeof(VertexPosColorTexcoord),
-                             0);
-  renderer->set_texture(nullptr);
-  renderer->set_index_buffer(scene_index_buffer.Get());
-  renderer->set_pixel_shader(scene_pixel_shader.Get());
-  renderer->set_vertex_shader(scene_vertex_shader.Get());
-  renderer->set_input_layout(vertex_layout.Get());
-  renderer->set_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-  renderer->draw_indexed(num_quads * 6);
+  //renderer->set_vertex_buffer(scene_vertex_buffer.GetAddressOf(),
+  //                           1,
+  //                           sizeof(VertexPosColorTexcoord),
+  //                           0);
+  //renderer->set_texture(nullptr);
+  //renderer->set_index_buffer(scene_index_buffer.Get());
+  //renderer->set_pixel_shader(scene_pixel_shader.Get());
+  //renderer->set_vertex_shader(scene_vertex_shader.Get());
+  //renderer->set_input_layout(vertex_layout.Get());
+  //renderer->set_topology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+  //renderer->draw_indexed(num_quads * 6);
 }
 
 void Scene::update_resources(Renderer *renderer) {
-  renderer->update_buffer(scene_vertex_buffer.Get(),
-                         [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
-                           tesselate_quads(
-                               (VertexPosColorTexcoord *)mapped_mem.pData);
-                         });
+  //renderer->update_buffer(scene_vertex_buffer.Get(),
+  //                       [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
+  //                         tesselate_quads(
+  //                             (VertexPosColorTexcoord *)mapped_mem.pData);
+  //                       });
 
-  renderer->update_buffer(scene_index_buffer.Get(),
-                         [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
-                           upload_indices((u32 *)mapped_mem.pData);
-                         });
+  //renderer->update_buffer(scene_index_buffer.Get(),
+  //                       [=](D3D11_MAPPED_SUBRESOURCE &mapped_mem) {
+  //                         upload_indices((u32 *)mapped_mem.pData);
+  //                       });
 }
 
 void Scene::tesselate_quads(VertexPosColorTexcoord *mapped_vertex_memory) {
-  for (i32 i = 0; i < num_quads; ++i) {
-    XMFLOAT4 pos = root_data.bounding_boxs[i];
-    XMFLOAT4 color = root_data.colors[i];
-    mapped_vertex_memory[i * 4 + 0] = {DirectX::XMFLOAT3{pos.x, pos.z, 0.f},
-                                       color,
-                                       DirectX::XMFLOAT2{0.0f, 0.0f}};
-    mapped_vertex_memory[i * 4 + 1] = {DirectX::XMFLOAT3{pos.y, pos.z, 0.f},
-                                       color,
-                                       DirectX::XMFLOAT2{0.0f, 0.0f}};
-    mapped_vertex_memory[i * 4 + 2] = {DirectX::XMFLOAT3{pos.x, pos.w, 0.f},
-                                       color,
-                                       DirectX::XMFLOAT2{0.0f, 0.0f}};
-    mapped_vertex_memory[i * 4 + 3] = {DirectX::XMFLOAT3{pos.y, pos.w, 0.f},
-                                       color,
-                                       DirectX::XMFLOAT2{0.0f, 0.0f}};
-  }
+  //for (i32 i = 0; i < num_quads; ++i) {
+  //  XMFLOAT4 pos = root_data.bounding_boxs[i];
+  //  XMFLOAT4 color = root_data.colors[i];
+  //  mapped_vertex_memory[i * 4 + 0] = {DirectX::XMFLOAT3{pos.x, pos.z, 0.f},
+  //                                     color,
+  //                                     DirectX::XMFLOAT2{0.0f, 0.0f}};
+  //  mapped_vertex_memory[i * 4 + 1] = {DirectX::XMFLOAT3{pos.y, pos.z, 0.f},
+  //                                     color,
+  //                                     DirectX::XMFLOAT2{0.0f, 0.0f}};
+  //  mapped_vertex_memory[i * 4 + 2] = {DirectX::XMFLOAT3{pos.x, pos.w, 0.f},
+  //                                     color,
+  //                                     DirectX::XMFLOAT2{0.0f, 0.0f}};
+  //  mapped_vertex_memory[i * 4 + 3] = {DirectX::XMFLOAT3{pos.y, pos.w, 0.f},
+  //                                     color,
+  //                                     DirectX::XMFLOAT2{0.0f, 0.0f}};
+  //}
 }
 
 void Scene::upload_indices(u32 *mapped_index_buffer) {
@@ -402,21 +434,21 @@ bool ImGui_ScrollableInputFloat(const char* label, float* value, float step, flo
 }
 
 void Scene::ui_draw_element_list() {
-  if (ImGui::Begin("Scene Objects")) {
+  //if (ImGui::Begin("Scene Objects")) {
 
-    for (int i = 0; i < num_quads; ++i) {
-      ImGui::InputText("Name", (char *)root_data.name[i].c_str(), MaxWidgetNameSize);
+  //  for (int i = 0; i < num_quads; ++i) {
+  //    ImGui::InputText("Name", (char *)root_data.name[i].c_str(), MaxWidgetNameSize);
 
-      ImGui_ScrollableInputFloat("left", &root_data.bounding_boxs[i].x, 5.0, 20.0); 
+  //    ImGui_ScrollableInputFloat("left", &root_data.bounding_boxs[i].x, 5.0, 20.0); 
 
-      ImGui::InputFloat("left", &root_data.bounding_boxs[i].x);
-      ImGui::InputFloat("right", &root_data.bounding_boxs[i].y);
+  //    ImGui::InputFloat("left", &root_data.bounding_boxs[i].x);
+  //    ImGui::InputFloat("right", &root_data.bounding_boxs[i].y);
 
 
-      ImGui::InputFloat("top", &root_data.bounding_boxs[i].z);
-      ImGui::InputFloat("bottom", &root_data.bounding_boxs[i].w);
-      ImGui::ColorEdit4("RGBA", &root_data.colors[i].x);
-    }
-  }
-  ImGui::End();
+  //    ImGui::InputFloat("top", &root_data.bounding_boxs[i].z);
+  //    ImGui::InputFloat("bottom", &root_data.bounding_boxs[i].w);
+  //    ImGui::ColorEdit4("RGBA", &root_data.colors[i].x);
+  //  }
+  //}
+  //ImGui::End();
 }

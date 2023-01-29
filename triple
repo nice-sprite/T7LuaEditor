@@ -14,17 +14,17 @@ else
   set shortmess=aoO
 endif
 badd +1 W:/Priscilla
-badd +170 W:/Priscilla/Source/Engine/renderer.h
-badd +252 W:/Priscilla/Source/Engine/scene.cpp
+badd +20 W:/Priscilla/Source/Engine/renderer.h
+badd +23 W:/Priscilla/Source/Engine/scene.cpp
 badd +42 W:/Priscilla/Build.bat
 badd +35 W:/Priscilla/scratch
 badd +152 W:/Priscilla/Source/Engine/win32_input.h
 badd +290 W:/Priscilla/Source/Engine/win32_input.cpp
-badd +263 W:/Priscilla/Source/Application/Application.cpp
+badd +76 W:/Priscilla/Source/Application/Application.cpp
 badd +11 W:/Priscilla/Source/Engine/camera.cpp
 badd +21 W:/Priscilla/Source/Engine/camera_controller.cpp
-badd +110 W:/Priscilla/Source/Engine/scene.h
-badd +72 W:/Priscilla/Source/Engine/renderer.cpp
+badd +85 W:/Priscilla/Source/Engine/scene.h
+badd +461 W:/Priscilla/Source/Engine/renderer.cpp
 badd +1 W:/Priscilla/Source/Engine/ray_cast.cpp
 badd +2 W:/Priscilla/Source/Engine/ray_cast.h
 badd +25 W:/Priscilla/Source/Engine/debug_lines.h
@@ -37,8 +37,8 @@ badd +8 Source/Engine/logging.h
 badd +12 W:/Priscilla/Source/Engine/logging.cpp
 badd +9 W:/Priscilla/SetupEnv.bat
 badd +1 setupenv.ps1
-badd +64 Source/Application/Application.h
-badd +19 W:/Priscilla/Source/main.cpp
+badd +65 Source/Application/Application.h
+badd +17 W:/Priscilla/Source/main.cpp
 badd +70 Source/Engine/font_renderer.cpp
 badd +8 Source/Engine/font_loader.h
 badd +8 Source/Engine/font_loader.cpp
@@ -61,10 +61,6 @@ badd +2 Source/Editor/EditorLayer.cpp
 badd +1 Source/Editor/EditorLayer.h
 badd +155 Source/Engine/input_system.h
 badd +1 Source/main.h
-badd +17 Source/main.cpp
-badd +175 Source/Application/Application.cpp
-badd +35 Source/Engine/renderer.h
-badd +330 Source/Engine/renderer.cpp
 badd +30 Source/Engine/win32_lib.h
 badd +11 Source/Engine/win32_lib.cpp
 badd +98 Source/Engine/camera_system.cpp
@@ -72,6 +68,12 @@ badd +48 Source/Engine/camera_system.h
 badd +1 Source/Engine/camera_controller.cpp
 badd +12 Source/Engine/camera.h
 badd +1 Source/Engine/camera_controller.h
+badd +1 Source/Engine/scene_renderer.cpp
+badd +3 Source/Engine/scene_renderer.h
+badd +58 Source/Application/Application.cpp
+badd +0 Source/Engine/scene.cpp
+badd +188 Source/Engine/renderer.h
+badd +0 Source/Engine/renderer.cpp
 argglobal
 %argdel
 $argadd W:/Priscilla
@@ -79,13 +81,16 @@ set stal=2
 tabnew +setlocal\ bufhidden=wipe
 tabnew +setlocal\ bufhidden=wipe
 tabrewind
-edit Source/Application/Application.h
+edit Source/Engine/scene.cpp
 let s:save_splitbelow = &splitbelow
 let s:save_splitright = &splitright
 set splitbelow splitright
 wincmd _ | wincmd |
 vsplit
-1wincmd h
+wincmd _ | wincmd |
+vsplit
+2wincmd h
+wincmd w
 wincmd w
 let &splitbelow = s:save_splitbelow
 let &splitright = s:save_splitright
@@ -98,7 +103,7 @@ set winminwidth=0
 set winwidth=1
 wincmd =
 argglobal
-balt Source/Engine/camera_system.h
+balt W:/Priscilla/Source/Engine/scene.h
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -109,19 +114,42 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 64 - ((30 * winheight(0) + 37) / 74)
+let s:l = 361 - ((34 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 64
+keepjumps 361
+normal! 033|
+wincmd w
+argglobal
+if bufexists(fnamemodify("Source/Engine/renderer.h", ":p")) | buffer Source/Engine/renderer.h | else | edit Source/Engine/renderer.h | endif
+if &buftype ==# 'terminal'
+  silent file Source/Engine/renderer.h
+endif
+balt Source/Application/Application.cpp
+setlocal fdm=manual
+setlocal fde=0
+setlocal fmr={{{,}}}
+setlocal fdi=#
+setlocal fdl=0
+setlocal fml=1
+setlocal fdn=20
+setlocal fen
+silent! normal! zE
+let &fdl = &fdl
+let s:l = 150 - ((39 * winheight(0) + 37) / 74)
+if s:l < 1 | let s:l = 1 | endif
+keepjumps exe s:l
+normal! zt
+keepjumps 150
 normal! 0
 wincmd w
 argglobal
-if bufexists(fnamemodify("Source/Application/Application.cpp", ":p")) | buffer Source/Application/Application.cpp | else | edit Source/Application/Application.cpp | endif
+if bufexists(fnamemodify("W:/Priscilla/Source/Engine/renderer.cpp", ":p")) | buffer W:/Priscilla/Source/Engine/renderer.cpp | else | edit W:/Priscilla/Source/Engine/renderer.cpp | endif
 if &buftype ==# 'terminal'
-  silent file Source/Application/Application.cpp
+  silent file W:/Priscilla/Source/Engine/renderer.cpp
 endif
-balt Source/Engine/camera_system.cpp
+balt W:/Priscilla/Source/Application/Application.cpp
 setlocal fdm=manual
 setlocal fde=0
 setlocal fmr={{{,}}}
@@ -132,11 +160,11 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 66 - ((26 * winheight(0) + 37) / 74)
+let s:l = 439 - ((18 * winheight(0) + 37) / 74)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 66
+keepjumps 439
 normal! 0
 wincmd w
 2wincmd w
@@ -154,11 +182,11 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 86 - ((53 * winheight(0) + 42) / 85)
+let s:l = 88 - ((31 * winheight(0) + 23) / 47)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
-keepjumps 86
+keepjumps 88
 normal! 0
 tabnext
 edit w:/freetype-demos/src/ftsdf.c
@@ -174,7 +202,7 @@ setlocal fdn=20
 setlocal fen
 silent! normal! zE
 let &fdl = &fdl
-let s:l = 70 - ((0 * winheight(0) + 42) / 85)
+let s:l = 70 - ((0 * winheight(0) + 23) / 47)
 if s:l < 1 | let s:l = 1 | endif
 keepjumps exe s:l
 normal! zt
